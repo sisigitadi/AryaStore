@@ -4,7 +4,7 @@
 > Dibangun dengan arsitektur serverless **Google Apps Script (GAS) + Google Sheets Database** dan dapat dijalankan langsung sebagai Single Page Application (SPA) di **GitHub Pages**.  
 > Kepatuhan Standar: **RetroBOT Core v3.0** & **antislop Filter**
 
-🌐 **Demo Live:** [https://aryastore.sigitadi.id/](https://sisigitadi.github.io/AryaStore/)  
+🌐 **Demo Live:** [https://sisigitadi.github.io/AryaStore/](https://sisigitadi.github.io/AryaStore/)  
 📦 **Repositori:** [https://github.com/sisigitadi/AryaStore](https://github.com/sisigitadi/AryaStore)
 
 ---
