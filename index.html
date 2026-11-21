@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AryaStore | Koleksi Busana & Apparel Minimalis Kontemporer</title>
   
+  <meta name="description" content="AryaStore : Brand fashion editorial minimalis kontemporer. Kurasi busana esensial berkualitas tinggi, potongan berkarakter, dan siluet abadi untuk gaya hidup modern.">
+  <meta name="keywords" content="AryaStore, fashion minimalis, baju pria wanita, outerwear, kemeja linen, celana pleated, belanja online, lookbook fashion">
+  <meta name="author" content="AryaStore">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.svg">
+  <meta name="theme-color" content="#1C1917">
+
+  <!-- Open Graph / Facebook / WhatsApp Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aryastore.sigitadi.id/">
+  <meta property="og:title" content="AryaStore : Koleksi Busana & Apparel Minimalis Kontemporer">
+  <meta property="og:description" content="Brand fashion editorial minimalis kontemporer. Kurasi busana esensial berkualitas tinggi, potongan berkarakter, dan siluet abadi untuk gaya hidup modern.">
+  <meta property="og:image" content="https://aryastore.sigitadi.id/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AryaStore Editorial Lookbook Preview">
+  <meta property="og:site_name" content="AryaStore">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://aryastore.sigitadi.id/">
+  <meta name="twitter:title" content="AryaStore : Koleksi Busana & Apparel Minimalis Kontemporer">
+  <meta name="twitter:description" content="Brand fashion editorial minimalis kontemporer. Kurasi busana esensial berkualitas tinggi, potongan berkarakter, dan siluet abadi untuk gaya hidup modern.">
+  <meta name="twitter:image" content="https://aryastore.sigitadi.id/og-image.jpg">
+
   <!-- Tipografi Google Fonts: Plus Jakarta Sans & Playfair Display -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -247,42 +274,58 @@
         </div>
 
         <div id="bundles-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Paket 1 -->
-          <div class="bg-[#FFFFFF] border border-[#E7E5E4] p-5 flex flex-col justify-between shadow-sm space-y-4">
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">Hemat Rp 140.000</span>
-                <span class="text-xs font-mono text-[#78716C]">Outfit Lengkap</span>
+          <!-- Paket 1: Weekend Minimalist Set -->
+          <div class="bg-[#FFFFFF] border border-[#E7E5E4] flex flex-col justify-between shadow-sm group hover:border-[#1C1917] transition-all duration-200 overflow-hidden">
+            <div>
+              <div class="relative aspect-[16/9] overflow-hidden bg-[#FAFAF9]">
+                <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80" alt="Atelier Monochrome Set" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80';">
+                <span class="absolute top-3 left-3 bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider">Hemat Rp 280.000</span>
+                <span class="absolute bottom-3 left-3 bg-[#1C1917]/85 text-[#FAFAF9] text-[10px] font-mono px-2 py-0.5">2 Item Kombinasi</span>
               </div>
-              <h3 class="font-serif text-lg font-bold text-[#1C1917]">Weekend Minimalist Set</h3>
-              <p class="text-xs text-[#78716C] leading-relaxed">Kombinasi Kemeja Linen Relaxed + Celana Pleated Wide Leg + Structured Canvas Tote.</p>
-              <div class="flex items-baseline space-x-2 pt-1">
-                <span class="font-mono text-lg font-bold text-[#C2410C]">Rp 1.050.000</span>
-                <span class="font-mono text-xs text-stone-400 line-through">Rp 1.190.000</span>
+              <div class="p-5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-[#78716C] uppercase tracking-wider">Paket Bundling 01</span>
+                </div>
+                <h3 class="font-serif text-lg font-bold text-[#1C1917]">Atelier Monochrome Set</h3>
+                <p class="text-xs text-[#78716C] leading-relaxed">Perpaduan mantel wol terstruktur dan celana berlipit hitam arang untuk estetika formal paripurna.</p>
+                <div class="flex items-baseline space-x-2.5 pt-2">
+                  <span class="font-mono text-xl font-bold text-[#C2410C]">Rp 1.550.000</span>
+                  <span class="font-mono text-xs text-stone-400 line-through">Rp 1.830.000</span>
+                </div>
               </div>
             </div>
-            <button onclick="addBundleToCart('CMP-BND-001')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
-              <span>+ Ambil Paket Bundle</span>
-            </button>
+            <div class="p-5 pt-0">
+              <button onclick="addBundleToCart('BND-001')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
+                <span>+ Ambil Paket Bundle</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Paket 2 -->
-          <div class="bg-[#FFFFFF] border border-[#E7E5E4] p-5 flex flex-col justify-between shadow-sm space-y-4">
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">Hemat Rp 350.000</span>
-                <span class="text-xs font-mono text-[#78716C]">Outfit Lengkap</span>
+          <!-- Paket 2: Urban Terracotta Duo -->
+          <div class="bg-[#FFFFFF] border border-[#E7E5E4] flex flex-col justify-between shadow-sm group hover:border-[#1C1917] transition-all duration-200 overflow-hidden">
+            <div>
+              <div class="relative aspect-[16/9] overflow-hidden bg-[#FAFAF9]">
+                <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80" alt="Urban Terracotta Duo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80';">
+                <span class="absolute top-3 left-3 bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider">Hemat Rp 120.000</span>
+                <span class="absolute bottom-3 left-3 bg-[#1C1917]/85 text-[#FAFAF9] text-[10px] font-mono px-2 py-0.5">2 Item Kombinasi</span>
               </div>
-              <h3 class="font-serif text-lg font-bold text-[#1C1917]">Smart Casual Atelier Set</h3>
-              <p class="text-xs text-[#78716C] leading-relaxed">Atelier Structured Wool Coat + Minimalist Linen Shirt + Leather Chelsea Boots.</p>
-              <div class="flex items-baseline space-x-2 pt-1">
-                <span class="font-mono text-lg font-bold text-[#C2410C]">Rp 2.420.000</span>
-                <span class="font-mono text-xs text-stone-400 line-through">Rp 2.770.000</span>
+              <div class="p-5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-[#78716C] uppercase tracking-wider">Paket Bundling 02</span>
+                </div>
+                <h3 class="font-serif text-lg font-bold text-[#1C1917]">Urban Terracotta Duo</h3>
+                <p class="text-xs text-[#78716C] leading-relaxed">Kombinasi kemeja santai linen bernapas dengan tas selempang kanvas atelier serbaguna.</p>
+                <div class="flex items-baseline space-x-2.5 pt-2">
+                  <span class="font-mono text-xl font-bold text-[#C2410C]">Rp 620.000</span>
+                  <span class="font-mono text-xs text-stone-400 line-through">Rp 740.000</span>
+                </div>
               </div>
             </div>
-            <button onclick="addBundleToCart('CMP-BND-002')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
-              <span>+ Ambil Paket Bundle</span>
-            </button>
+            <div class="p-5 pt-0">
+              <button onclick="addBundleToCart('BND-002')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
+                <span>+ Ambil Paket Bundle</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -691,7 +734,14 @@
     <footer class="mt-auto border-t border-[#E7E5E4] bg-[#FFFFFF] text-xs text-[#78716C]">
       <div class="max-w-7xl mx-auto px-4 sm:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div class="space-y-3">
-          <p class="font-serif text-lg font-bold text-[#1C1917]">AryaStore</p>
+          <div class="flex items-center space-x-2">
+            <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 40 40" fill="none">
+              <rect width="40" height="40" rx="8" fill="#1C1917"/>
+              <text x="20" y="28" font-family="'Playfair Display', Georgia, serif" font-size="22" font-weight="700" fill="#FAFAF9" text-anchor="middle">A</text>
+              <circle cx="29" cy="12" r="3" fill="#C2410C"/>
+            </svg>
+            <span class="font-serif text-lg font-bold text-[#1C1917]">AryaStore</span>
+          </div>
           <p class="text-xs leading-relaxed">Etalase digital kurasi busana minimalis kontemporer. Dikelola langsung melalui Google Sheets Database dan pemrosesan pesanan terpadu via WhatsApp.</p>
           <p class="text-[11px] font-mono text-[#1C1917]">Versi Sistem: 1.0.0 (Produksi)</p>
         </div>
@@ -2490,48 +2540,87 @@
         container.innerHTML = `<p class="text-xs text-stone-500">Tidak ada paket bundling aktif saat ini.</p>`;
         return;
       }
-      container.innerHTML = bundles.map(b => `
-        <div class="bg-[#FFFFFF] border border-[#E7E5E4] p-5 flex flex-col justify-between shadow-sm space-y-4">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">Hemat ${formatIDR(b.normal_price - b.bundle_price)}</span>
-              <span class="text-xs font-mono text-[#78716C]">Outfit Lengkap</span>
+      container.innerHTML = bundles.map((b, idx) => {
+        const discount = (b.normal_price && b.bundle_price) ? (b.normal_price - b.bundle_price) : 0;
+        const img = b.image_url || (idx === 0 ? 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80');
+        const itemCount = b.items ? b.items.length : (b.bundle_items_json ? JSON.parse(b.bundle_items_json).length : 2);
+        
+        return `
+          <div class="bg-[#FFFFFF] border border-[#E7E5E4] flex flex-col justify-between shadow-sm group hover:border-[#1C1917] transition-all duration-200 overflow-hidden">
+            <div>
+              <div class="relative aspect-[16/9] overflow-hidden bg-[#FAFAF9]">
+                <img src="${img}" alt="${b.banner_title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80';">
+                ${discount > 0 ? `
+                  <span class="absolute top-3 left-3 bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider">Hemat ${formatIDR(discount)}</span>
+                ` : ''}
+                <span class="absolute bottom-3 left-3 bg-[#1C1917]/85 text-[#FAFAF9] text-[10px] font-mono px-2 py-0.5">${itemCount} Item Kombinasi</span>
+              </div>
+              <div class="p-5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-[#78716C] uppercase tracking-wider">Paket Bundling 0${idx+1}</span>
+                </div>
+                <h3 class="font-serif text-lg font-bold text-[#1C1917]">${b.banner_title}</h3>
+                <p class="text-xs text-[#78716C] leading-relaxed">${b.banner_desc}</p>
+                <div class="flex items-baseline space-x-2.5 pt-2">
+                  <span class="font-mono text-xl font-bold text-[#C2410C]">${formatIDR(b.bundle_price)}</span>
+                  <span class="font-mono text-xs text-stone-400 line-through">${formatIDR(b.normal_price)}</span>
+                </div>
+              </div>
             </div>
-            <h3 class="font-serif text-lg font-bold text-[#1C1917]">${b.banner_title}</h3>
-            <p class="text-xs text-[#78716C] leading-relaxed">${b.banner_desc}</p>
-            <div class="flex items-baseline space-x-2 pt-1">
-              <span class="font-mono text-lg font-bold text-[#C2410C]">${formatIDR(b.bundle_price)}</span>
-              <span class="font-mono text-xs text-stone-400 line-through">${formatIDR(b.normal_price)}</span>
+            <div class="p-5 pt-0">
+              <button onclick="addBundleToCart('${b.campaign_id}')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
+                <span>+ Ambil Paket Bundle</span>
+              </button>
             </div>
           </div>
-          <button onclick="addBundleToCart('${b.campaign_id}')" class="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2">
-            <span>+ Ambil Paket Bundle</span>
-          </button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     /**
      * Tambahkan Paket Bundling Langsung ke Keranjang
      */
     function addBundleToCart(bundleId) {
-      const b = AppState.campaigns.bundles.find(x => x.campaign_id === bundleId);
-      if (!b) return;
+      // Cari bundle dengan fleksibilitas ID (BND-001, CMP-BND-001, dll)
+      let b = (AppState.campaigns && AppState.campaigns.bundles) ? AppState.campaigns.bundles.find(x => x.campaign_id === bundleId) : null;
+      if (!b && MockDB.campaigns && MockDB.campaigns.bundles) {
+        b = MockDB.campaigns.bundles.find(x => x.campaign_id === bundleId || x.campaign_id.includes(bundleId) || bundleId.includes(x.campaign_id));
+      }
+      if (!b) {
+        showToast('Paket bundling tidak ditemukan', 'error');
+        return;
+      }
       
-      b.items.forEach(it => {
-        const prod = AppState.products.find(p => p.id === it.product_id);
+      let itemsList = b.items;
+      if (!itemsList || itemsList.length === 0) {
+        if (b.bundle_items_json) {
+          try { itemsList = JSON.parse(b.bundle_items_json); } catch(e) {}
+        }
+      }
+      if (!itemsList || itemsList.length === 0) {
+        // Fallback default items
+        itemsList = [
+          { product_id: 'PRD-001', variant_id: 'VAR-002', name: 'Atelier Structured Wool Coat' },
+          { product_id: 'PRD-003', variant_id: 'VAR-011', name: 'Pleated Wide Leg Trousers' }
+        ];
+      }
+      
+      const pricePerItem = Math.round(b.bundle_price / Math.max(1, itemsList.length));
+
+      itemsList.forEach(it => {
+        const prod = (AppState.products && AppState.products.length > 0) ? AppState.products.find(p => p.id === it.product_id) : MockDB.products.find(p => p.id === it.product_id);
         const variant = prod && prod.variants ? prod.variants.find(v => v.variant_id === it.variant_id) || prod.variants[0] : null;
         
         AppState.cart.push({
           productId: it.product_id,
           variantId: variant ? variant.variant_id : `BND-${it.product_id}`,
           sku: variant ? variant.sku : 'BND-SKU',
-          name: prod ? prod.name : it.name,
+          name: (prod ? prod.name : it.name) + ' (Paket)',
           color: variant ? variant.color : 'Sesuai Paket',
           size: variant ? variant.size : 'M',
-          price: Math.round(b.bundle_price / b.items.length),
+          price: pricePerItem,
           qty: 1,
-          image_url: prod ? prod.image_url : b.image_url
+          image_url: prod ? prod.image_url : (b.image_url || 'https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80')
         });
       });
 
@@ -4198,6 +4287,34 @@
         });
       });
     }
+
+    // Global Event Handlers Exposure (Jaminan eksekusi tombol inline onclick di semua browser)
+    window.addBundleToCart = addBundleToCart;
+    window.toggleWishlist = toggleWishlist;
+    window.openProductDetailModal = openProductDetailModal;
+    window.closeProductDetailModal = closeProductDetailModal;
+    window.openCartDrawer = openCartDrawer;
+    window.closeCartDrawer = closeCartDrawer;
+    window.openSizeGuideModal = openSizeGuideModal;
+    window.closeSizeGuideModal = closeSizeGuideModal;
+    window.openOrderTrackerModal = openOrderTrackerModal;
+    window.closeOrderTrackerModal = closeOrderTrackerModal;
+    window.openAdminLoginModal = openAdminLoginModal;
+    window.closeAdminLoginModal = closeAdminLoginModal;
+    window.openWishlistModal = openWishlistModal;
+    window.closeWishlistModal = closeWishlistModal;
+    window.checkoutWhatsApp = checkoutWhatsApp;
+    window.applyCoupon = applyCoupon;
+    window.setCategoryFilter = setCategoryFilter;
+    window.setSortFilter = setSortFilter;
+    window.setSizeFilter = setSizeFilter;
+    window.setMaxPriceFilter = setMaxPriceFilter;
+    window.resetAllFilters = resetAllFilters;
+    window.selectColor = selectColor;
+    window.selectSize = selectSize;
+    window.addToCartFromModal = addToCartFromModal;
+    window.updateCartQty = updateCartQty;
+    window.removeCartItem = removeCartItem;
 
   </script>
 </body>

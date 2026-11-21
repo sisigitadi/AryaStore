@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" fill="none">
+  <!-- Monogram Mark -->
+  <rect x="0" y="4" width="40" height="40" rx="8" fill="#1C1917"/>
+  <text x="20" y="32" font-family="'Playfair Display', Georgia, serif" font-size="24" font-weight="700" fill="#FAFAF9" text-anchor="middle">A</text>
+  <circle cx="30" cy="14" r="3.5" fill="#C2410C"/>
+  <!-- Wordmark -->
+  <text x="50" y="33" font-family="'Playfair Display', Georgia, serif" font-size="24" font-weight="700" fill="#1C1917" letter-spacing="-0.5">AryaStore</text>
+  <text x="175" y="31" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="8" font-weight="700" fill="#C2410C" letter-spacing="2">STUDIO</text>
+</svg>
