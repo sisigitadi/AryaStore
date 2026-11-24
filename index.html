@@ -340,6 +340,24 @@
         break-inside: avoid;
       }
     }
+    /* Mobile Touch & Input Ergonomics (antislop R-03, R-18) */
+    @media (max-width: 639px) {
+      input[type="text"],
+      input[type="tel"],
+      input[type="email"],
+      input[type="number"],
+      input[type="password"],
+      input[type="search"],
+      select,
+      textarea {
+        font-size: 16px !important; /* Mencegah auto-zoom pada peramban mobile */
+        touch-action: manipulation;
+      }
+      .touch-target-mobile {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
   </style>
 </head>
 <body class="min-h-full flex flex-col antialiased selection:bg-[#FFF7ED] selection:text-[#C2410C]">
@@ -384,7 +402,7 @@
             <!-- Currency Selector (Valas - Selalu Aktif & Terlihat di Seluruh Device) -->
             <div class="flex items-center space-x-1 text-stone-300">
               <span class="hidden sm:inline text-stone-500 font-mono text-[9px]">VALAS:</span>
-              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] hover:bg-[#3E3835] text-[#FAFAF9] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer font-medium transition-colors" title="Ubah Mata Uang / Currency">
+              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] hover:bg-[#3E3835] text-[#FAFAF9] text-[10px] px-2 py-1 min-h-[32px] sm:min-h-[26px] rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer font-medium transition-colors" title="Ubah Mata Uang / Currency">
                 <option value="IDR">IDR (Rp)</option>
                 <option value="USD">USD ($)</option>
                 <option value="SGD">SGD (S$)</option>
@@ -398,9 +416,9 @@
 
             <!-- Language Switcher (Selalu Aktif & Terlihat di Seluruh Device) -->
             <div class="flex items-center space-x-0.5 text-[10px]">
-              <button onclick="setLanguage('id')" id="lang-btn-id" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9]" title="Bahasa Indonesia">ID</button>
+              <button onclick="setLanguage('id')" id="lang-btn-id" class="min-h-[32px] min-w-[28px] sm:min-h-[26px] sm:min-w-[24px] px-2 py-1 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9] flex items-center justify-center active:scale-95" title="Bahasa Indonesia">ID</button>
               <span class="text-stone-500 text-[10px]">/</span>
-              <button onclick="setLanguage('en')" id="lang-btn-en" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white" title="English">EN</button>
+              <button onclick="setLanguage('en')" id="lang-btn-en" class="min-h-[32px] min-w-[28px] sm:min-h-[26px] sm:min-w-[24px] px-2 py-1 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white flex items-center justify-center active:scale-95" title="English">EN</button>
             </div>
           </div>
         </div>
@@ -430,7 +448,7 @@
           <div class="flex items-center space-x-1.5 sm:space-x-2.5">
             
             <!-- Tombol Wishlist (Desktop / Tablet) -->
-            <button onclick="openWishlistModal()" class="hidden sm:flex relative p-2 min-h-[40px] min-w-[40px] items-center justify-center text-[#1C1917] hover:text-[#C2410C] transition-colors" title="Daftar Keinginan (Wishlist)">
+            <button onclick="openWishlistModal()" class="hidden sm:flex relative p-2 min-h-[44px] min-w-[44px] items-center justify-center text-[#1C1917] hover:text-[#C2410C] transition-colors active:scale-95" title="Daftar Keinginan (Wishlist)">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
               </svg>
@@ -438,7 +456,7 @@
             </button>
 
             <!-- Tombol Keranjang Belanja (Compact & Clean) -->
-            <button onclick="openCartDrawer()" class="flex items-center space-x-1.5 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] px-2.5 sm:px-3 py-2 min-h-[40px] text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm">
+            <button onclick="openCartDrawer()" class="flex items-center space-x-1.5 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] px-2.5 sm:px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-95">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119.993z" />
               </svg>
@@ -447,12 +465,12 @@
             </button>
 
             <!-- Tombol Akses Admin PIN (Desktop / Tablet) -->
-            <button onclick="openAdminLoginModal()" class="hidden sm:flex text-xs text-[#57534E] hover:text-[#1C1917] px-2.5 py-2 min-h-[40px] border border-[#E7E5E4] hover:border-[#1C1917] transition-colors items-center justify-center space-x-1" title="Akses Tim Operasional">
+            <button onclick="openAdminLoginModal()" class="hidden sm:flex text-xs text-[#57534E] hover:text-[#1C1917] px-2.5 py-2 min-h-[44px] border border-[#E7E5E4] hover:border-[#1C1917] transition-colors items-center justify-center space-x-1 active:scale-95" title="Akses Tim Operasional">
               <span data-i18n="nav_admin" class="font-medium">Admin</span>
             </button>
 
             <!-- Tombol Menu Mobile (Dengan Label Teks R-03, min 44x44px tap target, High Contrast Solid Button) -->
-            <button onclick="openMobileNav()" class="md:hidden flex items-center space-x-1.5 px-3 py-2 bg-[#1C1917] text-white hover:bg-[#292524] transition-colors rounded-sm shadow-sm min-h-[40px] min-w-[40px]" aria-label="Buka Menu Navigasi">
+            <button onclick="openMobileNav()" class="md:hidden flex items-center space-x-1.5 px-3.5 py-2.5 bg-[#1C1917] text-white hover:bg-[#292524] transition-colors rounded-sm shadow-sm min-h-[44px] min-w-[44px] active:scale-95" aria-label="Buka Menu Navigasi">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
@@ -489,14 +507,14 @@
               <div>
                 <label class="block font-bold text-[#1C1917] uppercase tracking-wider text-[11px] mb-1.5">Bahasa / Language</label>
                 <div class="flex space-x-2">
-                  <button onclick="setLanguage('id')" id="mobile-lang-id" class="px-3 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white rounded-sm font-semibold">Bahasa Indonesia</button>
-                  <button onclick="setLanguage('en')" id="mobile-lang-en" class="px-3 py-1.5 border border-[#E7E5E4] text-[#1C1917] rounded-sm font-semibold">English</button>
+                  <button onclick="setLanguage('id')" id="mobile-lang-id" class="px-4 py-2.5 min-h-[44px] border border-[#1C1917] bg-[#1C1917] text-white rounded-sm font-semibold flex items-center justify-center active:scale-95">Bahasa Indonesia</button>
+                  <button onclick="setLanguage('en')" id="mobile-lang-en" class="px-4 py-2.5 min-h-[44px] border border-[#E7E5E4] text-[#1C1917] rounded-sm font-semibold flex items-center justify-center active:scale-95">English</button>
                 </div>
               </div>
               
               <div>
                 <label class="block font-bold text-[#1C1917] uppercase tracking-wider text-[11px] mb-1.5">Mata Uang / Currency</label>
-                <select id="mobile-currency-select" onchange="setCurrency(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-[#1C1917] p-2 rounded-sm text-xs">
+                <select id="mobile-currency-select" onchange="setCurrency(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-[#1C1917] p-2.5 rounded-sm text-base sm:text-xs min-h-[44px]">
                   <option value="IDR">IDR : Rupiah (Rp)</option>
                   <option value="USD">USD : Dollar ($)</option>
                   <option value="SGD">SGD : Dollar (S$)</option>
@@ -590,17 +608,17 @@
           <!-- Input Pencarian -->
           <div class="relative max-w-md w-full">
             <svg class="w-4 h-4 text-[#57534E] absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" id="filter-search" oninput="debounceFilter()" placeholder="Cari busana, warna, atau material..." class="w-full pl-9 pr-4 py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-xs text-[#1C1917] focus:border-[#1C1917] focus:bg-[#FFFFFF] transition-colors placeholder:text-[#A8A29E]">
+            <input type="text" id="filter-search" oninput="debounceFilter()" placeholder="Cari busana, warna, atau material..." class="w-full pl-9 pr-4 py-3 sm:py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs text-[#1C1917] focus:border-[#1C1917] focus:bg-[#FFFFFF] transition-colors placeholder:text-[#A8A29E] min-h-[44px]">
           </div>
 
           <!-- Kategori Tabs -->
           <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
-            <button onclick="setCategoryFilter('')" id="cat-btn-all" class="interactive-btn px-3 py-2 border border-[#1C1917] bg-[#1C1917] text-[#FAFAF9] transition-all active:scale-95">Semua</button>
-            <button onclick="setCategoryFilter('Outerwear')" id="cat-btn-Outerwear" class="interactive-btn px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95">Outerwear</button>
-            <button onclick="setCategoryFilter('Tops')" id="cat-btn-Tops" class="interactive-btn px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95">Tops</button>
-            <button onclick="setCategoryFilter('Bottoms')" id="cat-btn-Bottoms" class="interactive-btn px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95">Bottoms</button>
-            <button onclick="setCategoryFilter('Footwear')" id="cat-btn-Footwear" class="interactive-btn px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95">Footwear</button>
-            <button onclick="setCategoryFilter('Accessories')" id="cat-btn-Accessories" class="interactive-btn px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95">Accessories</button>
+            <button onclick="setCategoryFilter('')" id="cat-btn-all" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#1C1917] bg-[#1C1917] text-[#FAFAF9] transition-all active:scale-95 flex items-center justify-center">Semua</button>
+            <button onclick="setCategoryFilter('Outerwear')" id="cat-btn-Outerwear" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">Outerwear</button>
+            <button onclick="setCategoryFilter('Tops')" id="cat-btn-Tops" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">Tops</button>
+            <button onclick="setCategoryFilter('Bottoms')" id="cat-btn-Bottoms" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">Bottoms</button>
+            <button onclick="setCategoryFilter('Footwear')" id="cat-btn-Footwear" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">Footwear</button>
+            <button onclick="setCategoryFilter('Accessories')" id="cat-btn-Accessories" class="interactive-btn min-h-[40px] px-3.5 py-2 border border-[#E7E5E4] text-[#57534E] hover:text-[#1C1917] hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">Accessories</button>
           </div>
         </div>
 
@@ -619,15 +637,15 @@
             <div class="flex items-center space-x-1.5 overflow-x-auto py-1">
               <span data-i18n="filter_size" class="font-semibold text-[#57534E] mr-1">Ukuran:</span>
               
-                <button onclick="setSizeFilter('XS')" id="size-chip-XS" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">XS</button>
-                <button onclick="setSizeFilter('S')" id="size-chip-S" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">S</button>
-                <button onclick="setSizeFilter('M')" id="size-chip-M" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">M</button>
-                <button onclick="setSizeFilter('L')" id="size-chip-L" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">L</button>
-                <button onclick="setSizeFilter('XL')" id="size-chip-XL" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">XL</button>
-                <button onclick="setSizeFilter('2XL')" id="size-chip-2XL" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">2XL</button>
-                <button onclick="setSizeFilter('3XL')" id="size-chip-3XL" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">3XL</button>
-                <button onclick="setSizeFilter('4XL')" id="size-chip-4XL" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">4XL</button>
-                <button onclick="setSizeFilter('5XL')" id="size-chip-5XL" class="interactive-btn px-2 py-1 border border-[#E7E5E4] text-[10px] font-mono hover:border-[#1C1917] transition-all active:scale-95">5XL</button>
+                <button onclick="setSizeFilter('XS')" id="size-chip-XS" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">XS</button>
+                <button onclick="setSizeFilter('S')" id="size-chip-S" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">S</button>
+                <button onclick="setSizeFilter('M')" id="size-chip-M" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">M</button>
+                <button onclick="setSizeFilter('L')" id="size-chip-L" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">L</button>
+                <button onclick="setSizeFilter('XL')" id="size-chip-XL" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">XL</button>
+                <button onclick="setSizeFilter('2XL')" id="size-chip-2XL" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">2XL</button>
+                <button onclick="setSizeFilter('3XL')" id="size-chip-3XL" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">3XL</button>
+                <button onclick="setSizeFilter('4XL')" id="size-chip-4XL" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">4XL</button>
+                <button onclick="setSizeFilter('5XL')" id="size-chip-5XL" class="interactive-btn min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] px-2.5 py-1.5 border border-[#E7E5E4] text-xs font-mono hover:border-[#1C1917] transition-all active:scale-95 flex items-center justify-center">5XL</button>
               
             </div>
           </div>
@@ -636,7 +654,7 @@
           <div class="flex items-center space-x-3 ml-auto">
             <div class="flex items-center space-x-1.5">
               <span data-i18n="filter_sort" class="font-semibold text-[#57534E]">Urutkan:</span>
-              <select id="filter-sort" onchange="applyFilters()" class="bg-[#FAFAF9] border border-[#E7E5E4] py-1.5 px-2.5 text-xs text-[#1C1917] cursor-pointer">
+              <select id="filter-sort" onchange="applyFilters()" class="bg-[#FAFAF9] border border-[#E7E5E4] py-2 sm:py-1.5 px-3 sm:px-2.5 text-base sm:text-xs text-[#1C1917] cursor-pointer min-h-[40px]">
                 <option value="newest">Terbaru</option>
                 <option value="price_asc">Harga Terendah</option>
                 <option value="price_desc">Harga Tertinggi</option>
@@ -1033,8 +1051,8 @@
               <p data-i18n="cart_shipping_live_subtitle" class="text-[10px] text-[#57534E]">Cari kota, kecamatan, atau negara untuk tarif kurir langsung.</p>
               
               <div class="flex space-x-1.5">
-                <input type="text" id="live-shipping-search-input" onkeydown="if(event.key==='Enter'){event.preventDefault(); searchLiveShippingDestinations();}" placeholder="Ketik kota, kecamatan, atau kode pos..." class="flex-1 bg-white border border-[#E7E5E4] px-2 py-1.5 text-xs text-[#1C1917] focus:outline-none focus:border-[#1C1917]">
-                <button id="live-shipping-search-btn" onclick="searchLiveShippingDestinations()" class="px-3 py-1.5 bg-[#1C1917] hover:bg-[#292524] text-white text-[11px] font-semibold whitespace-nowrap min-h-[36px] flex items-center justify-center">
+                <input type="text" id="live-shipping-search-input" onkeydown="if(event.key==='Enter'){event.preventDefault(); searchLiveShippingDestinations();}" placeholder="Ketik kota, kecamatan, atau kode pos..." class="flex-1 bg-white border border-[#E7E5E4] px-3 py-2.5 sm:py-1.5 text-base sm:text-xs text-[#1C1917] focus:outline-none focus:border-[#1C1917] min-h-[44px]">
+                <button id="live-shipping-search-btn" onclick="searchLiveShippingDestinations()" class="px-4 py-2.5 bg-[#1C1917] hover:bg-[#292524] text-white text-xs sm:text-[11px] font-semibold whitespace-nowrap min-h-[44px] flex items-center justify-center active:scale-95">
                   <span id="live-shipping-search-btn-text" data-i18n="cart_shipping_btn_lookup">Cari & Hitung</span>
                 </button>
               </div>
@@ -1058,7 +1076,7 @@
             <!-- Dropdown Pilihan Zona / Negara (Matrix Mode) -->
             <div id="cart-zone-matrix-container">
               <label data-i18n="cart_select_zone" class="block text-[11px] font-semibold text-[#57534E] mb-1">Pilih Wilayah Tujuan:</label>
-              <select id="cart-shipping-zone-select" onchange="onShippingZoneChanged(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-xs p-2 text-[#1C1917] cursor-pointer">
+              <select id="cart-shipping-zone-select" onchange="onShippingZoneChanged(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs py-2.5 sm:py-2 px-3 text-[#1C1917] cursor-pointer min-h-[44px]">
                 <!-- Populated dynamically -->
               </select>
             </div>
@@ -1082,8 +1100,8 @@
           <div id="cart-coupon-section" class="pt-4 border-t border-[#E7E5E4] space-y-2">
             <label data-i18n="cart_coupon_title" class="block text-xs font-bold uppercase tracking-wider text-[#1C1917]">Kupon Diskon & Promo</label>
             <div class="flex space-x-2">
-              <input type="text" id="cart-coupon-input" placeholder="Contoh: WELCOME10" class="flex-1 px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-xs font-mono uppercase focus:border-[#1C1917] placeholder:normal-case">
-              <button onclick="submitApplyCoupon()" data-i18n="cart_coupon_apply" class="px-4 py-2 bg-[#1C1917] text-[#FAFAF9] text-xs font-semibold uppercase hover:bg-[#292524]">Gunakan</button>
+              <input type="text" id="cart-coupon-input" placeholder="Contoh: WELCOME10" class="flex-1 px-3 py-2.5 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs font-mono uppercase focus:border-[#1C1917] placeholder:normal-case min-h-[44px]">
+              <button onclick="submitApplyCoupon()" data-i18n="cart_coupon_apply" class="px-4 py-2.5 sm:py-2 bg-[#1C1917] text-[#FAFAF9] text-xs font-semibold uppercase hover:bg-[#292524] min-h-[44px] flex items-center justify-center active:scale-95">Gunakan</button>
             </div>
             <p id="cart-coupon-feedback" class="text-[11px] font-mono"></p>
           </div>
@@ -1092,23 +1110,23 @@
           <div id="cart-customer-form-section" class="pt-4 border-t border-[#E7E5E4] space-y-3">
             <span data-i18n="cart_customer_title" class="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">Informasi Penerima & Alamat</span>
             <div>
-              <input type="text" id="cart-cust-name" placeholder="Nama Lengkap Penerima" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-xs focus:border-[#1C1917]">
+              <input type="text" id="cart-cust-name" autocomplete="name" placeholder="Nama Lengkap Penerima" class="w-full px-3 py-2.5 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs focus:border-[#1C1917] min-h-[44px]">
             </div>
             <div>
-              <input type="tel" id="cart-cust-wa" placeholder="Nomor WhatsApp (Contoh: 08123456789)" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-xs font-mono focus:border-[#1C1917]">
+              <input type="tel" id="cart-cust-wa" inputmode="tel" autocomplete="tel" placeholder="Nomor WhatsApp (Contoh: 08123456789)" class="w-full px-3 py-2.5 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs font-mono focus:border-[#1C1917] min-h-[44px]">
             </div>
             <div>
-              <textarea id="cart-cust-address" rows="2" placeholder="Alamat Pengiriman Lengkap (Jalan, No, RT/RW, Kota, Kode Pos)" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-xs focus:border-[#1C1917]"></textarea>
+              <textarea id="cart-cust-address" autocomplete="street-address" rows="2" placeholder="Alamat Pengiriman Lengkap (Jalan, No, RT/RW, Kota, Kode Pos)" class="w-full px-3 py-2.5 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs focus:border-[#1C1917] min-h-[64px]"></textarea>
             </div>
             <div>
-              <input type="text" id="cart-cust-notes" placeholder="Catatan Khusus untuk Kurir (Opsional)" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-xs focus:border-[#1C1917]">
+              <input type="text" id="cart-cust-notes" placeholder="Catatan Khusus untuk Kurir (Opsional)" class="w-full px-3 py-2.5 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs focus:border-[#1C1917] min-h-[44px]">
             </div>
           </div>
 
         </div>
 
         <!-- Footer Ringkasan Biaya & Tombol Checkout WA -->
-        <div id="cart-summary-footer" class="p-6 border-t border-[#E7E5E4] bg-[#FAFAF9] space-y-3">
+        <div id="cart-summary-footer" class="p-6 border-t border-[#E7E5E4] bg-[#FAFAF9] space-y-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div class="space-y-1.5 text-xs text-[#57534E]">
             <div class="flex justify-between">
               <span data-i18n="cart_summary_subtotal">Subtotal Produk</span>
@@ -1160,13 +1178,13 @@
         <div class="space-y-3">
           <div>
             <label data-i18n="tracker_input_inv" class="block text-[11px] font-semibold text-[#57534E] mb-1">Nomor Invoice</label>
-            <input type="text" id="tracker-invoice-input" placeholder="INV-202611-001" class="w-full px-3 py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-xs font-mono uppercase focus:border-[#1C1917]">
+            <input type="text" id="tracker-invoice-input" placeholder="INV-202611-001" class="w-full px-3 py-3 sm:py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs font-mono uppercase focus:border-[#1C1917] min-h-[44px]">
           </div>
           <div>
             <label data-i18n="tracker_input_wa" class="block text-[11px] font-semibold text-[#57534E] mb-1">Nomor WhatsApp Terdaftar</label>
-            <input type="tel" id="tracker-phone-input" placeholder="08123456789" class="w-full px-3 py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-xs font-mono focus:border-[#1C1917]">
+            <input type="tel" id="tracker-phone-input" inputmode="tel" autocomplete="tel" placeholder="08123456789" class="w-full px-3 py-3 sm:py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs font-mono focus:border-[#1C1917] min-h-[44px]">
           </div>
-          <button onclick="lookupOrderAction()" id="tracker-lookup-btn" class="w-full py-2.5 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524]">
+          <button onclick="lookupOrderAction()" id="tracker-lookup-btn" class="w-full py-3 sm:py-2.5 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] min-h-[44px] flex items-center justify-center active:scale-95">
             <span data-i18n="tracker_btn_check">Periksa Status Pesanan</span>
           </button>
         </div>
@@ -1234,15 +1252,15 @@
         <form id="return-form" onsubmit="submitReturnAction(event)" class="space-y-3 text-xs">
           <div>
             <label class="block font-semibold text-[#57534E] mb-1">Nomor Invoice Pesanan</label>
-            <input type="text" id="ret-inv" placeholder="INV-202611-001" required class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono uppercase">
+            <input type="text" id="ret-inv" placeholder="INV-202611-001" required class="w-full px-3 py-3 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono uppercase text-base sm:text-xs min-h-[44px]">
           </div>
           <div>
             <label class="block font-semibold text-[#57534E] mb-1">Nama Pemesan</label>
-            <input type="text" id="ret-name" required class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4]">
+            <input type="text" id="ret-name" autocomplete="name" required class="w-full px-3 py-3 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs min-h-[44px]">
           </div>
           <div>
             <label data-i18n="return_reason" class="block font-semibold text-[#57534E] mb-1">Alasan Pengajuan:</label>
-            <select id="ret-reason" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4] cursor-pointer">
+            <select id="ret-reason" class="w-full px-3 py-3 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] cursor-pointer text-base sm:text-xs min-h-[44px]">
               <option value="Tukar Ukuran">Tukar Ukuran (Size Exchange)</option>
               <option value="Cacat Jahitan atau Bahan">Cacat Jahitan atau Bahan</option>
               <option value="Barang Tidak Sesuai">Barang Tidak Sesuai Pesanan</option>
@@ -1250,9 +1268,9 @@
           </div>
           <div>
             <label data-i18n="return_target_size" class="block font-semibold text-[#57534E] mb-1">Ukuran Pengganti yang Diminta:</label>
-            <input type="text" id="ret-size" placeholder="Contoh: L (dari sebelumnya M)" class="w-full px-3 py-2 bg-[#FAFAF9] border border-[#E7E5E4]">
+            <input type="text" id="ret-size" placeholder="Contoh: L (dari sebelumnya M)" class="w-full px-3 py-3 sm:py-2 bg-[#FAFAF9] border border-[#E7E5E4] text-base sm:text-xs min-h-[44px]">
           </div>
-          <button type="submit" id="ret-submit-btn" class="w-full py-2.5 bg-[#1C1917] text-white font-semibold uppercase tracking-wider hover:bg-[#292524]">
+          <button type="submit" id="ret-submit-btn" class="w-full py-3.5 sm:py-2.5 bg-[#1C1917] text-white font-semibold uppercase tracking-wider hover:bg-[#292524] min-h-[44px] flex items-center justify-center active:scale-95">
             <span data-i18n="return_submit_btn">Kirim Permohonan Retur</span>
           </button>
         </form>
@@ -1290,10 +1308,10 @@
       </div>
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 text-xs w-full md:w-auto">
         <div class="flex space-x-2 w-full sm:w-auto">
-          <button onclick="acceptAllCookies()" data-i18n="cookie_accept_all" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#C2410C] hover:bg-[#9A3412] text-white font-semibold uppercase tracking-wider text-center">Setujui Semua</button>
-          <button onclick="acceptEssentialCookies()" data-i18n="cookie_essential" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-stone-600 hover:bg-[#292524] text-white font-semibold uppercase tracking-wider text-center">Hanya Esensial</button>
+          <button onclick="acceptAllCookies()" data-i18n="cookie_accept_all" class="flex-1 sm:flex-none px-4 py-2.5 bg-[#C2410C] hover:bg-[#9A3412] text-white font-semibold uppercase tracking-wider text-center min-h-[44px] flex items-center justify-center active:scale-95">Setujui Semua</button>
+          <button onclick="acceptEssentialCookies()" data-i18n="cookie_essential" class="flex-1 sm:flex-none px-4 py-2.5 border border-stone-600 hover:bg-[#292524] text-white font-semibold uppercase tracking-wider text-center min-h-[44px] flex items-center justify-center active:scale-95">Hanya Esensial</button>
         </div>
-        <button onclick="openCookieSettings()" data-i18n="cookie_manage" class="w-full sm:w-auto text-center py-1.5 text-stone-400 hover:text-white underline underline-offset-2">Atur Pilihan</button>
+        <button onclick="openCookieSettings()" data-i18n="cookie_manage" class="w-full sm:w-auto text-center py-2 text-stone-400 hover:text-white underline underline-offset-2 min-h-[44px] flex items-center justify-center">Atur Pilihan</button>
       </div>
     </div>
   </div>
@@ -1392,10 +1410,10 @@
         <form id="admin-login-form" onsubmit="adminLoginAction(event)" class="space-y-4">
           <div>
             <label class="block text-xs font-semibold text-[#1C1917] mb-1">PIN Otorisasi 4-Digit</label>
-            <input type="password" id="admin-pin-input" maxlength="6" required placeholder="&bull;&bull;&bull;&bull;" class="w-full text-center tracking-[0.5em] text-lg font-mono py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] focus:border-[#1C1917]">
+            <input type="password" id="admin-pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" required placeholder="&bull;&bull;&bull;&bull;" class="w-full text-center tracking-[0.5em] text-xl font-mono py-3 sm:py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] focus:border-[#1C1917] min-h-[48px]">
           </div>
           <p id="admin-login-error" class="text-xs text-red-600 font-semibold hidden text-center"></p>
-          <button type="submit" id="admin-login-btn" class="w-full py-2.5 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors">
+          <button type="submit" id="admin-login-btn" class="w-full py-3 sm:py-2.5 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors min-h-[44px] flex items-center justify-center active:scale-95">
             Masuk ke Konsol Admin
           </button>
         </form>
@@ -1444,17 +1462,17 @@
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 flex flex-col md:flex-row gap-6">
       
       <!-- Admin Sidebar Navigation (Role-Based Visibility) -->
-      <aside class="w-full md:w-56 shrink-0 space-y-1">
-        <button onclick="switchAdminTab('overview')" id="tab-nav-overview" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm bg-[#1C1917] text-white">1. Ringkasan & KPI</button>
-        <button onclick="switchAdminTab('products')" id="tab-nav-products" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">2. Produk & Varian</button>
-        <button onclick="switchAdminTab('orders')" id="tab-nav-orders" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">3. Pesanan</button>
-        <button onclick="switchAdminTab('returns')" id="tab-nav-returns" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">4. Retur & Pengembalian</button>
-        <button onclick="switchAdminTab('coupons')" id="tab-nav-coupons" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">5. Kupon & Promo</button>
-        <button onclick="switchAdminTab('customers')" id="tab-nav-customers" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">6. Direktori Pelanggan</button>
-        <button onclick="switchAdminTab('bundles')" id="tab-nav-bundles" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">7. Flash Sale & Bundle</button>
-        <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">8. Analitik & Atribusi UTM</button>
-        <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">9. Log Audit & Event</button>
-        <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200">10. Pengaturan Toko</button>
+      <aside class="w-full md:w-56 shrink-0 flex md:flex-col overflow-x-auto md:overflow-visible gap-1.5 md:space-y-1 pb-2 md:pb-0 scrollbar-none">
+        <button onclick="switchAdminTab('overview')" id="tab-nav-overview" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] whitespace-nowrap active:scale-95">1. Ringkasan & KPI</button>
+        <button onclick="switchAdminTab('products')" id="tab-nav-products" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">2. Produk & Varian</button>
+        <button onclick="switchAdminTab('orders')" id="tab-nav-orders" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">3. Pesanan</button>
+        <button onclick="switchAdminTab('returns')" id="tab-nav-returns" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">4. Retur & Pengembalian</button>
+        <button onclick="switchAdminTab('coupons')" id="tab-nav-coupons" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">5. Kupon & Promo</button>
+        <button onclick="switchAdminTab('customers')" id="tab-nav-customers" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">6. Direktori Pelanggan</button>
+        <button onclick="switchAdminTab('bundles')" id="tab-nav-bundles" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">7. Flash Sale & Bundle</button>
+        <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">8. Analitik & Atribusi UTM</button>
+        <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">9. Log Audit & Event</button>
+        <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">10. Pengaturan Toko</button>
       </aside>
 
       <!-- Admin Tab Panels Container -->
@@ -6141,7 +6159,7 @@ const AppState = {
       // Render Color Swatches
       const colorContainer = document.getElementById('detail-color-swatches');
       colorContainer.innerHTML = distinctColors.map((col, idx) => `
-        <button onclick="selectDetailColor('${col}')" class="px-3 py-1.5 border text-xs font-semibold ${idx === 0 ? 'border-[#1C1917] bg-[#1C1917] text-white' : 'border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]'}">
+        <button onclick="selectDetailColor('${col}')" class="px-3.5 py-2 border text-xs font-semibold min-h-[42px] flex items-center justify-center transition-all active:scale-95 ${idx === 0 ? 'border-[#1C1917] bg-[#1C1917] text-white' : 'border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]'}">
           ${col}
         </button>
       `).join('');
@@ -6189,9 +6207,9 @@ const AppState = {
       const buttons = document.querySelectorAll('#detail-color-swatches button');
       buttons.forEach(btn => {
         if (btn.textContent.trim() === color) {
-          btn.className = 'px-3 py-1.5 border text-xs font-semibold border-[#1C1917] bg-[#1C1917] text-white';
+          btn.className = 'px-3.5 py-2 border text-xs font-semibold min-h-[42px] flex items-center justify-center transition-all active:scale-95 border-[#1C1917] bg-[#1C1917] text-white';
         } else {
-          btn.className = 'px-3 py-1.5 border text-xs font-semibold border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]';
+          btn.className = 'px-3.5 py-2 border text-xs font-semibold min-h-[42px] flex items-center justify-center transition-all active:scale-95 border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]';
         }
       });
 
@@ -6230,7 +6248,7 @@ const AppState = {
       
       const sizeContainer = document.getElementById('detail-size-chips');
       sizeContainer.innerHTML = availableVariants.map((v, idx) => `
-        <button onclick="selectDetailSize('${v.variant_id}')" id="variant-btn-${v.variant_id}" class="px-3 py-2 border font-mono text-xs ${idx === 0 ? 'border-[#1C1917] bg-[#1C1917] text-white' : 'border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]'} ${v.stock <= 0 ? 'opacity-40 cursor-not-allowed line-through' : ''}">
+        <button onclick="selectDetailSize('${v.variant_id}')" id="variant-btn-${v.variant_id}" class="px-3 py-2 border font-mono text-xs min-h-[42px] min-w-[44px] flex items-center justify-center transition-all active:scale-95 ${idx === 0 ? 'border-[#1C1917] bg-[#1C1917] text-white' : 'border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917]'} ${v.stock <= 0 ? 'opacity-40 cursor-not-allowed line-through' : ''}">
           ${v.size} ${v.stock < 5 && v.stock > 0 ? '(!)' : ''}
         </button>
       `).join('');
@@ -6253,9 +6271,9 @@ const AppState = {
         const btn = document.getElementById('variant-btn-' + v.variant_id);
         if (btn) {
           if (v.variant_id === variantId) {
-            btn.className = 'px-3 py-2 border font-mono text-xs border-[#1C1917] bg-[#1C1917] text-white';
+            btn.className = 'px-3 py-2 border font-mono text-xs min-h-[42px] min-w-[44px] flex items-center justify-center transition-all active:scale-95 border-[#1C1917] bg-[#1C1917] text-white';
           } else {
-            btn.className = 'px-3 py-2 border font-mono text-xs border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917] ' + (v.stock <= 0 ? 'opacity-40 cursor-not-allowed line-through' : '');
+            btn.className = 'px-3 py-2 border font-mono text-xs min-h-[42px] min-w-[44px] flex items-center justify-center transition-all active:scale-95 border-[#E7E5E4] text-[#1C1917] hover:border-[#1C1917] ' + (v.stock <= 0 ? 'opacity-40 cursor-not-allowed line-through' : '');
           }
         }
       });
@@ -6495,16 +6513,16 @@ const AppState = {
             <div>
               <div class="flex justify-between items-start">
                 <h4 class="font-serif font-bold text-xs text-[#1C1917] leading-snug">${isEn && item.name_en ? item.name_en : item.name}</h4>
-                <button onclick="removeCartItem(${idx})" class="text-[#A8A29E] hover:text-red-700 p-1">&times;</button>
+                <button onclick="removeCartItem(${idx})" class="text-[#A8A29E] hover:text-red-700 min-w-[36px] min-h-[36px] p-2 flex items-center justify-center text-base active:scale-90" title="Hapus item">&times;</button>
               </div>
               <p class="text-[11px] font-mono text-[#57534E] mt-0.5">${item.color} / ${item.size} (${item.sku})</p>
             </div>
             
             <div class="flex justify-between items-center pt-2">
               <div class="flex items-center border border-[#E7E5E4]">
-                <button onclick="changeCartQty(${idx}, -1)" class="px-2 py-0.5 text-xs hover:bg-[#FAFAF9]">-</button>
-                <span class="px-2.5 py-0.5 font-mono text-xs font-bold">${item.qty}</span>
-                <button onclick="changeCartQty(${idx}, 1)" class="px-2 py-0.5 text-xs hover:bg-[#FAFAF9]">+</button>
+                <button onclick="changeCartQty(${idx}, -1)" class="w-8 h-8 min-w-[36px] min-h-[36px] flex items-center justify-center text-sm font-bold hover:bg-[#FAFAF9] active:scale-90 text-[#1C1917]">-</button>
+                <span class="px-3 py-1 font-mono text-xs font-bold">${item.qty}</span>
+                <button onclick="changeCartQty(${idx}, 1)" class="w-8 h-8 min-w-[36px] min-h-[36px] flex items-center justify-center text-sm font-bold hover:bg-[#FAFAF9] active:scale-90 text-[#1C1917]">+</button>
               </div>
               <span class="font-mono text-xs font-bold text-[#1C1917]">${formatMoney(item.price * item.qty)}</span>
             </div>
@@ -7581,10 +7599,10 @@ const AppState = {
     function switchAdminTab(tabKey) {
       AppState.adminActiveTab = tabKey;
       document.querySelectorAll('.admin-tab-btn').forEach(btn => {
-        btn.className = 'admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200';
+        btn.className = 'admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95';
       });
       const activeBtn = document.getElementById('tab-nav-' + tabKey);
-      if (activeBtn) activeBtn.className = 'admin-tab-btn w-full text-left px-3 py-2 text-xs font-semibold rounded-sm bg-[#1C1917] text-white';
+      if (activeBtn) activeBtn.className = 'admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] whitespace-nowrap active:scale-95';
 
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
       const activePanel = document.getElementById('admin-panel-' + tabKey);
