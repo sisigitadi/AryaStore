@@ -1,23 +1,31 @@
 /**
  * ================================================================================
- * ARYASTORE E-COMMERCE ENGINE - DATABASE SETUP & SAFE MIGRATION SCRIPT
+ * ARYASTORE E-COMMERCE ENGINE - DATABASE SETUP & SAFE MIGRATION SCRIPT v2.0
  * ================================================================================
  * File: setup.gs
  * Target: Google Apps Script + Google Sheets
- * Standard: RetroBOT v3.0 Database Architecture & Non-Destructive Safe Migration
+ * Standard: RetroBOT v3.0 Database Architecture & Non-Destructive Safe Migration v2.0
  * 
  * Capabilities:
  * 1. Sheet tab names strictly without underscores ('Products', 'ProductVariants', etc.)
  * 2. Idempotent initialization: creates missing sheets, never calls clear() on existing data
- * 3. Schema synchronization: dynamically appends any missing columns at the rightmost position
- * 4. Comprehensive idempotent seed data (9 fashion items, XS-5XL variants, bundles, coupons, settings)
+ * 3. Safe rightmost-append column migration: if an existing sheet has fewer header columns
+ *    than SCHEMA_DEFINITIONS[tabName].headers.length, appends only missing columns on the right
+ * 4. Comprehensive idempotent seed data:
+ *    - 19 curated editorial fashion articles across 5 categories (Outerwear, Tops, Bottoms, Footwear, Accessories)
+ *    - 73 variant SKUs covering inclusive sizing (XS to 5XL) and editorial color swatches
+ *    - 2 verified outfit bundles (BND-001, BND-002) with verified image URLs and item manifests
+ *    - Promo coupons: WELCOME10, HEMAT50K, GLOBALSHIP
+ *    - Sample customers, multi-currency international orders with UTM attribution, and returns
+ *    - Complete v2.0 Settings: Brand, WA, Multi-currency rates, Domestic 8-zone + International 8-zone rates,
+ *      Marketplace links, Social links, SEO metadata, and Ads Pixels
  * 5. Automatic SpreadsheetApp.flush() on all write transactions
- * 6. Google Sheets custom menu (onOpen) for one-click setup, status check, and seed migration
+ * 6. Google Sheets custom menu (onOpen) with '🛍️ AryaStore > Inisialisasi Database'
  * ================================================================================
  */
 
 // ================================================================================
-// 1. COLUMN INDEX CONSTANTS (Zero-Based Mapping for All 10 Entities)
+// 1. COLUMN INDEX CONSTANTS (Zero-Based Mapping for All 10 Entities v2.0)
 // ================================================================================
 
 var COL_PRODUCTS = {
@@ -28,7 +36,12 @@ var COL_PRODUCTS = {
   BADGE: 4,
   DESCRIPTION: 5,
   IMAGE_URL: 6,
-  CREATED_AT: 7
+  CREATED_AT: 7,
+  NAME_EN: 8,
+  DESCRIPTION_EN: 9,
+  WEIGHT_GRAM: 10,
+  MARKETPLACE_LINKS_JSON: 11,
+  COLOR_IMAGES_JSON: 12
 };
 
 var COL_VARIANTS = {
@@ -37,7 +50,8 @@ var COL_VARIANTS = {
   SKU: 2,
   COLOR: 3,
   SIZE: 4,
-  STOCK: 5
+  STOCK: 5,
+  IMAGE_URL: 6
 };
 
 var COL_CAMPAIGNS = {
@@ -65,7 +79,11 @@ var COL_ORDERS = {
   SHIPPING_COST: 10,
   GRAND_TOTAL: 11,
   PAYMENT_PROOF_URL: 12,
-  STATUS: 13
+  STATUS: 13,
+  SHIPPING_ZONE: 14,
+  CURRENCY_CODE: 15,
+  EXCHANGE_RATE: 16,
+  UTM_SOURCE: 17
 };
 
 var COL_CUSTOMERS = {
@@ -117,20 +135,43 @@ var COL_SETTINGS = {
 };
 
 // ================================================================================
-// 2. MASTER SCHEMA DEFINITIONS (The 10 Non-Underscored Sheets)
+// 2. MASTER SCHEMA DEFINITIONS (The 10 Non-Underscored Sheets v2.0)
 // ================================================================================
 
 var SCHEMA_DEFINITIONS = {
   Products: {
-    headers: ['id', 'name', 'category', 'base_price', 'badge', 'description', 'image_url', 'created_at'],
+    headers: [
+      'id',
+      'name',
+      'category',
+      'base_price',
+      'badge',
+      'description',
+      'image_url',
+      'created_at',
+      'name_en',
+      'description_en',
+      'weight_gram',
+      'marketplace_links_json',
+      'color_images_json'
+    ],
     colMap: COL_PRODUCTS
   },
   ProductVariants: {
-    headers: ['variant_id', 'product_id', 'sku', 'color', 'size', 'stock'],
+    headers: ['variant_id', 'product_id', 'sku', 'color', 'size', 'stock', 'image_url'],
     colMap: COL_VARIANTS
   },
   CampaignsAndBundles: {
-    headers: ['campaign_id', 'banner_title', 'banner_desc', 'ends_at', 'is_active', 'bundle_items_json', 'normal_price', 'bundle_price'],
+    headers: [
+      'campaign_id',
+      'banner_title',
+      'banner_desc',
+      'ends_at',
+      'is_active',
+      'bundle_items_json',
+      'normal_price',
+      'bundle_price'
+    ],
     colMap: COL_CAMPAIGNS
   },
   Orders: {
@@ -148,7 +189,11 @@ var SCHEMA_DEFINITIONS = {
       'shipping_cost',
       'grand_total',
       'payment_proof_url',
-      'status'
+      'status',
+      'shipping_zone',
+      'currency_code',
+      'exchange_rate',
+      'utm_source'
     ],
     colMap: COL_ORDERS
   },
@@ -183,8 +228,8 @@ var SCHEMA_DEFINITIONS = {
 // ================================================================================
 
 /**
- * Returns formatted timestamp in Asia/Jakarta timezone.
- * Falls back safely to standard ISO string if run outside GAS.
+ * Returns formatted timestamp in Asia/Jakarta timezone (WIB).
+ * Falls back safely to ISO string if run outside GAS.
  */
 function getTimestamp() {
   if (typeof Utilities !== 'undefined' && Utilities.formatDate) {
@@ -204,12 +249,12 @@ function getSpreadsheet() {
 }
 
 // ================================================================================
-// 4. MAIN SETUP & MIGRATION FUNCTION (Idempotent)
+// 4. MAIN SETUP & MIGRATION FUNCTION (Safe Rightmost-Append Migration)
 // ================================================================================
 
 /**
  * Initializes all 10 required database sheets, verifies/appends headers,
- * synchronizes missing columns at the rightmost position without data loss,
+ * synchronizes missing columns strictly at the rightmost position without data loss,
  * and executes idempotent seeding.
  */
 function setupDatabase() {
@@ -234,13 +279,13 @@ function setupDatabase() {
     var lastRow = sheet.getLastRow();
     var lastCol = sheet.getLastColumn();
 
-    // 2. If completely empty, write headers and format header style
+    // 2. If completely empty, write full expected headers
     if (lastRow === 0 || lastCol === 0) {
       sheet.getRange(1, 1, 1, schema.headers.length).setValues([schema.headers]);
       formatHeaderRow(sheet, schema.headers.length);
-      migrationReport.push(sheetName + ': Lembar kerja dibuat dan header diinisialisasi.');
+      migrationReport.push(sheetName + ': Lembar kerja dibuat dan header diinisialisasi (' + schema.headers.length + ' kolom).');
     } else {
-      // 3. Synchronize any missing columns at the rightmost position
+      // 3. Safe rightmost-append: compare existing header row with schema
       var existingHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
       var missingHeaders = [];
 
@@ -260,7 +305,7 @@ function setupDatabase() {
           .setFontColor('#1C1917');
         migrationReport.push(sheetName + ': Menambahkan kolom baru (' + missingHeaders.join(', ') + ') di posisi kanan.');
       } else {
-        migrationReport.push(sheetName + ': Skema sudah sinkron.');
+        migrationReport.push(sheetName + ': Skema sudah sinkron (' + lastCol + ' kolom).');
       }
     }
   }
@@ -272,7 +317,7 @@ function setupDatabase() {
   SpreadsheetApp.flush();
 
   // 6. Log audit entry for migration
-  logSystemAudit('Super Admin', 'SYSTEM_MIGRATION', 'setupDatabase executed successfully. ' + migrationReport.join(' | '));
+  logSystemAudit('Super Admin', 'SYSTEM_MIGRATION', 'setupDatabase v2.0 executed successfully. ' + migrationReport.join(' | '));
 
   return {
     success: true,
@@ -292,16 +337,16 @@ function formatHeaderRow(sheet, colCount) {
     .setBackground('#F5F5F4')
     .setFontColor('#1C1917')
     .setHorizontalAlignment('left');
-  
+
   sheet.setFrozenRows(1);
 }
 
 // ================================================================================
-// 5. IDEMPOTENT SEED DATA ENGINE
+// 5. IDEMPOTENT SEED DATA ENGINE (Baseline 19 Produk & Konfigurasi v2.0)
 // ================================================================================
 
 /**
- * Seeds initial demo data for all entities idempotently.
+ * Seeds initial data for all 10 entities idempotently.
  * Checks for existing unique keys before inserting to guarantee zero duplication.
  */
 function seedDatabase() {
@@ -311,6 +356,7 @@ function seedDatabase() {
   var results = {
     settingsAdded: 0,
     productsAdded: 0,
+    productsUpdated: 0,
     variantsAdded: 0,
     campaignsAdded: 0,
     couponsAdded: 0,
@@ -324,46 +370,235 @@ function seedDatabase() {
   var now = getTimestamp();
 
   // ----------------------------------------------------------------------------
-  // A. Seed Settings (Store Configuration & RBAC PINs)
+  // A. Seed Settings (Comprehensive Configuration & RBAC PINs v2.0)
   // ----------------------------------------------------------------------------
   var settingsSheet = ss.getSheetByName('Settings');
   if (settingsSheet) {
-    var existingKeys = getExistingColumnValues(settingsSheet, 0); // Key is at index 0
+    var existingKeys = getExistingColumnValues(settingsSheet, 0);
 
     var defaultSettings = [
       {
-        key: 'WA_NUMBER',
-        value: '6281234567890',
-        description: 'Nomor WhatsApp admin tujuan penerimaan order dan konfirmasi transfer (format 62...)'
-      },
-      {
         key: 'BRAND_NAME',
         value: 'AryaStore',
-        description: 'Nama merek resmi yang ditampilkan pada storefront, invoice, dan notifikasi WhatsApp'
+        description: 'Nama resmi toko dan merek apparel yang ditampilkan pada storefront, invoice, dan notifikasi'
+      },
+      {
+        key: 'WA_NUMBER',
+        value: '6281234567890',
+        description: 'Nomor WhatsApp resmi admin tujuan penerimaan order dan konfirmasi transfer (format 62...)'
+      },
+      {
+        key: 'CURRENCY_PREFIX',
+        value: 'Rp ',
+        description: 'Format prefiks mata uang dasar IDR'
+      },
+      {
+        key: 'DEFAULT_LANGUAGE',
+        value: 'id',
+        description: 'Bahasa default antarmuka storefront dan notifikasi (id / en)'
+      },
+      {
+        key: 'DEFAULT_CURRENCY',
+        value: 'IDR',
+        description: 'Mata uang default dasar transaksi'
+      },
+      {
+        key: 'CURRENCY_AUTO_SYNC',
+        value: 'TRUE',
+        description: 'Sakelar sinkronisasi nilai tukar valas otomatis'
+      },
+      {
+        key: 'CURRENCY_RATES_JSON',
+        value: JSON.stringify({
+          IDR: 1,
+          USD: 0.000063,
+          EUR: 0.000058,
+          SGD: 0.000085,
+          MYR: 0.00028,
+          JPY: 0.0098,
+          GBP: 0.000050,
+          AUD: 0.000096
+        }),
+        description: 'Nilai tukar 8 valuta dunia terhadap IDR'
+      },
+      {
+        key: 'FREE_SHIPPING_THRESHOLD_IDR',
+        value: '1500000',
+        description: 'Ambang batas belanja gratis ongkir domestik (Rp 1.500.000)'
+      },
+      {
+        key: 'SHIPPING_RATES_JSON',
+        value: JSON.stringify({
+          zones: {
+            JABODETABEK: { flat: 15000, perKg: 10000, label_id: 'Jabodetabek', label_en: 'Greater Jakarta', group: 'DOMESTIC' },
+            JAWA_BARAT: { flat: 20000, perKg: 12000, label_id: 'Jawa Barat & Banten', label_en: 'West Java & Banten', group: 'DOMESTIC' },
+            JAWA_TENGAH_DIY: { flat: 22000, perKg: 13000, label_id: 'Jawa Tengah & DIY', label_en: 'Central Java & Yogyakarta', group: 'DOMESTIC' },
+            JAWA_TIMUR: { flat: 25000, perKg: 15000, label_id: 'Jawa Timur', label_en: 'East Java', group: 'DOMESTIC' },
+            BALI_NTB_NTT: { flat: 35000, perKg: 20000, label_id: 'Bali, NTB & NTT', label_en: 'Bali & Nusa Tenggara', group: 'DOMESTIC' },
+            SUMATERA: { flat: 40000, perKg: 22000, label_id: 'Sumatera', label_en: 'Sumatra', group: 'DOMESTIC' },
+            KALIMANTAN: { flat: 45000, perKg: 25000, label_id: 'Kalimantan', label_en: 'Kalimantan / Borneo', group: 'DOMESTIC' },
+            SULAWESI_MALUKU_PAPUA: { flat: 55000, perKg: 30000, label_id: 'Sulawesi, Maluku & Papua', label_en: 'Eastern Indonesia', group: 'DOMESTIC' },
+            JAWA_BALI: { flat: 25000, perKg: 15000, label_id: 'Jawa & Bali (Reguler)', label_en: 'Java & Bali (Standard)', group: 'DOMESTIC' },
+            LUAR_JAWA: { flat: 45000, perKg: 25000, label_id: 'Luar Jawa (Reguler)', label_en: 'Outer Islands (Standard)', group: 'DOMESTIC' },
+            SINGAPORE: { flat: 120000, perKg: 70000, label_id: 'Singapura', label_en: 'Singapore', group: 'INTERNATIONAL' },
+            MALAYSIA: { flat: 130000, perKg: 75000, label_id: 'Malaysia', label_en: 'Malaysia', group: 'INTERNATIONAL' },
+            SOUTHEAST_ASIA: { flat: 180000, perKg: 95000, label_id: 'Asia Tenggara (TH/PH/VN)', label_en: 'Southeast Asia (TH/PH/VN)', group: 'INTERNATIONAL' },
+            EAST_ASIA: { flat: 250000, perKg: 130000, label_id: 'Asia Timur (JP/KR/TW/HK)', label_en: 'East Asia (JP/KR/TW/HK)', group: 'INTERNATIONAL' },
+            AUSTRALIA_NZ: { flat: 280000, perKg: 150000, label_id: 'Australia & Selandia Baru', label_en: 'Australia & New Zealand', group: 'INTERNATIONAL' },
+            EUROPE: { flat: 320000, perKg: 180000, label_id: 'Eropa (UK/DE/FR/NL)', label_en: 'Europe (UK/DE/FR/NL)', group: 'INTERNATIONAL' },
+            NORTH_AMERICA: { flat: 350000, perKg: 200000, label_id: 'Amerika Utara (US/CA)', label_en: 'North America (US/CA)', group: 'INTERNATIONAL' },
+            REST_OF_WORLD: { flat: 400000, perKg: 250000, label_id: 'Seluruh Dunia Lainnya', label_en: 'Rest of the World', group: 'INTERNATIONAL' },
+            INTERNATIONAL_SEA: { flat: 150000, perKg: 80000, label_id: 'Asia Tenggara (Ekspres)', label_en: 'Southeast Asia Express', group: 'INTERNATIONAL' },
+            INTERNATIONAL_GLOBAL: { flat: 350000, perKg: 200000, label_id: 'Internasional Global', label_en: 'Global International', group: 'INTERNATIONAL' }
+          }
+        }),
+        description: 'Matriks tarif ongkos kirim lengkap 8 zona domestik dan 8 zona internasional'
+      },
+      {
+        key: 'MARKETPLACE_LINKS_JSON',
+        value: JSON.stringify({
+          shopee: 'https://shopee.co.id/aryastore',
+          tokopedia: 'https://tokopedia.com/aryastore',
+          tiktokshop: 'https://tiktok.com/@aryastore'
+        }),
+        description: 'Tautan resmi toko ke marketplace eksternal Shopee, Tokopedia, dan TikTok Shop'
+      },
+      {
+        key: 'SOCIAL_LINKS_JSON',
+        value: JSON.stringify({
+          instagram: 'https://instagram.com/aryastore.id',
+          tiktok: 'https://tiktok.com/@aryastore',
+          facebook: 'https://facebook.com/aryastore',
+          youtube: 'https://youtube.com/@aryastore',
+          pinterest: 'https://pinterest.com/aryastore',
+          whatsapp: 'https://wa.me/6281234567890'
+        }),
+        description: 'Tautan resmi saluran media sosial AryaStore'
+      },
+      {
+        key: 'STORE_BASE_URL',
+        value: 'https://sisigitadi.github.io/AryaStore',
+        description: 'URL basis kanonikal publikasi toko'
+      },
+      {
+        key: 'SEO_TITLE',
+        value: 'AryaStore - Modern Minimalist Fashion & Curated Apparel',
+        description: 'Judul global mesin pencari dan OpenGraph'
+      },
+      {
+        key: 'SEO_DESCRIPTION',
+        value: 'AryaStore menghadirkan koleksi busana minimalis kontemporer berkualitas tinggi dengan kurasi bahan premium, potongan presisi, dan pengiriman ke seluruh dunia.',
+        description: 'Deskripsi global mesin pencari dan OpenGraph'
+      },
+      {
+        key: 'SEO_KEYWORDS',
+        value: 'fashion minimalis, apparel indonesia, aryastore, baju pria wanita, jaket premium, outerwear, belanja baju online',
+        description: 'Kata kunci global meta SEO'
+      },
+      {
+        key: 'GA4_MEASUREMENT_ID',
+        value: 'G-XXXXXXXXXX',
+        description: 'ID Google Analytics 4'
+      },
+      {
+        key: 'GOOGLE_ADS_ID',
+        value: 'AW-XXXXXXXXXX',
+        description: 'ID Google Ads Remarketing'
+      },
+      {
+        key: 'GOOGLE_ADS_CONVERSION_LABEL',
+        value: 'XXXXXXXXXXXXX',
+        description: 'Label konversi Google Ads Checkout'
+      },
+      {
+        key: 'GTM_ID',
+        value: 'GTM-XXXXXXX',
+        description: 'ID Wadah Google Tag Manager'
+      },
+      {
+        key: 'META_PIXEL_ID',
+        value: '123456789012345',
+        description: 'ID Meta / Facebook Pixel'
+      },
+      {
+        key: 'TIKTOK_PIXEL_ID',
+        value: 'CXXXXXXXXXXXXXXXXX',
+        description: 'ID TikTok Pixel'
       },
       {
         key: 'PIN_SUPER_ADMIN',
         value: '9999',
-        description: 'PIN otentikasi Super Admin (akses penuh seluruh modul dan pengaturan sistem)'
+        description: 'PIN otorisasi Super Admin (akses penuh seluruh modul dan pengaturan sistem - RAHASIA)'
       },
       {
         key: 'PIN_STORE_MANAGER',
         value: '8888',
-        description: 'PIN otentikasi Store Manager (katalog produk, stok varian SKU, dan operasional pesanan)'
+        description: 'PIN otorisasi Store Manager (katalog produk, stok varian SKU, dan operasional pesanan - RAHASIA)'
       },
       {
         key: 'PIN_CUSTOMER_SERVICE',
         value: '7777',
-        description: 'PIN otentikasi Customer Service (verifikasi transfer, status pesanan, dan penanganan retur)'
+        description: 'PIN otorisasi Customer Service (verifikasi transfer, status pesanan, dan penanganan retur - RAHASIA)'
+      },
+      {
+        key: 'DRIVE_FOLDER_NAME',
+        value: 'ARYASTORE_PAYMENTS',
+        description: 'Nama folder Google Drive tempat penampungan bukti transfer pembayaran'
+      },
+      {
+        key: 'DRIVE_PRODUCTS_FOLDER_NAME',
+        value: 'ARYASTORE_PRODUCTS',
+        description: 'Nama folder Google Drive penampung foto produk & varian warna'
       },
       {
         key: 'SHIPPING_METHODS',
         value: JSON.stringify([
-          { id: 'REG', name: 'Reguler (JNE/J&T)', estimated_days: '2-3 Hari Kerja', note: 'Ongkir manual via konfirmasi admin WA' },
-          { id: 'EXP', name: 'Express (SiCepat/Paxel)', estimated_days: '1-2 Hari Kerja', note: 'Ongkir manual via konfirmasi admin WA' },
+          { id: 'REG', name: 'Reguler (JNE/J&T)', estimated_days: '2-3 Hari Kerja', note: 'Ongkir dihitung otomatis berdasarkan zona dan berat' },
+          { id: 'EXP', name: 'Express (SiCepat/Paxel)', estimated_days: '1-2 Hari Kerja', note: 'Ongkir dihitung otomatis berdasarkan zona dan berat' },
+          { id: 'INTL', name: 'International Shipping (DHL/FedEx)', estimated_days: '4-7 Business Days', note: 'Worldwide delivery calculated per kg' },
           { id: 'STORE', name: 'Ambil di Toko', estimated_days: 'Hari Kerja Toko (10.00 - 20.00)', note: 'Bebas biaya ongkos kirim' }
         ]),
         description: 'Daftar metode ekspedisi pengiriman yang aktif di cart checkout'
+      },
+      {
+        key: 'SHIPPING_PROVIDER',
+        value: 'AUTO',
+        description: 'Mode kalkulasi ongkos kirim: AUTO (RajaOngkir lalu Biteship lalu Matrix), MATRIX, RAJAONGKIR, atau BITESHIP'
+      },
+      {
+        key: 'RAJAONGKIR_API_KEY',
+        value: '',
+        description: 'Kunci API RajaOngkir Komerce v2 untuk tarif live domestik dan internasional (RAHASIA)'
+      },
+      {
+        key: 'RAJAONGKIR_ORIGIN_ID',
+        value: '17470',
+        description: 'ID Lokasi Asal Toko di RajaOngkir Komerce (default 17470 untuk Jakarta Selatan)'
+      },
+      {
+        key: 'RAJAONGKIR_COURIERS_DOMESTIC',
+        value: 'jne:sicepat:jnt:pos:tiki:anteraja',
+        description: 'Daftar kode kurir domestik aktif untuk RajaOngkir Komerce (dipisahkan titik dua)'
+      },
+      {
+        key: 'RAJAONGKIR_COURIERS_INTL',
+        value: 'pos:jne:tiki',
+        description: 'Daftar kode kurir internasional aktif untuk RajaOngkir Komerce (dipisahkan titik dua)'
+      },
+      {
+        key: 'BITESHIP_API_KEY',
+        value: '',
+        description: 'Kunci API Biteship v1 untuk tarif live kurir multi-ekspedisi dan internasional (RAHASIA)'
+      },
+      {
+        key: 'BITESHIP_ORIGIN_POSTAL_CODE',
+        value: '12190',
+        description: 'Kode pos asal pengiriman toko untuk Biteship (default 12190 untuk Jakarta Selatan)'
+      },
+      {
+        key: 'BITESHIP_COURIERS',
+        value: 'jne,jnt,sicepat,paxel,anteraja,pos,dhl,tlx,rayspeed',
+        description: 'Daftar kode kurir aktif untuk Biteship (dipisahkan koma)'
       }
     ];
 
@@ -377,7 +612,7 @@ function seedDatabase() {
   }
 
   // ----------------------------------------------------------------------------
-  // B. Seed 9 Fashion Items (Across 5 Categories: Outerwear, Tops, Bottoms, Footwear, Accessories)
+  // B. Seed 19 Fashion Products & 73 Variant SKUs (catalog-v2.json)
   // ----------------------------------------------------------------------------
   var productsSheet = ss.getSheetByName('Products');
   var variantsSheet = ss.getSheetByName('ProductVariants');
@@ -387,186 +622,866 @@ function seedDatabase() {
     var existingVariantIds = getExistingColumnValues(variantsSheet, 0);
 
     var sampleProducts = [
-      {
-        id: 'PRD-001',
-        name: 'Oversized Wool Trench Coat',
-        category: 'Outerwear',
-        base_price: 899000,
-        badge: 'Best Seller',
-        description: 'Mantel trench siluet oversized berbahan premium wool blend dengan lining satin lembut. Tahan angin dan memberikan struktur siluet editorial yang elegan untuk layering.',
-        image_url: 'https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WTC-CG-XS', color: 'Charcoal Grey', size: 'XS', stock: 6 },
-          { sku: 'WTC-CG-S',  color: 'Charcoal Grey', size: 'S',  stock: 12 },
-          { sku: 'WTC-CG-M',  color: 'Charcoal Grey', size: 'M',  stock: 18 },
-          { sku: 'WTC-CG-L',  color: 'Charcoal Grey', size: 'L',  stock: 14 },
-          { sku: 'WTC-CG-XL', color: 'Charcoal Grey', size: 'XL', stock: 8 },
-          { sku: 'WTC-CT-S',  color: 'Camel Tan',     size: 'S',  stock: 10 },
-          { sku: 'WTC-CT-M',  color: 'Camel Tan',     size: 'M',  stock: 15 },
-          { sku: 'WTC-CT-L',  color: 'Camel Tan',     size: 'L',  stock: 9 },
-          { sku: 'WTC-CT-XL', color: 'Camel Tan',     size: 'XL', stock: 5 }
-        ]
-      },
-      {
-        id: 'PRD-002',
-        name: 'Structured Boxy Blazer',
-        category: 'Outerwear',
-        base_price: 649000,
-        badge: 'New Arrival',
-        description: 'Blazer siluet boxy kontemporer dengan potongan bahu berstruktur tegas, saku welt tersembunyi, dan kancing tanduk tunggal. Fleksibel untuk formal maupun smart-casual.',
-        image_url: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'SBB-BK-S',   color: 'Midnight Black', size: 'S',   stock: 8 },
-          { sku: 'SBB-BK-M',   color: 'Midnight Black', size: 'M',   stock: 16 },
-          { sku: 'SBB-BK-L',   color: 'Midnight Black', size: 'L',   stock: 12 },
-          { sku: 'SBB-BK-XL',  color: 'Midnight Black', size: 'XL',  stock: 7 },
-          { sku: 'SBB-BK-XXL', color: 'Midnight Black', size: 'XXL', stock: 4 },
-          { sku: 'SBB-HG-S',   color: 'Heather Grey',   size: 'S',   stock: 6 },
-          { sku: 'SBB-HG-M',   color: 'Heather Grey',   size: 'M',   stock: 11 },
-          { sku: 'SBB-HG-L',   color: 'Heather Grey',   size: 'L',   stock: 8 }
-        ]
-      },
-      {
-        id: 'PRD-003',
-        name: 'Heavyweight Cotton Boxy Tee',
-        category: 'Tops',
-        base_price: 189000,
-        badge: 'Best Seller',
-        description: 'Kaos boxy fit dari 100% combed cotton 240 GSM. Kerah rib tebal anti-melar dengan jahitan ganda kokoh dan drape kain yang jatuh rapi dan tegap di tubuh.',
-        image_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          // Full inclusive sizing matrix: XS to 5XL
-          { sku: 'HCT-VB-XS',  color: 'Vintage Black', size: 'XS',  stock: 10 },
-          { sku: 'HCT-VB-S',   color: 'Vintage Black', size: 'S',   stock: 25 },
-          { sku: 'HCT-VB-M',   color: 'Vintage Black', size: 'M',   stock: 35 },
-          { sku: 'HCT-VB-L',   color: 'Vintage Black', size: 'L',   stock: 30 },
-          { sku: 'HCT-VB-XL',  color: 'Vintage Black', size: 'XL',  stock: 20 },
-          { sku: 'HCT-VB-XXL', color: 'Vintage Black', size: 'XXL', stock: 12 },
-          { sku: 'HCT-VB-3XL', color: 'Vintage Black', size: '3XL', stock: 8 },
-          { sku: 'HCT-VB-4XL', color: 'Vintage Black', size: '4XL', stock: 6 },
-          { sku: 'HCT-VB-5XL', color: 'Vintage Black', size: '5XL', stock: 3 }, // Low-stock indicator (<5)
-          { sku: 'HCT-BW-S',   color: 'Bone White',    size: 'S',   stock: 20 },
-          { sku: 'HCT-BW-M',   color: 'Bone White',    size: 'M',   stock: 28 },
-          { sku: 'HCT-BW-L',   color: 'Bone White',    size: 'L',   stock: 22 },
-          { sku: 'HCT-BW-XL',  color: 'Bone White',    size: 'XL',  stock: 15 },
-          { sku: 'HCT-SG-M',   color: 'Sage Green',    size: 'M',   stock: 18 },
-          { sku: 'HCT-SG-L',   color: 'Sage Green',    size: 'L',   stock: 14 }
-        ]
-      },
-      {
-        id: 'PRD-004',
-        name: 'Relaxed Linen Camp Collar Shirt',
-        category: 'Tops',
-        base_price: 299000,
-        badge: 'None',
-        description: 'Kemeja santai kerah terbuka (camp collar) dari serat linen murni Prancis yang sejuk dan breathable. Memberikan tekstur alami berkelas untuk iklim tropis.',
-        image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'LCS-NF-S',   color: 'Natural Flax', size: 'S',   stock: 9 },
-          { sku: 'LCS-NF-M',   color: 'Natural Flax', size: 'M',   stock: 16 },
-          { sku: 'LCS-NF-L',   color: 'Natural Flax', size: 'L',   stock: 12 },
-          { sku: 'LCS-NF-XL',  color: 'Natural Flax', size: 'XL',  stock: 7 },
-          { sku: 'LCS-TC-M',   color: 'Terracotta',   size: 'M',   stock: 14 },
-          { sku: 'LCS-TC-L',   color: 'Terracotta',   size: 'L',   stock: 10 }
-        ]
-      },
-      {
-        id: 'PRD-005',
-        name: 'Wide-Leg Pleated Trousers',
-        category: 'Bottoms',
-        base_price: 389000,
-        badge: 'Best Seller',
-        description: 'Celana panjang potongan wide-leg dengan lipit ganda depan (double pleats) dan pinggang elastis tersembunyi. Dibuat dari kain poly-viscose yang mengalir elegan.',
-        image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WPT-DC-XS',  color: 'Deep Charcoal', size: 'XS',  stock: 5 },
-          { sku: 'WPT-DC-S',   color: 'Deep Charcoal', size: 'S',   stock: 14 },
-          { sku: 'WPT-DC-M',   color: 'Deep Charcoal', size: 'M',   stock: 22 },
-          { sku: 'WPT-DC-L',   color: 'Deep Charcoal', size: 'L',   stock: 18 },
-          { sku: 'WPT-DC-XL',  color: 'Deep Charcoal', size: 'XL',  stock: 10 },
-          { sku: 'WPT-DC-XXL', color: 'Deep Charcoal', size: 'XXL', stock: 6 },
-          { sku: 'WPT-KC-S',   color: 'Khaki Cream',   size: 'S',   stock: 12 },
-          { sku: 'WPT-KC-M',   color: 'Khaki Cream',   size: 'M',   stock: 16 },
-          { sku: 'WPT-KC-L',   color: 'Khaki Cream',   size: 'L',   stock: 11 }
-        ]
-      },
-      {
-        id: 'PRD-006',
-        name: 'Raw Selvedge Straight Denim',
-        category: 'Bottoms',
-        base_price: 529000,
-        badge: 'Limited Edition',
-        description: 'Celana denim tenun selvedge 14 oz unwashed dengan pinggiran tenun merah klasik. Potongan straight-leg abadi yang akan membentuk garis fade unik personal.',
-        image_url: 'https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'RSD-IN-XS',  color: 'Indigo Raw', size: 'XS',  stock: 4 },
-          { sku: 'RSD-IN-S',   color: 'Indigo Raw', size: 'S',   stock: 12 },
-          { sku: 'RSD-IN-M',   color: 'Indigo Raw', size: 'M',   stock: 20 },
-          { sku: 'RSD-IN-L',   color: 'Indigo Raw', size: 'L',   stock: 16 },
-          { sku: 'RSD-IN-XL',  color: 'Indigo Raw', size: 'XL',  stock: 9 },
-          { sku: 'RSD-IN-XXL', color: 'Indigo Raw', size: 'XXL', stock: 5 }
-        ]
-      },
-      {
-        id: 'PRD-007',
-        name: 'Minimalist Derby Leather Shoes',
-        category: 'Footwear',
-        base_price: 749000,
-        badge: 'New Arrival',
-        description: 'Sepatu derby kulit sapi asli (full-grain leather) dengan sol luar karet lug anti-slip dan bantalan insole ortopedik empuk untuk kenyamanan melangkah sepanjang hari.',
-        image_url: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'DLS-BK-S',  color: 'Matte Black', size: 'S',  stock: 6 },
-          { sku: 'DLS-BK-M',  color: 'Matte Black', size: 'M',  stock: 10 },
-          { sku: 'DLS-BK-L',  color: 'Matte Black', size: 'L',  stock: 14 },
-          { sku: 'DLS-BK-XL', color: 'Matte Black', size: 'XL', stock: 12 },
-          { sku: 'DLS-BR-M',  color: 'Espresso',    size: 'M',  stock: 8 },
-          { sku: 'DLS-BR-L',  color: 'Espresso',    size: 'L',  stock: 9 }
-        ]
-      },
-      {
-        id: 'PRD-008',
-        name: 'Canvas & Leather Weekender Tote',
-        category: 'Accessories',
-        base_price: 329000,
-        badge: 'None',
-        description: 'Tas jinjing serbaguna dari kanvas katun tebal 16 oz dengan aksen kulit sapi asli, kompartemen laptop 15 inci empuk, dan penutup ritsleting logam YKK.',
-        image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'CWT-OL-OS', color: 'Olive Green', size: 'All Size', stock: 18 },
-          { sku: 'CWT-BG-OS', color: 'Sand Beige',  size: 'All Size', stock: 15 }
-        ]
-      },
-      {
-        id: 'PRD-009',
-        name: 'Wool Blend Knit Beanie',
-        category: 'Accessories',
-        base_price: 149000,
-        badge: 'None',
-        description: 'Topi kupluk rajut rib tenun halus dari campuran wol merino yang hangat tanpa rasa gatal. Desain lipatan fleksibel menyesuaikan bentuk kepala secara nyaman.',
-        image_url: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WKB-BK-OS', color: 'Raven Black',  size: 'All Size', stock: 24 },
-          { sku: 'WKB-OM-OS', color: 'Oatmeal',      size: 'All Size', stock: 20 },
-          { sku: 'WKB-BO-OS', color: 'Burnt Orange', size: 'All Size', stock: 14 }
-        ]
-      }
-    ];
-
-    var variantCounter = 1;
+  {
+    "id": "PRD-001",
+    "name": "Mantel Wol Terstruktur Atelier",
+    "category": "Outerwear",
+    "base_price": 1250000,
+    "badge": "Best Seller",
+    "description": "Mantel wol potongan terstruktur dengan kerah takik lebar, ikat pinggang senada, dan lapisan furing satin halus untuk kenyamanan maksimal.",
+    "image_url": "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-01 10:00:00",
+    "name_en": "Atelier Structured Wool Coat",
+    "description_en": "Structured wool-blend coat tailored with wide notch lapels, a matching waist tie belt, and smooth satin lining for elevated layering.",
+    "weight_gram": 920,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Mantel+Wol+Terstruktur+Atelier\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Mantel+Wol+Terstruktur+Atelier\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Mantel+Wol+Terstruktur+Atelier\"}"
+  },
+  {
+    "id": "PRD-002",
+    "name": "Kemeja Linen Santai Minimalis",
+    "category": "Tops",
+    "base_price": 420000,
+    "badge": "New Arrival",
+    "description": "Kemeja lengan panjang dari serat linen alami yang sejuk dan bernapas. Dirancang berpotongan santai dengan kancing mutiara minimalis untuk iklim tropis.",
+    "image_url": "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-02 11:30:00",
+    "name_en": "Minimalist Relaxed Linen Shirt",
+    "description_en": "Long-sleeve button-down crafted from breathable pure flax linen. Cut in a relaxed silhouette with understated pearl buttons suited for warm climates.",
+    "weight_gram": 300,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Kemeja+Linen+Santai+Minimalis\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Kemeja+Linen+Santai+Minimalis\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Kemeja+Linen+Santai+Minimalis\"}"
+  },
+  {
+    "id": "PRD-003",
+    "name": "Celana Lipit Wide-Leg Atelier",
+    "category": "Bottoms",
+    "base_price": 580000,
+    "badge": "Best Seller",
+    "description": "Celana panjang berlipit ganda dengan pinggang tinggi dan potongan wide-leg yang jatuh rapi. Menggunakan bahan katun-viscose bertekstur lembut.",
+    "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-03 14:00:00",
+    "name_en": "Pleated Wide-Leg Trousers",
+    "description_en": "High-waisted trousers with tailored front pleats and a fluid wide-leg drape. Woven from a soft cotton-viscose blend for clean daily movement.",
+    "weight_gram": 460,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Celana+Lipit+Wide-Leg+Atelier\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Lipit+Wide-Leg+Atelier\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Celana+Lipit+Wide-Leg+Atelier\"}"
+  },
+  {
+    "id": "PRD-004",
+    "name": "Sepatu Bot Kulit Heritage Minimalis",
+    "category": "Footwear",
+    "base_price": 1150000,
+    "badge": "Limited Edition",
+    "description": "Sepatu bot semata kaki dari kulit sapi asli full-grain dengan detail cap-toe klasik, lubang tali logam tahan karat, dan sol karet anti-selip.",
+    "image_url": "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-04 09:15:00",
+    "name_en": "Minimalist Leather Heritage Boots",
+    "description_en": "Ankle-high service boots handcrafted from full-grain leather featuring classic cap-toe stitching, brushed metal eyelets, and a durable rubber outsole.",
+    "weight_gram": 1120,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Sepatu+Bot+Kulit+Heritage\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Sepatu+Bot+Kulit+Heritage\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Sepatu+Bot+Kulit+Heritage\"}"
+  },
+  {
+    "id": "PRD-005",
+    "name": "Kaos Katun Tebal Oversized",
+    "category": "Tops",
+    "base_price": 240000,
+    "badge": "Best Seller",
+    "description": "Kaos potongan oversized berbahan 100% katun combed 240 GSM dengan kerah rib tebal anti-melar. Jatuh rapi di tubuh dan nyaman dikenakan sepanjang hari.",
+    "image_url": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-05 16:40:00",
+    "name_en": "Heavyweight Cotton Oversized Tee",
+    "description_en": "Oversized crewneck tee knit from 240 GSM combed cotton with a dense ribbed neckline. Holds a clean architectural drape wash after wash.",
+    "weight_gram": 250,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Kaos+Katun+Tebal+Oversized\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Kaos+Katun+Tebal+Oversized\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Kaos+Katun+Tebal+Oversized\"}"
+  },
+  {
+    "id": "PRD-006",
+    "name": "Blazer Single-Breasted Terstruktur",
+    "category": "Outerwear",
+    "base_price": 980000,
+    "badge": "New Arrival",
+    "description": "Blazer formal dan smart-casual berpotongan presisi dengan bahu berstruktur, kerah takik bersih, serta furing bernapas untuk kenyamanan kerja maupun acara malam.",
+    "image_url": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-06 13:20:00",
+    "name_en": "Tailored Single-Breasted Blazer",
+    "description_en": "Precision-cut single-breasted blazer with structured shoulders, crisp notch lapels, and breathable lining built for modern office and evening wear.",
+    "weight_gram": 780,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Blazer+Single-Breasted+Terstruktur\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Blazer+Single-Breasted+Terstruktur\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Blazer+Single-Breasted+Terstruktur\"}"
+  },
+  {
+    "id": "PRD-007",
+    "name": "Celana Jeans Selvedge Potongan Lurus",
+    "category": "Bottoms",
+    "base_price": 650000,
+    "badge": "Limited Edition",
+    "description": "Celana denim tenun selvedge 14 oz dengan jahitan kontras kokoh dan potongan lurus klasik yang membentuk karakter warna alami seiring pemakaian.",
+    "image_url": "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-07 11:00:00",
+    "name_en": "Raw Selvedge Straight Cut Jeans",
+    "description_en": "14 oz selvedge denim crafted in a timeless straight-leg cut with durable contrast stitching designed to develop personal patina over time.",
+    "weight_gram": 540,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Celana+Jeans+Selvedge+Lurus\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Jeans+Selvedge+Lurus\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Celana+Jeans+Selvedge+Lurus\"}"
+  },
+  {
+    "id": "PRD-008",
+    "name": "Tas Tote Kanvas Atelier",
+    "category": "Accessories",
+    "base_price": 350000,
+    "badge": "Best Seller",
+    "description": "Tas tote berstruktur kokoh dari kanvas katun tebal 16 oz dengan tali bahu anyaman lebar dan ruang luas untuk laptop 14 inci serta perlengkapan harian.",
+    "image_url": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-08 15:30:00",
+    "name_en": "Canvas Atelier Weekender Tote",
+    "description_en": "Structured everyday tote sewn from heavyweight 16 oz cotton canvas with wide webbing handles and ample room for a 14-inch laptop and essentials.",
+    "weight_gram": 450,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Tas+Tote+Kanvas+Atelier\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Tas+Tote+Kanvas+Atelier\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Tas+Tote+Kanvas+Atelier\"}"
+  },
+  {
+    "id": "PRD-009",
+    "name": "Kupluk Rajut Wol Merino",
+    "category": "Accessories",
+    "base_price": 180000,
+    "badge": "None",
+    "description": "Topi kupluk rajut rib dari campuran wol merino halus yang hangat tanpa rasa gatal. Lipatan ganda elastis menyesuaikan bentuk kepala secara nyaman.",
+    "image_url": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-09 08:45:00",
+    "name_en": "Merino Wool Ribbed Beanie",
+    "description_en": "Rib-knit cuffed beanie spun from soft merino wool blend for itch-free warmth. Flexible double-fold construction adapts comfortably to any fit.",
+    "weight_gram": 180,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Kupluk+Rajut+Wol+Merino\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Kupluk+Rajut+Wol+Merino\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Kupluk+Rajut+Wol+Merino\"}"
+  },
+  {
+    "id": "PRD-010",
+    "name": "Jaket Bomber Terracotta Atelier",
+    "category": "Outerwear",
+    "base_price": 720000,
+    "badge": "New Arrival",
+    "description": "Jaket bomber minimalis berwarna terracotta hangat berbahan twill nilon matte tahan angin, dilengkapi saku ritsleting lengan dan rib elastis rapi.",
+    "image_url": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-10 10:15:00",
+    "name_en": "Atelier Terracotta Bomber Jacket",
+    "description_en": "Minimalist zip-up bomber jacket in signature warm terracotta matte nylon twill, finished with a utility sleeve pocket and structured ribbed trims.",
+    "weight_gram": 760,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Jaket+Bomber+Terracotta+Atelier\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Jaket+Bomber+Terracotta+Atelier\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Jaket+Bomber+Terracotta+Atelier\"}"
+  },
+  {
+    "id": "PRD-011",
+    "name": "Jaket Denim Kerah Sherpa Studio",
+    "category": "Outerwear",
+    "base_price": 790000,
+    "badge": "Limited Edition",
+    "description": "Jaket trucker denim katun tebal dengan aksen kerah sherpa krem lembut, saku dada berkancing logam, dan pencucian indigo muda bergaya kasual terkurasi.",
+    "image_url": "https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-11 11:20:00",
+    "name_en": "Studio Sherpa Collar Denim Jacket",
+    "description_en": "Heavyweight cotton trucker denim jacket accented with a soft cream sherpa collar, chest flap pockets, and a clean light-indigo studio wash.",
+    "weight_gram": 860,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Jaket+Denim+Kerah+Sherpa\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Jaket+Denim+Kerah+Sherpa\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Jaket+Denim+Kerah+Sherpa\"}"
+  },
+  {
+    "id": "PRD-012",
+    "name": "Sweater Turtleneck Rajut Merino",
+    "category": "Tops",
+    "base_price": 640000,
+    "badge": "Best Seller",
+    "description": "Sweater kerah tinggi (turtleneck) rajut rib rapat berbahan wol merino lembut. Memberikan kehangatan seimbang dan profil ramping untuk layering di bawah blazer atau mantel.",
+    "image_url": "https://images.unsplash.com/photo-1623183949963-0557c9532763?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-12 09:50:00",
+    "name_en": "Merino Ribbed Turtleneck Sweater",
+    "description_en": "Fine-ribbed turtleneck sweater knitted from soft merino wool. Delivers balanced warmth and a clean silhouette made for layering under coats or blazers.",
+    "weight_gram": 420,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Sweater+Turtleneck+Rajut+Merino\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Sweater+Turtleneck+Rajut+Merino\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Sweater+Turtleneck+Rajut+Merino\"}"
+  },
+  {
+    "id": "PRD-013",
+    "name": "Pullover Crewneck Katun Atelier",
+    "category": "Tops",
+    "base_price": 480000,
+    "badge": "None",
+    "description": "Sweatshirt crewneck polos berbahan katun French terry 340 GSM dengan jahitan bahu santai serta rib elastis pada kerah, manset, dan pinggang.",
+    "image_url": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-13 13:10:00",
+    "name_en": "Atelier Cotton Crewneck Pullover",
+    "description_en": "Clean unbranded crewneck pullover cut from 340 GSM cotton French terry, featuring relaxed shoulders and structured ribbed cuffs and hem.",
+    "weight_gram": 410,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Pullover+Crewneck+Katun+Atelier\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Pullover+Crewneck+Katun+Atelier\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Pullover+Crewneck+Katun+Atelier\"}"
+  },
+  {
+    "id": "PRD-014",
+    "name": "Celana Twill 5-Pocket Minimalis",
+    "category": "Bottoms",
+    "base_price": 490000,
+    "badge": "New Arrival",
+    "description": "Celana panjang 5-pocket berbahan katun twill tenun padat dengan paku keling tembaga halus dan potongan lurus ramping untuk gaya smart-casual.",
+    "image_url": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-14 10:00:00",
+    "name_en": "Minimalist 5-Pocket Twill Pants",
+    "description_en": "Five-pocket straight pants tailored from dense cotton twill with understated copper rivets for a versatile smart-casual staple.",
+    "weight_gram": 450,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Celana+Twill+5-Pocket+Minimalis\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Twill+5-Pocket+Minimalis\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Celana+Twill+5-Pocket+Minimalis\"}"
+  },
+  {
+    "id": "PRD-015",
+    "name": "Celana Utility Tapered Santai",
+    "category": "Bottoms",
+    "base_price": 440000,
+    "badge": "None",
+    "description": "Celana potongan tapered dengan pinggang dan pergelangan elastis, dilengkapi saku tempel depan bergaya utility dari kain katun-linen ringan yang nyaman.",
+    "image_url": "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-15 14:25:00",
+    "name_en": "Relaxed Utility Tapered Trousers",
+    "description_en": "Tapered relaxed trousers with an elasticized waistband, ankle cuffs, and front flap utility pockets sewn in lightweight cotton-linen.",
+    "weight_gram": 420,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Celana+Utility+Tapered+Santai\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Utility+Tapered+Santai\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Celana+Utility+Tapered+Santai\"}"
+  },
+  {
+    "id": "PRD-016",
+    "name": "Sepatu Derby Kulit Full-Grain",
+    "category": "Footwear",
+    "base_price": 950000,
+    "badge": "Best Seller",
+    "description": "Sepatu derby kulit sapi full-grain berwarna cokelat cognac dengan panel tekstur mikro yang halus, jahitan rapi, dan bantalan insole empuk untuk kenyamanan formal.",
+    "image_url": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-16 09:30:00",
+    "name_en": "Full-Grain Leather Derby Shoes",
+    "description_en": "Cognac full-grain leather derby shoes detailed with fine micro-textured vamp panels, clean tonal stitching, and a cushioned insole for all-day formal wear.",
+    "weight_gram": 1050,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Sepatu+Derby+Kulit+Full-Grain\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Sepatu+Derby+Kulit+Full-Grain\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Sepatu+Derby+Kulit+Full-Grain\"}"
+  },
+  {
+    "id": "PRD-017",
+    "name": "Sneakers Kanvas Low-Top Minimalis",
+    "category": "Footwear",
+    "base_price": 590000,
+    "badge": "New Arrival",
+    "description": "Sepatu sneakers low-top putih bersih tanpa logo berlebihan, terbuat dari kanvas katun tenun rapat dengan sol karet vulkanisir fleksibel untuk padanan kasual.",
+    "image_url": "https://images.unsplash.com/photo-1499321889027-736489e2f5a5?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-17 11:45:00",
+    "name_en": "Minimalist Low-Top Canvas Sneakers",
+    "description_en": "Clean unbranded white low-top sneakers constructed from tightly woven cotton canvas on a flexible vulcanized rubber sole for daily casual pairing.",
+    "weight_gram": 950,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis\"}"
+  },
+  {
+    "id": "PRD-018",
+    "name": "Kacamata Hitam Bingkai Tipis Atelier",
+    "category": "Accessories",
+    "base_price": 320000,
+    "badge": "New Arrival",
+    "description": "Kacamata hitam berbingkai logam bulat tipis warna emas lembut dengan lensa UV400 hijau arang anti-silau. Ringan dan dilengkapi sarung pelindung kanvas.",
+    "image_url": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-18 15:00:00",
+    "name_en": "Atelier Minimalist Round Sunglasses",
+    "description_en": "Slim gold-wire round sunglasses fitted with anti-glare dark slate-green UV400 lenses. Featherweight balance complete with a protective canvas sleeve.",
+    "weight_gram": 190,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Kacamata+Hitam+Bingkai+Tipis\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Kacamata+Hitam+Bingkai+Tipis\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Kacamata+Hitam+Bingkai+Tipis\"}"
+  },
+  {
+    "id": "PRD-019",
+    "name": "Topi Twill Katun Minimalis",
+    "category": "Accessories",
+    "base_price": 210000,
+    "badge": "None",
+    "description": "Topi 6-panel berbahan katun twill washed berwarna abu arang dengan visor melengkung klasik dan pengait gesper belakang yang mudah disesuaikan.",
+    "image_url": "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-19 16:20:00",
+    "name_en": "Structured Cotton Twill Cap",
+    "description_en": "Six-panel baseball cap crafted from garment-washed charcoal cotton twill with a pre-curved brim and adjustable back strap clasp.",
+    "weight_gram": 185,
+    "marketplace_links_json": "{\"shopee\":\"https://shopee.co.id/search?keyword=AryaStore+Topi+Twill+Katun+Minimalis\",\"tokopedia\":\"https://www.tokopedia.com/search?st=product&q=AryaStore+Topi+Twill+Katun+Minimalis\",\"tiktokshop\":\"https://www.tiktok.com/search?q=AryaStore+Topi+Twill+Katun+Minimalis\"}"
+  }
+];
+    var sampleVariants = [
+  {
+    "variant_id": "VAR-0001",
+    "product_id": "PRD-001",
+    "sku": "COAT-CML-S",
+    "color": "Camel Hangat",
+    "size": "S",
+    "stock": 8
+  },
+  {
+    "variant_id": "VAR-0002",
+    "product_id": "PRD-001",
+    "sku": "COAT-CML-M",
+    "color": "Camel Hangat",
+    "size": "M",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0003",
+    "product_id": "PRD-001",
+    "sku": "COAT-CML-L",
+    "color": "Camel Hangat",
+    "size": "L",
+    "stock": 4
+  },
+  {
+    "variant_id": "VAR-0004",
+    "product_id": "PRD-001",
+    "sku": "COAT-BLK-M",
+    "color": "Hitam Arang",
+    "size": "M",
+    "stock": 9
+  },
+  {
+    "variant_id": "VAR-0005",
+    "product_id": "PRD-001",
+    "sku": "COAT-BLK-XL",
+    "color": "Hitam Arang",
+    "size": "XL",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0006",
+    "product_id": "PRD-002",
+    "sku": "LNSH-WHT-S",
+    "color": "Putih Tulang",
+    "size": "S",
+    "stock": 15
+  },
+  {
+    "variant_id": "VAR-0007",
+    "product_id": "PRD-002",
+    "sku": "LNSH-WHT-M",
+    "color": "Putih Tulang",
+    "size": "M",
+    "stock": 22
+  },
+  {
+    "variant_id": "VAR-0008",
+    "product_id": "PRD-002",
+    "sku": "LNSH-SKY-L",
+    "color": "Biru Pucat",
+    "size": "L",
+    "stock": 3
+  },
+  {
+    "variant_id": "VAR-0009",
+    "product_id": "PRD-002",
+    "sku": "LNSH-SKY-XL",
+    "color": "Biru Pucat",
+    "size": "XL",
+    "stock": 11
+  },
+  {
+    "variant_id": "VAR-0010",
+    "product_id": "PRD-003",
+    "sku": "PLTD-SND-S",
+    "color": "Pasir Krem",
+    "size": "S",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0011",
+    "product_id": "PRD-003",
+    "sku": "PLTD-SND-M",
+    "color": "Pasir Krem",
+    "size": "M",
+    "stock": 16
+  },
+  {
+    "variant_id": "VAR-0012",
+    "product_id": "PRD-003",
+    "sku": "PLTD-BLK-L",
+    "color": "Hitam Arang",
+    "size": "L",
+    "stock": 12
+  },
+  {
+    "variant_id": "VAR-0013",
+    "product_id": "PRD-003",
+    "sku": "PLTD-BLK-XXL",
+    "color": "Hitam Arang",
+    "size": "XXL",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0014",
+    "product_id": "PRD-004",
+    "sku": "BOOT-ESP-S",
+    "color": "Cokelat Espresso",
+    "size": "S",
+    "stock": 4
+  },
+  {
+    "variant_id": "VAR-0015",
+    "product_id": "PRD-004",
+    "sku": "BOOT-ESP-M",
+    "color": "Cokelat Espresso",
+    "size": "M",
+    "stock": 8
+  },
+  {
+    "variant_id": "VAR-0016",
+    "product_id": "PRD-004",
+    "sku": "BOOT-ESP-L",
+    "color": "Cokelat Espresso",
+    "size": "L",
+    "stock": 7
+  },
+  {
+    "variant_id": "VAR-0017",
+    "product_id": "PRD-004",
+    "sku": "BOOT-BLK-XL",
+    "color": "Hitam Pekat",
+    "size": "XL",
+    "stock": 5
+  },
+  {
+    "variant_id": "VAR-0018",
+    "product_id": "PRD-005",
+    "sku": "HTEE-WHT-XS",
+    "color": "Putih Tulang",
+    "size": "XS",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0019",
+    "product_id": "PRD-005",
+    "sku": "HTEE-WHT-M",
+    "color": "Putih Tulang",
+    "size": "M",
+    "stock": 28
+  },
+  {
+    "variant_id": "VAR-0020",
+    "product_id": "PRD-005",
+    "sku": "HTEE-BLK-L",
+    "color": "Hitam Arang",
+    "size": "L",
+    "stock": 22
+  },
+  {
+    "variant_id": "VAR-0021",
+    "product_id": "PRD-005",
+    "sku": "HTEE-BLK-3XL",
+    "color": "Hitam Arang",
+    "size": "3XL",
+    "stock": 9
+  },
+  {
+    "variant_id": "VAR-0022",
+    "product_id": "PRD-005",
+    "sku": "HTEE-WHT-5XL",
+    "color": "Putih Tulang",
+    "size": "5XL",
+    "stock": 3
+  },
+  {
+    "variant_id": "VAR-0023",
+    "product_id": "PRD-006",
+    "sku": "BLZR-NVY-S",
+    "color": "Biru Dongker",
+    "size": "S",
+    "stock": 7
+  },
+  {
+    "variant_id": "VAR-0024",
+    "product_id": "PRD-006",
+    "sku": "BLZR-NVY-M",
+    "color": "Biru Dongker",
+    "size": "M",
+    "stock": 13
+  },
+  {
+    "variant_id": "VAR-0025",
+    "product_id": "PRD-006",
+    "sku": "BLZR-BLK-L",
+    "color": "Hitam Arang",
+    "size": "L",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0026",
+    "product_id": "PRD-006",
+    "sku": "BLZR-BLK-XL",
+    "color": "Hitam Arang",
+    "size": "XL",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0027",
+    "product_id": "PRD-007",
+    "sku": "SLVG-IND-S",
+    "color": "Indigo Klasik",
+    "size": "S",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0028",
+    "product_id": "PRD-007",
+    "sku": "SLVG-IND-M",
+    "color": "Indigo Klasik",
+    "size": "M",
+    "stock": 18
+  },
+  {
+    "variant_id": "VAR-0029",
+    "product_id": "PRD-007",
+    "sku": "SLVG-BLK-4XL",
+    "color": "Hitam Pekat",
+    "size": "4XL",
+    "stock": 4
+  },
+  {
+    "variant_id": "VAR-0030",
+    "product_id": "PRD-008",
+    "sku": "TOTE-TAN-M",
+    "color": "Cokelat Pasir",
+    "size": "M",
+    "stock": 22
+  },
+  {
+    "variant_id": "VAR-0031",
+    "product_id": "PRD-008",
+    "sku": "TOTE-ECR-M",
+    "color": "Ecru Natural",
+    "size": "M",
+    "stock": 18
+  },
+  {
+    "variant_id": "VAR-0032",
+    "product_id": "PRD-008",
+    "sku": "TOTE-BLK-L",
+    "color": "Hitam Arang",
+    "size": "L",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0033",
+    "product_id": "PRD-009",
+    "sku": "BEAN-ESP-M",
+    "color": "Cokelat Tua",
+    "size": "M",
+    "stock": 20
+  },
+  {
+    "variant_id": "VAR-0034",
+    "product_id": "PRD-009",
+    "sku": "BEAN-OLV-M",
+    "color": "Hijau Hutan",
+    "size": "M",
+    "stock": 16
+  },
+  {
+    "variant_id": "VAR-0035",
+    "product_id": "PRD-009",
+    "sku": "BEAN-ROS-M",
+    "color": "Mawar Redup",
+    "size": "M",
+    "stock": 12
+  },
+  {
+    "variant_id": "VAR-0036",
+    "product_id": "PRD-010",
+    "sku": "BMBR-TER-S",
+    "color": "Terracotta",
+    "size": "S",
+    "stock": 9
+  },
+  {
+    "variant_id": "VAR-0037",
+    "product_id": "PRD-010",
+    "sku": "BMBR-TER-M",
+    "color": "Terracotta",
+    "size": "M",
+    "stock": 15
+  },
+  {
+    "variant_id": "VAR-0038",
+    "product_id": "PRD-010",
+    "sku": "BMBR-TER-L",
+    "color": "Terracotta",
+    "size": "L",
+    "stock": 11
+  },
+  {
+    "variant_id": "VAR-0039",
+    "product_id": "PRD-010",
+    "sku": "BMBR-BLK-XXL",
+    "color": "Hitam Arang",
+    "size": "XXL",
+    "stock": 5
+  },
+  {
+    "variant_id": "VAR-0040",
+    "product_id": "PRD-011",
+    "sku": "DNJK-LTI-S",
+    "color": "Indigo Muda",
+    "size": "S",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0041",
+    "product_id": "PRD-011",
+    "sku": "DNJK-LTI-M",
+    "color": "Indigo Muda",
+    "size": "M",
+    "stock": 12
+  },
+  {
+    "variant_id": "VAR-0042",
+    "product_id": "PRD-011",
+    "sku": "DNJK-LTI-L",
+    "color": "Indigo Muda",
+    "size": "L",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0043",
+    "product_id": "PRD-011",
+    "sku": "DNJK-IND-XL",
+    "color": "Indigo Gelap",
+    "size": "XL",
+    "stock": 4
+  },
+  {
+    "variant_id": "VAR-0044",
+    "product_id": "PRD-012",
+    "sku": "TRTL-BLK-XS",
+    "color": "Hitam Pekat",
+    "size": "XS",
+    "stock": 7
+  },
+  {
+    "variant_id": "VAR-0045",
+    "product_id": "PRD-012",
+    "sku": "TRTL-BLK-S",
+    "color": "Hitam Pekat",
+    "size": "S",
+    "stock": 13
+  },
+  {
+    "variant_id": "VAR-0046",
+    "product_id": "PRD-012",
+    "sku": "TRTL-BLK-M",
+    "color": "Hitam Pekat",
+    "size": "M",
+    "stock": 17
+  },
+  {
+    "variant_id": "VAR-0047",
+    "product_id": "PRD-012",
+    "sku": "TRTL-OAT-L",
+    "color": "Oatmeal",
+    "size": "L",
+    "stock": 9
+  },
+  {
+    "variant_id": "VAR-0048",
+    "product_id": "PRD-013",
+    "sku": "CRWN-WHT-S",
+    "color": "Putih Bersih",
+    "size": "S",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0049",
+    "product_id": "PRD-013",
+    "sku": "CRWN-WHT-M",
+    "color": "Putih Bersih",
+    "size": "M",
+    "stock": 20
+  },
+  {
+    "variant_id": "VAR-0050",
+    "product_id": "PRD-013",
+    "sku": "CRWN-GRY-L",
+    "color": "Abu Batu",
+    "size": "L",
+    "stock": 15
+  },
+  {
+    "variant_id": "VAR-0051",
+    "product_id": "PRD-013",
+    "sku": "CRWN-GRY-3XL",
+    "color": "Abu Batu",
+    "size": "3XL",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0052",
+    "product_id": "PRD-014",
+    "sku": "TWLL-SLT-S",
+    "color": "Biru Slate",
+    "size": "S",
+    "stock": 11
+  },
+  {
+    "variant_id": "VAR-0053",
+    "product_id": "PRD-014",
+    "sku": "TWLL-SLT-M",
+    "color": "Biru Slate",
+    "size": "M",
+    "stock": 19
+  },
+  {
+    "variant_id": "VAR-0054",
+    "product_id": "PRD-014",
+    "sku": "TWLL-SLT-L",
+    "color": "Biru Slate",
+    "size": "L",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0055",
+    "product_id": "PRD-014",
+    "sku": "TWLL-KHK-XL",
+    "color": "Khaki Batu",
+    "size": "XL",
+    "stock": 8
+  },
+  {
+    "variant_id": "VAR-0056",
+    "product_id": "PRD-015",
+    "sku": "UTLP-CLY-XS",
+    "color": "Tanah Liat",
+    "size": "XS",
+    "stock": 8
+  },
+  {
+    "variant_id": "VAR-0057",
+    "product_id": "PRD-015",
+    "sku": "UTLP-CLY-S",
+    "color": "Tanah Liat",
+    "size": "S",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0058",
+    "product_id": "PRD-015",
+    "sku": "UTLP-CLY-M",
+    "color": "Tanah Liat",
+    "size": "M",
+    "stock": 16
+  },
+  {
+    "variant_id": "VAR-0059",
+    "product_id": "PRD-015",
+    "sku": "UTLP-OLV-L",
+    "color": "Zaitun",
+    "size": "L",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0060",
+    "product_id": "PRD-016",
+    "sku": "DRBY-COG-S",
+    "color": "Cokelat Cognac",
+    "size": "S",
+    "stock": 7
+  },
+  {
+    "variant_id": "VAR-0061",
+    "product_id": "PRD-016",
+    "sku": "DRBY-COG-M",
+    "color": "Cokelat Cognac",
+    "size": "M",
+    "stock": 12
+  },
+  {
+    "variant_id": "VAR-0062",
+    "product_id": "PRD-016",
+    "sku": "DRBY-COG-L",
+    "color": "Cokelat Cognac",
+    "size": "L",
+    "stock": 10
+  },
+  {
+    "variant_id": "VAR-0063",
+    "product_id": "PRD-016",
+    "sku": "DRBY-BLK-XL",
+    "color": "Hitam Pekat",
+    "size": "XL",
+    "stock": 6
+  },
+  {
+    "variant_id": "VAR-0064",
+    "product_id": "PRD-017",
+    "sku": "SNKR-WHT-S",
+    "color": "Putih Bersih",
+    "size": "S",
+    "stock": 11
+  },
+  {
+    "variant_id": "VAR-0065",
+    "product_id": "PRD-017",
+    "sku": "SNKR-WHT-M",
+    "color": "Putih Bersih",
+    "size": "M",
+    "stock": 18
+  },
+  {
+    "variant_id": "VAR-0066",
+    "product_id": "PRD-017",
+    "sku": "SNKR-WHT-L",
+    "color": "Putih Bersih",
+    "size": "L",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0067",
+    "product_id": "PRD-017",
+    "sku": "SNKR-ECR-XL",
+    "color": "Putih Tulang",
+    "size": "XL",
+    "stock": 9
+  },
+  {
+    "variant_id": "VAR-0068",
+    "product_id": "PRD-018",
+    "sku": "SUNG-GLD-M",
+    "color": "Emas Matte",
+    "size": "M",
+    "stock": 16
+  },
+  {
+    "variant_id": "VAR-0069",
+    "product_id": "PRD-018",
+    "sku": "SUNG-SLV-M",
+    "color": "Perak Sikat",
+    "size": "M",
+    "stock": 12
+  },
+  {
+    "variant_id": "VAR-0070",
+    "product_id": "PRD-018",
+    "sku": "SUNG-BLK-M",
+    "color": "Hitam Matte",
+    "size": "M",
+    "stock": 14
+  },
+  {
+    "variant_id": "VAR-0071",
+    "product_id": "PRD-019",
+    "sku": "CAP-CHR-M",
+    "color": "Abu Arang",
+    "size": "M",
+    "stock": 21
+  },
+  {
+    "variant_id": "VAR-0072",
+    "product_id": "PRD-019",
+    "sku": "CAP-SND-M",
+    "color": "Pasir Krem",
+    "size": "M",
+    "stock": 17
+  },
+  {
+    "variant_id": "VAR-0073",
+    "product_id": "PRD-019",
+    "sku": "CAP-BLK-L",
+    "color": "Hitam Pekat",
+    "size": "L",
+    "stock": 15
+  }
+];
 
     for (var p = 0; p < sampleProducts.length; p++) {
       var prod = sampleProducts[p];
-      if (existingProductIds.indexOf(prod.id) === -1) {
+      var pIndex = existingProductIds.indexOf(prod.id);
+
+      if (pIndex === -1) {
+        // Product does not exist: append full 13-column row
         productsSheet.appendRow([
           prod.id,
           prod.name,
@@ -575,82 +1490,92 @@ function seedDatabase() {
           prod.badge,
           prod.description,
           prod.image_url,
-          prod.created_at
+          prod.created_at,
+          prod.name_en,
+          prod.description_en,
+          prod.weight_gram,
+          prod.marketplace_links_json,
+          JSON.stringify(prod.color_images || {})
         ]);
         results.productsAdded++;
-      }
+      } else {
+        // Product exists: check if row has fewer than 13 columns, safely backfill v2 fields!
+        var rowNum = pIndex + 2; // account for 1-based index and header row
+        var productRowData = productsSheet.getRange(rowNum, 1, 1, 13).getValues()[0];
 
-      // Add product variants
-      for (var v = 0; v < prod.variants.length; v++) {
-        var vData = prod.variants[v];
-        var variantId = 'VAR-' + ('000' + variantCounter).slice(-4);
-        variantCounter++;
-
-        if (existingVariantIds.indexOf(variantId) === -1) {
-          variantsSheet.appendRow([
-            variantId,
-            prod.id,
-            vData.sku,
-            vData.color,
-            vData.size,
-            vData.stock
-          ]);
-          results.variantsAdded++;
+        // Check if v2 columns are blank
+        if (!productRowData[COL_PRODUCTS.NAME_EN] || !productRowData[COL_PRODUCTS.WEIGHT_GRAM] || !productRowData[COL_PRODUCTS.COLOR_IMAGES_JSON]) {
+          productsSheet.getRange(rowNum, COL_PRODUCTS.NAME_EN + 1, 1, 5).setValues([[
+            prod.name_en,
+            prod.description_en,
+            prod.weight_gram,
+            prod.marketplace_links_json,
+            JSON.stringify(prod.color_images || {})
+          ]]);
+          results.productsUpdated++;
         }
+      }
+    }
+
+    // Seed 73 Variants (with optional variant image_url)
+    for (var v = 0; v < sampleVariants.length; v++) {
+      var vData = sampleVariants[v];
+      if (existingVariantIds.indexOf(vData.variant_id) === -1) {
+        variantsSheet.appendRow([
+          vData.variant_id,
+          vData.product_id,
+          vData.sku,
+          vData.color,
+          vData.size,
+          vData.stock,
+          vData.image_url || ''
+        ]);
+        results.variantsAdded++;
       }
     }
   }
 
   // ----------------------------------------------------------------------------
-  // C. Seed 2 Outfit Bundles & Campaigns
+  // C. Seed 2 Curated Outfit Bundles (BND-001 & BND-002)
   // ----------------------------------------------------------------------------
   var campaignSheet = ss.getSheetByName('CampaignsAndBundles');
   if (campaignSheet) {
     var existingCampaignIds = getExistingColumnValues(campaignSheet, 0);
+    var sampleBundles = [
+  {
+    "campaign_id": "BND-001",
+    "banner_title": "Atelier Monochrome Set (Mantel Wol + Celana Lipit)",
+    "banner_desc": "Perpaduan mantel wol terstruktur dan celana lipit wide-leg untuk estetika formal paripurna.",
+    "ends_at": "2026-12-31 23:59:59",
+    "is_active": "TRUE",
+    "bundle_items_json": "[{\"product_id\":\"PRD-001\",\"variant_id\":\"VAR-0002\",\"sku\":\"COAT-CML-M\",\"name\":\"Mantel Wol Terstruktur Atelier (Camel Hangat, M)\",\"name_en\":\"Atelier Structured Wool Coat (Warm Camel, M)\",\"quantity\":1,\"base_price\":1250000,\"bundle_image_url\":\"https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80\"},{\"product_id\":\"PRD-003\",\"variant_id\":\"VAR-0011\",\"sku\":\"PLTD-SND-M\",\"name\":\"Celana Lipit Wide-Leg Atelier (Pasir Krem, M)\",\"name_en\":\"Pleated Wide-Leg Trousers (Sand Cream, M)\",\"quantity\":1,\"base_price\":580000,\"bundle_image_url\":\"https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80\"}]",
+    "normal_price": 1830000,
+    "bundle_price": 1550000
+  },
+  {
+    "campaign_id": "BND-002",
+    "banner_title": "Urban Terracotta Duo (Kemeja Linen + Tas Tote Kanvas)",
+    "banner_desc": "Kombinasi kemeja linen bernapas dengan tas tote kanvas atelier serbaguna untuk mobilitas harian.",
+    "ends_at": "2026-12-31 23:59:59",
+    "is_active": "TRUE",
+    "bundle_items_json": "[{\"product_id\":\"PRD-002\",\"variant_id\":\"VAR-0007\",\"sku\":\"LNSH-WHT-M\",\"name\":\"Kemeja Linen Santai Minimalis (Putih Tulang, M)\",\"name_en\":\"Minimalist Relaxed Linen Shirt (Bone White, M)\",\"quantity\":1,\"base_price\":420000,\"bundle_image_url\":\"https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80\"},{\"product_id\":\"PRD-008\",\"variant_id\":\"VAR-0030\",\"sku\":\"TOTE-TAN-M\",\"name\":\"Tas Tote Kanvas Atelier (Cokelat Pasir, M)\",\"name_en\":\"Canvas Atelier Weekender Tote (Sand Tan, M)\",\"quantity\":1,\"base_price\":350000,\"bundle_image_url\":\"https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80\"}]",
+    "normal_price": 770000,
+    "bundle_price": 650000
+  }
+];
 
-    var sampleCampaigns = [
-      {
-        campaign_id: 'CMP-001',
-        banner_title: 'Koleksi Minimalis Kota (Urban Layer Set)',
-        banner_desc: 'Paduan sempurna trench coat wol, kaos katun boxy tebal, dan celana wide-leg lipit ganda. Tampil rapi seketika dengan potongan harga spesial paket bundle.',
-        ends_at: '2026-12-31 23:59:59',
-        is_active: 'TRUE',
-        bundle_items_json: JSON.stringify([
-          { product_id: 'PRD-001', name: 'Oversized Wool Trench Coat', quantity: 1, base_price: 899000 },
-          { product_id: 'PRD-003', name: 'Heavyweight Cotton Boxy Tee', quantity: 1, base_price: 189000 },
-          { product_id: 'PRD-005', name: 'Wide-Leg Pleated Trousers', quantity: 1, base_price: 389000 }
-        ]),
-        normal_price: 1477000,
-        bundle_price: 1239000
-      },
-      {
-        campaign_id: 'CMP-002',
-        banner_title: 'Setelan Tailored Kontemporer (Modern Tailoring Set)',
-        banner_desc: 'Kombinasi modern berstruktur tajam: blazer boxy berstruktur, kemeja santai linen kerah terbuka, dan celana selvedge denim straight-leg klasik.',
-        ends_at: '2026-12-31 23:59:59',
-        is_active: 'TRUE',
-        bundle_items_json: JSON.stringify([
-          { product_id: 'PRD-002', name: 'Structured Boxy Blazer', quantity: 1, base_price: 649000 },
-          { product_id: 'PRD-004', name: 'Relaxed Linen Camp Collar Shirt', quantity: 1, base_price: 299000 },
-          { product_id: 'PRD-006', name: 'Raw Selvedge Straight Denim', quantity: 1, base_price: 529000 }
-        ]),
-        normal_price: 1477000,
-        bundle_price: 1249000
-      }
-    ];
-
-    for (var c = 0; c < sampleCampaigns.length; c++) {
-      var camp = sampleCampaigns[c];
-      if (existingCampaignIds.indexOf(camp.campaign_id) === -1) {
+    for (var c = 0; c < sampleBundles.length; c++) {
+      var bnd = sampleBundles[c];
+      if (existingCampaignIds.indexOf(bnd.campaign_id) === -1) {
         campaignSheet.appendRow([
-          camp.campaign_id,
-          camp.banner_title,
-          camp.banner_desc,
-          camp.ends_at,
-          camp.is_active,
-          camp.bundle_items_json,
-          camp.normal_price,
-          camp.bundle_price
+          bnd.campaign_id,
+          bnd.banner_title,
+          bnd.banner_desc,
+          bnd.ends_at,
+          bnd.is_active,
+          bnd.bundle_items_json,
+          bnd.normal_price,
+          bnd.bundle_price
         ]);
         results.campaignsAdded++;
       }
@@ -658,7 +1583,7 @@ function seedDatabase() {
   }
 
   // ----------------------------------------------------------------------------
-  // D. Seed Sample Coupons (WELCOME10 & HEMAT50K)
+  // D. Seed Sample Coupons (WELCOME10, HEMAT50K, GLOBALSHIP)
   // ----------------------------------------------------------------------------
   var couponsSheet = ss.getSheetByName('Coupons');
   if (couponsSheet) {
@@ -679,6 +1604,14 @@ function seedDatabase() {
         discount_value: 50000,
         min_spend: 350000,
         description: 'Potongan harga langsung Rp 50.000 untuk transaksi minimal Rp 350.000',
+        is_active: 'TRUE'
+      },
+      {
+        code: 'GLOBALSHIP',
+        discount_type: 'FIXED',
+        discount_value: 100000,
+        min_spend: 1000000,
+        description: 'Subsidi ongkos kirim Rp 100.000 untuk pesanan minimal Rp 1.000.000',
         is_active: 'TRUE'
       }
     ];
@@ -711,8 +1644,8 @@ function seedDatabase() {
         customer_id: 'CST-001',
         name: 'Dimas Pratama',
         whatsapp_no: '6281234567891',
-        total_orders: 2,
-        total_spent: 1029200,
+        total_orders: 1,
+        total_spent: 447000,
         created_at: now,
         notes: 'Pelanggan reguler menyukai warna monokrom gelap'
       },
@@ -721,9 +1654,18 @@ function seedDatabase() {
         name: 'Siti Rahma',
         whatsapp_no: '6281898765432',
         total_orders: 1,
-        total_spent: 674000,
+        total_spent: 1225000,
         created_at: now,
-        notes: 'Membeli blazer untuk acara formal'
+        notes: 'Membeli mantel wol untuk musim dingin'
+      },
+      {
+        customer_id: 'CST-003',
+        name: 'Aisyah Noor',
+        whatsapp_no: '6581234567',
+        total_orders: 1,
+        total_spent: 540000,
+        created_at: now,
+        notes: 'Pelanggan internasional dari Singapura'
       }
     ];
 
@@ -745,7 +1687,7 @@ function seedDatabase() {
   }
 
   // ----------------------------------------------------------------------------
-  // F. Seed Sample Orders
+  // F. Seed Sample Orders (18 Columns with International & UTM Attribution)
   // ----------------------------------------------------------------------------
   var ordersSheet = ss.getSheetByName('Orders');
   if (ordersSheet) {
@@ -760,24 +1702,31 @@ function seedDatabase() {
         whatsapp_no: '6281234567891',
         items_json: JSON.stringify([
           {
-            product_id: 'PRD-003',
-            name: 'Heavyweight Cotton Boxy Tee',
-            sku: 'HCT-VB-L',
-            color: 'Vintage Black',
-            size: 'L',
+            product_id: 'PRD-005',
+            name: 'Kaos Katun Tebal Oversized',
+            name_en: 'Heavyweight Cotton Oversized Tee',
+            variant_id: 'VAR-0019',
+            sku: 'HTEE-WHT-M',
+            color: 'Putih Tulang',
+            size: 'M',
             quantity: 2,
-            price: 189000,
-            subtotal: 378000
+            price: 240000,
+            weight_gram: 250,
+            subtotal: 480000
           }
         ]),
-        subtotal: 378000,
+        subtotal: 480000,
         coupon_code: 'WELCOME10',
-        coupon_discount: 37800,
+        coupon_discount: 48000,
         shipping_method: 'Reguler (JNE/J&T)',
         shipping_cost: 15000,
-        grand_total: 355200,
+        grand_total: 447000,
         payment_proof_url: '',
-        status: 'Selesai'
+        status: 'Selesai',
+        shipping_zone: 'JABODETABEK',
+        currency_code: 'IDR',
+        exchange_rate: 1,
+        utm_source: 'instagram'
       },
       {
         invoice_no: 'INV-202611-002',
@@ -787,24 +1736,65 @@ function seedDatabase() {
         whatsapp_no: '6281898765432',
         items_json: JSON.stringify([
           {
-            product_id: 'PRD-002',
-            name: 'Structured Boxy Blazer',
-            sku: 'SBB-BK-M',
-            color: 'Midnight Black',
+            product_id: 'PRD-001',
+            name: 'Mantel Wol Terstruktur Atelier',
+            name_en: 'Atelier Structured Wool Coat',
+            variant_id: 'VAR-0002',
+            sku: 'COAT-CML-M',
+            color: 'Camel Hangat',
             size: 'M',
             quantity: 1,
-            price: 649000,
-            subtotal: 649000
+            price: 1250000,
+            weight_gram: 920,
+            subtotal: 1250000
           }
         ]),
-        subtotal: 649000,
-        coupon_code: '',
-        coupon_discount: 0,
+        subtotal: 1250000,
+        coupon_code: 'HEMAT50K',
+        coupon_discount: 50000,
         shipping_method: 'Express (SiCepat/Paxel)',
         shipping_cost: 25000,
-        grand_total: 674000,
+        grand_total: 1225000,
         payment_proof_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80',
-        status: 'Bukti Diupload'
+        status: 'Bukti Diupload',
+        shipping_zone: 'JAWA_BALI',
+        currency_code: 'IDR',
+        exchange_rate: 1,
+        utm_source: 'google_ads'
+      },
+      {
+        invoice_no: 'INV-202611-003',
+        created_at: now,
+        customer_id: 'CST-003',
+        customer_name: 'Aisyah Noor',
+        whatsapp_no: '6581234567',
+        items_json: JSON.stringify([
+          {
+            product_id: 'PRD-002',
+            name: 'Kemeja Linen Santai Minimalis',
+            name_en: 'Minimalist Relaxed Linen Shirt',
+            variant_id: 'VAR-0007',
+            sku: 'LNSH-WHT-M',
+            color: 'Putih Tulang',
+            size: 'M',
+            quantity: 1,
+            price: 420000,
+            weight_gram: 300,
+            subtotal: 420000
+          }
+        ]),
+        subtotal: 420000,
+        coupon_code: '',
+        coupon_discount: 0,
+        shipping_method: 'International Shipping (DHL/FedEx)',
+        shipping_cost: 120000,
+        grand_total: 540000,
+        payment_proof_url: '',
+        status: 'Diproses',
+        shipping_zone: 'SINGAPORE',
+        currency_code: 'SGD',
+        exchange_rate: 0.000085,
+        utm_source: 'tiktok'
       }
     ];
 
@@ -825,7 +1815,11 @@ function seedDatabase() {
           ord.shipping_cost,
           ord.grand_total,
           ord.payment_proof_url,
-          ord.status
+          ord.status,
+          ord.shipping_zone,
+          ord.currency_code,
+          ord.exchange_rate,
+          ord.utm_source
         ]);
         results.ordersAdded++;
       }
@@ -843,10 +1837,10 @@ function seedDatabase() {
       return_id: 'RTR-202611-001',
       invoice_no: 'INV-202611-001',
       customer_name: 'Dimas Pratama',
-      reason: 'Ukuran L terlalu longgar di bahu, ingin mengajukan tukar size ke M',
-      requested_size: 'M',
+      reason: 'Ukuran M terlalu pas di dada, ingin mengajukan tukar ukuran ke L',
+      requested_size: 'L',
       status: 'Diajukan',
-      admin_notes: 'Menunggu konfirmasi penerimaan barang di gudang'
+      admin_notes: 'Menunggu konfirmasi barang retur tiba di gudang'
     };
 
     if (existingReturns.indexOf(sampleReturn.return_id) === -1) {
@@ -872,7 +1866,7 @@ function seedDatabase() {
       now,
       'Super Admin',
       'SYSTEM',
-      'Inisialisasi skema database 10 sheet dan pemuatan seed data awal berhasil'
+      'Inisialisasi skema database 10 sheet v2.0 dan pemuatan seed data 19 produk berhasil'
     ]);
     results.auditLogsAdded++;
   }
@@ -883,27 +1877,20 @@ function seedDatabase() {
   var eventSheet = ss.getSheetByName('EventLogs');
   if (eventSheet && eventSheet.getLastRow() <= 1) {
     var funnelEvents = [
-      // Stage 1: Product Views (8 views)
       { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-001', session_id: 'SES-01', referrer: 'hero' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-003', session_id: 'SES-02', referrer: 'catalog' }) },
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-005', session_id: 'SES-02', referrer: 'catalog' }) },
       { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-002', session_id: 'SES-03', referrer: 'bundle' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-005', session_id: 'SES-04', referrer: 'catalog' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-006', session_id: 'SES-05', referrer: 'denim' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-003', session_id: 'SES-06', referrer: 'catalog' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-007', session_id: 'SES-07', referrer: 'featured' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-001', session_id: 'SES-08', referrer: 'catalog' }) },
-
-      // Stage 2: Add to Cart (4 adds)
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-003', sku: 'HCT-VB-L', qty: 2, session_id: 'SES-02' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-002', sku: 'SBB-BK-M', qty: 1, session_id: 'SES-03' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-005', sku: 'WPT-DC-M', qty: 1, session_id: 'SES-04' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-001', sku: 'WTC-CG-M', qty: 1, session_id: 'SES-08' }) },
-
-      // Stage 3: WA Checkout Triggered (2 checkouts)
-      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-001', grand_total: 355200, session_id: 'SES-02' }) },
-      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-002', grand_total: 674000, session_id: 'SES-03' }) },
-
-      // Stage 4: Paid & Completed (1 paid)
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-003', session_id: 'SES-04', referrer: 'catalog' }) },
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-007', session_id: 'SES-05', referrer: 'denim' }) },
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-010', session_id: 'SES-06', referrer: 'bomber' }) },
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-016', session_id: 'SES-07', referrer: 'footwear' }) },
+      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-018', session_id: 'SES-08', referrer: 'accessories' }) },
+      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-005', sku: 'HTEE-WHT-M', qty: 2, session_id: 'SES-02' }) },
+      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-001', sku: 'COAT-CML-M', qty: 1, session_id: 'SES-03' }) },
+      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-002', sku: 'LNSH-WHT-M', qty: 1, session_id: 'SES-04' }) },
+      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-001', grand_total: 447000, session_id: 'SES-02' }) },
+      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-002', grand_total: 1225000, session_id: 'SES-03' }) },
+      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-003', grand_total: 540000, session_id: 'SES-04' }) },
       { name: 'order_completed', payload: JSON.stringify({ invoice_no: 'INV-202611-001', status: 'Selesai', session_id: 'SES-02' }) }
     ];
 
@@ -956,7 +1943,7 @@ function logSystemAudit(actorRole, moduleName, detail) {
 }
 
 // ================================================================================
-// 6. HEALTH & STATUS CHECK FUNCTION
+// 6. HEALTH & STATUS CHECK FUNCTION v2.0
 // ================================================================================
 
 /**
@@ -1006,15 +1993,15 @@ function checkDatabaseStatus() {
 
 /**
  * Triggered automatically when the Google Sheet is opened.
- * Adds a custom menu to execute database setup, seed migration, and health checks easily.
+ * Adds the official AryaStore custom menu to execute database setup, seed migration, and health checks easily.
  */
 function onOpen() {
   if (typeof SpreadsheetApp === 'undefined') return;
 
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Fashion E-Commerce Admin')
-    .addItem('Jalankan Inisialisasi / Migrasi Database', 'menuSetupDatabase')
-    .addItem('Muat Ulang Seed Data (Aman & Idempoten)', 'menuSeedDatabase')
+  ui.createMenu('🛍️ AryaStore')
+    .addItem('Inisialisasi Database & Skema v2.0', 'menuSetupDatabase')
+    .addItem('Muat Ulang Seed Data (19 Produk & Variasi)', 'menuSeedDatabase')
     .addSeparator()
     .addItem('Periksa Status Skema Database', 'menuCheckDatabaseStatus')
     .addToUi();
@@ -1029,7 +2016,7 @@ function menuSetupDatabase() {
     var res = setupDatabase();
     ui.alert(
       'Inisialisasi Berhasil',
-      'Database dan skema tabel telah berhasil disinkronkan.\n' +
+      'Database dan skema tabel telah berhasil disinkronkan ke v2.0.\n' +
       'Laporan migrasi:\n- ' + res.migrationReport.join('\n- '),
       ui.ButtonSet.OK
     );
@@ -1047,8 +2034,9 @@ function menuSeedDatabase() {
     var res = seedDatabase();
     ui.alert(
       'Seed Data Berhasil',
-      'Data seed idempoten telah dimuat:\n' +
+      'Data seed idempoten v2.0 telah dimuat:\n' +
       '- Produk Ditambahkan: ' + res.productsAdded + '\n' +
+      '- Produk Diperbarui (v2 columns): ' + res.productsUpdated + '\n' +
       '- Varian Ditambahkan: ' + res.variantsAdded + '\n' +
       '- Bundle Ditambahkan: ' + res.campaignsAdded + '\n' +
       '- Kupon Ditambahkan: ' + res.couponsAdded + '\n' +
@@ -1068,7 +2056,7 @@ function menuCheckDatabaseStatus() {
   var ui = SpreadsheetApp.getUi();
   try {
     var status = checkDatabaseStatus();
-    var msg = 'Status Database: ' + (status.isHealthy ? 'SEHAT (Lengkap 10 Sheet)' : 'PERLU PERBAIKAN') + '\n\n';
+    var msg = 'Status Database: ' + (status.isHealthy ? 'SEHAT (Lengkap 10 Sheet v2.0)' : 'PERLU PERBAIKAN') + '\n\n';
     var sheetNames = Object.keys(status.sheets);
 
     for (var i = 0; i < sheetNames.length; i++) {

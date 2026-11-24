@@ -1,6 +1,6 @@
 # Sistem Desain Visual & Token Desain: AryaStore
 
-> **Panduan Resmi Sistem Desain Antarmuka (Design System & Tokens)**  
+> **Panduan Resmi Sistem Desain Antarmuka (Design System & Tokens v2.0)**  
 > Estetika: **Editorial Minimalist Fashion**  
 > Dials: **ENERGY 2 / RHYTHM 2 / MOTION 1**  
 > Kepatuhan Standar: **RetroBOT v3.0 & antislop Core Filter**
@@ -10,7 +10,7 @@
 ## BAGIAN A: STRATEGI & ANATOMI KONVERSI EDITORIAL
 
 ### 1. Karakter Visual & Filosofi Produk
-Platform **AryaStore** mengusung filosofi desain editorial busana kontemporer. Antarmuka dirancang menyerupai majalah mode cetak kelas atas (*high-fashion lookbook*) yang dipadukan dengan kepraktisan digital modern.
+Platform **AryaStore** mengusung filosofi desain editorial busana kontemporer. Antarmuka dirancang menyerupai majalah mode cetak kelas atas (*high-fashion lookbook*) yang dipadukan dengan kepraktisan transaksi global modern.
 
 Prinsip panduan visual:
 - **Ketegasan Ruang (Intentional Whitespace)**: Elemen katalog diberikan ruang bernapas yang lega untuk menonjolkan detail material pakaian.
@@ -30,7 +30,7 @@ Prinsip panduan visual:
 
 ## BAGIAN B: SISTEM TOKEN VISUAL & ATURAN ANTI-AI
 
-### 1. Palet Warna Resmi (Color Tokens)
+### 1. Palet Warna Resmi (Color Tokens v2.0)
 
 Sistem warna menggunakan palet netral hangat (*warm stone*) yang dipadukan dengan aksen terracotta terbakar (*burnt terracotta*). Menghilangkan gradasi ungu/biru generik khas kecerdasan buatan.
 
@@ -40,17 +40,19 @@ Sistem warna menggunakan palet netral hangat (*warm stone*) yang dipadukan denga
  ├── [#E7E5E4] Border & Divider (Stone 200)
  ├── [#A8A29E] Muted Border & Subtle Icon (Stone 400)
  ├── [#78716C] Secondary Text (Stone 500)
+ ├── [#57534E] High-Contrast Micro Labels (Stone 600 - WCAG AA Lock)
  ├── [#1C1917] Primary Text & Button Dark (Stone 900)
  └── [#C2410C] Primary Accent (Burnt Terracotta / Orange 700)
       ├── [#9A3412] Accent Hover (Orange 800)
       └── [#FFF7ED] Accent Subtle Surface (Orange 50)
 ```
 
-#### Spesifikasi Nilai Hex Warna:
+#### Spesifikasi Nilai Hex Warna & Kunci Kontras Teks (WCAG AA Lock):
 - **Latar Belakang Dasar (`--bg-base`)**: `#FAFAF9` (Stone-50). Memberikan sensasi kertas cetak majalah fashion yang hangat, jauh dari kesan putih silau rumah sakit.
 - **Latar Permukaan Kartu & Modal (`--bg-surface`)**: `#FFFFFF` (Pure White). Digunakan pada kartu produk, panel modal, dan drawer keranjang dengan pembatas garis rambut (*hairline border*).
 - **Teks Utama (`--text-primary`)**: `#1C1917` (Stone-900 / Deep Charcoal). Kontras tinggi rasio 13.8:1 terhadap latar belakang dasar, melampaui standar aksesibilitas WCAG AAA.
 - **Teks Sekunder (`--text-secondary`)**: `#78716C` (Stone-500). Digunakan pada deskripsi material, tanggal pesanan, dan teks bantuan form (rasio kontras 4.7:1, lolos WCAG AA).
+- **Kunci Kontras Label Mikro 11px-12px (`--text-micro-lock`)**: `#57534E` (Stone-600). Digunakan khusus untuk teks berukuran 10px hingga 12px (badge kategori, indikator stok, label form kecil) pada latar `#FAFAF9` untuk mengunci rasio kontras tinggi 6.8:1, menjamin kepatuhan mutlak WCAG AA pada tipografi kecil.
 - **Garis Pembatas Halus (`--border-subtle`)**: `#E7E5E4` (Stone-200). Garis batas 1px bersih tanpa bayangan kabur berlebih.
 - **Garis Pembatas Fokus / Ikon (`--border-focus`)**: `#A8A29E` (Stone-400). Digunakan pada border elemen interaktif yang sedang aktif atau dipilih.
 - **Warna Aksen Utama (`--accent-primary`)**: `#C2410C` (Terracotta / Orange-700). Warna hangat alami yang melambangkan keahlian kriya busana (*craftsmanship*). Diterapkan pada tombol checkout, tombol tambah bundle, dan badge edisi terbatas.
@@ -74,70 +76,89 @@ Angka Finansial & Kode SKU: 'Plus Jakarta Sans', tabular-nums
 - **Display 1 (Hero Title)**: `font-serif text-3xl sm:text-5xl font-normal tracking-tight leading-tight` (36px s.d. 48px).
 - **Heading 1 (Section Title)**: `font-serif text-2xl sm:text-3xl font-medium tracking-tight` (24px s.d. 30px).
 - **Heading 2 (Card / Modal Title)**: `font-serif text-lg sm:text-xl font-medium leading-snug` (18px s.d. 20px).
-- **Subheading & Section Header**: `font-sans text-xs uppercase tracking-widest font-semibold text-stone-500` (11px s.d. 12px).
+- **Subheading & Section Header**: `font-sans text-xs uppercase tracking-widest font-semibold text-stone-600` (11px s.d. 12px).
 - **Body Regular**: `font-sans text-sm font-normal text-stone-800 leading-relaxed` (14px).
 - **Body Small / Data Table**: `font-sans text-xs font-normal text-stone-600 leading-normal` (12px).
-- **Micro Label / Badge**: `font-sans text-[11px] font-medium tracking-wider uppercase` (10px s.d. 11px).
+- **Micro Label / Badge**: `font-sans text-[11px] font-medium tracking-wider uppercase text-stone-600` (10px s.d. 11px).
 
 > **Kepatuhan Aturan antislop R-02**: Seluruh teks antarmuka dan salinan promosi dilarang menggunakan tanda pisah panjang (*em dash* / U+2014). Gunakan tanda titik dua (`:`), tanda koma (`,`), atau tanda kurung (`()`) sebagai pengganti pemisah klausa.
 
-### 3. Geometri Komponen & Sudut Lengkung (Border Radius Formula)
-
-Sesuai dengan standar antislop untuk menghindari tombol kapsul generik (*pill buttons*):
-- **Radius Tombol Utama & Input Form**: `rounded-sm` (2px) hingga `rounded` (4px). Potongan sudut tegas mencerminkan presisi jahitan busana formal.
-- **Radius Kartu & Panel Modal**: `rounded-md` (6px). Memberikan lengkungan yang sangat halus tanpa kehilangan bentuk geometris yang rapi.
-- **Larangan Khusus**: DILARANG menerapkan `rounded-full` pada tombol tindakan utama (seperti tombol Checkout, Tambah ke Keranjang, atau Login PIN). `rounded-full` hanya diizinkan untuk lingkaran pemilih warna (*color swatches*) berukuran 24x24px.
-
-### 4. Sistem Bayangan & Garis Tepi (Shadows & Borders)
-- Menghindari bayangan tebal dan kabur (*large diffuse floating shadows*).
-- Mengutamakan garis batas tipis 1px (`border border-stone-200`).
-- Bayangan interaksi dibatasi pada elevasi mikro:
-  - `shadow-sm`: `0 1px 2px 0 rgba(28, 25, 23, 0.04)` untuk kartu katalog.
-  - `shadow-lg`: `0 10px 25px -5px rgba(28, 25, 23, 0.08)` untuk slide-over keranjang dan modal dialog agar kontras terhadap backdrop gelap tipis (`bg-stone-900/40 backdrop-blur-none`).
-
-### 5. Respon Interaksi & Status Komponen (Component States)
-
-Setiap elemen interaktif wajib memiliki 5 keadaan terdefinisi:
-1. **Keadaan Normal (Default)**: Tampilan kontras sesuai hierarki visual.
-2. **Keadaan Sentuh (Hover)**: Perubahan warna latar yang halus (`transition-colors duration-150`). Tombol gelap `#1C1917` berubah menjadi `#292524`; tombol terracotta `#C2410C` berubah menjadi `#9A3412`.
-3. **Keadaan Tekan (Active)**: Reduksi skala mikro (`active:scale-[0.99]`) memberikan umpan balik taktil.
-4. **Keadaan Fokus Keyboard (`:focus-visible`)**: Cincin fokus tegas `ring-2 ring-stone-900 ring-offset-2 ring-offset-stone-50` untuk memastikan navigasi tabulasi ramah aksesibilitas.
-5. **Keadaan Memuat & Dinonaktifkan (Loading / Disabled)**: Opasitas 50%, kursor `cursor-not-allowed`, teks tombol digantikan oleh spinner SVG berputar halus, mencegah pengiriman berulang (*anti-double-submit*).
+### 3. Standar Sentuh Seluler & Ergonomi Interaksi (Mobile Ergonomics)
+- **Target Sentuh Minimum 44x44px**: Seluruh elemen yang dapat diklik atau disentuh pada perangkat bergerak (tombol navigasi, chip ukuran baju, switcher bahasa/valas, tombol kuantitas keranjang, penutup modal) wajib memiliki luas tap area minimal 44x44 piksel (`min-h-[44px] min-w-[44px] flex items-center justify-center`).
+- **Geometri Sudut Tegas (Border Radius)**:
+  - Tombol dan Input: `rounded-sm` (2px) hingga `rounded` (4px).
+  - Kartu & Modal: `rounded-md` (6px).
+  - DILARANG menerapkan bentuk kapsul lonjong (`rounded-full`) pada tombol aksi utama. Bentuk lingkaran hanya diizinkan untuk lingkaran warna baju (color swatches).
 
 ---
 
-## BAGIAN C: PANDUAN IMPLEMENTASI STOREFRONT & DASHBOARD
+## BAGIAN C: KOMPONEN GLOBAL & FITUR EXPANSION v2.0
 
-### 1. Tata Letak Storefront (Halaman Depan Toko)
-- **Header Tetap (Sticky Header)**: Ketinggian 64px dengan latar belakang `#FAFAF9` bergaris pembatas bawah tipis. Terdiri dari teks logo brand di sebelah kiri, navigasi kategori di tengah (pada desktop), dan aksi cepat (Wishlist, Keranjang, Lacak Pesanan) di sebelah kanan.
-- **Hero Lookbook Section**: Gambar rasio 16:9 atau 21:9 dengan overlay teks editorial yang proporsional, menampilkan tajuk koleksi utama.
-- **Flash Sale & Bundle Block**:
-  - Penanda waktu hitung mundur digital dengan kotak satuan Jam, Menit, dan Detik.
-  - Kartu bundling busana menampilkan foto kombinasi produk, harga normal yang dicoret halus, harga paket hemat, dan tombol instan `+ Ambil Bundle`.
-- **Bilah Filter Multi-Atribut**:
-  - Filter kategori berbentuk tombol tab horizontal yang mudah digeser pada layar sentuh.
-  - Chip ukuran pakaian berderet rapat (`XS`, `S`, `M`, `L`, `XL`, `XXL`, `3XL`, `4XL`, `5XL`) dengan indikasi aktif yang kontras.
-  - Slider harga responsif yang memperbarui teks batas nominal secara langsung.
-- **Grid Produk**:
-  - Mobile: 2 kolom (`grid-cols-2 gap-3`).
-  - Tablet/Desktop: 4 kolom (`sm:grid-cols-3 lg:grid-cols-4 gap-6`).
-  - Foto produk berasio 3:4 (rasio standar potret mode pakaian).
-  - Teks nama produk, kategori, dan harga tersaji utuh tanpa pemotongan teks gantung.
+### 1. Pengalih Bahasa & Mata Uang Ringkas (Language & Currency Switchers)
+- **Komponen Pengalih Bahasa (ID / EN)**:
+  - Sakelar 2 opsi ringkas berbasis tombol segmen (`id` / `en`).
+  - Mengubah seluruh label antarmuka secara instan melalui kamus terjemahan lokal (*client-side i18n dictionary*).
+  - Menyimpan preferensi ke `localStorage` browser.
+- **Komponen Pengalih Mata Uang (Currency Switcher)**:
+  - Menu pilihan ringkas untuk 8 mata uang dunia: `IDR` (Rp), `USD` ($), `EUR` (€), `SGD` (S$), `MYR` (RM), `JPY` (¥), `GBP` (£), `AUD` (A$).
+  - Mengonversi nominal harga produk dan total belanja secara dinamis sesuai nilai tukar pada konfigurasi sistem.
 
-### 2. Tata Letak Admin Dashboard (Panel Operasional)
-- **Struktur Antarmuka**: Sidebar navigasi tetap di sebelah kiri (pada layar lebar) atau drawer menu (pada layar ponsel), dipadukan dengan area kerja utama yang responsif.
-- **Ringkasan KPI (4-Card Metric Grid)**:
-  - Kartu metrik bergaris pembatas rapi dengan nilai angka tebal dan label deskriptif berbahasa Indonesia.
-- **Tabel Pesanan & Varian SKU (Fluid Table Typography)**:
-  - Menyesuaikan ukuran layar dengan pembungkusan teks multi-tier (*multi-tier wrap*) pada informasi invoice dan nama pelanggan.
-  - DILARANG menggunakan pemotongan teks dengan elipsis (`...`) pada nomor invoice (`INV-YYYYMM-XXX`) maupun kode SKU.
-  - Kolom input ongkir manual tersaji secara *inline* sehingga operator toko dapat langsung memperbarui nominal dan menekan tombol simpan dengan cepat.
-- **Visualisasi Corong Konversi (CSS-Only Conversion Funnel)**:
-  - Diagram batang horizontal murni menggunakan CSS Flexbox dengan label tahapan: Kunjungan Produk, Tambah ke Keranjang, Checkout WhatsApp, dan Pembayaran Selesai.
+### 2. Laci Navigasi Seluler (Mobile Menu Drawer)
+- Menghadirkan laci navigasi samping (*slide-over drawer*) yang mulus dari sisi kiri layar pada perangkat ponsel.
+- Memuat navigasi kategori koleksi, switcher bahasa & valas, tautan pelacakan pesanan, serta tautan kanal media sosial dan marketplace eksternal.
+
+### 3. Estimator Tarif Ongkir Domestik & Internasional (Shipping Rate Estimator)
+- **Kartu Estimasi Cepat**: Menyediakan kalkulator tarif pengiriman sebelum checkout berdasarkan zona penerima dan total berat pesanan dalam gram.
+- **Bilah Progres Bebas Ongkir (Free Shipping Bar)**:
+  - Menampilkan progres belanja menuju batas gratis ongkir (contoh: batas Rp 500.000).
+  - Menampilkan pesan dinamis: "Tambahkan Rp XX.XXX lagi untuk mendapatkan Bebas Ongkir!".
+
+### 4. Bilah Kanal Marketplace & Sosial (Marketplace & Social Link Strip)
+- Bilah minimalis pada footer dan menu drawer yang menampilkan tautan resmi ke toko Shopee, Tokopedia, dan TikTok Shop AryaStore.
+- Dilengkapi lencana ikon tajam untuk saluran Instagram, TikTok, Facebook, YouTube, dan Pinterest.
+
+### 5. Kartu Hangtag Busana Ganda (Dual QR + Code128 Barcode Hangtag)
+Fitur cetak label pakaian fisik untuk manajemen gudang dan identitas produk:
+- **Layout Hangtag Standar Industri**: Rasio proporsional 50mm x 90mm dengan border hairline presisi.
+- **Informasi Produk Lengkap**: Nama brand AryaStore, kode SKU varian, nama artikel busana, ukuran (`XS` s.d. `5XL`), warna pakaian, dan harga resmi.
+- **Elemen Identifikasi Ganda**:
+  - **Kode QR Interaktif**: Menghubungkan pembeli langsung ke halaman detail produk di website toko.
+  - **Barcode Code128**: Menampilkan representasi visual barcode SKU untuk pemindaian instan oleh pemindai optik (*optical scanner*) di gudang.
+- **Aturan Cetak (@media print rules)**:
+  ```css
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #hangtag-print-area, #hangtag-print-area * {
+      visibility: visible;
+    }
+    #hangtag-print-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 50mm;
+      height: 90mm;
+      padding: 4mm;
+      page-break-inside: avoid;
+      background: #FFFFFF !important;
+      color: #000000 !important;
+      border: 1px dashed #78716C;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+  ```
+
+### 6. Banner Persetujuan Cookie Minimalis (Cookie Consent Banner)
+- Banner ramping non-intrusif di bagian bawah layar (*bottom strip*) dengan latar belakang `#1C1917` dan teks kontras `#FAFAF9`.
+- Menyampaikan pesan privasi ringkas dan tombol persetujuan tegas `Setuju` serta tautan kebijakan privasi.
+- Menyimpan status persetujuan di `localStorage` agar tidak muncul berulang kali.
 
 ---
 
-## BAGIAN D: CHECKLIST KEPATUHAN DELIVERY GATE (ANTISLOP AUDIT)
+## BAGIAN D: CHECKLIST KEPATUHAN DELIVERY GATE (ANTISLOP AUDIT v2.0)
 
 Sebelum menyerahkan berkas antarmuka ke tahap akhir, lakukan audit terhadap 4 blok standar antislop:
 
@@ -155,5 +176,6 @@ Sebelum menyerahkan berkas antarmuka ke tahap akhir, lakukan audit terhadap 4 bl
   - MOTION 1: Animasi geser dan fade yang cepat (150-250ms), tanpa efek membal.
 - [x] **Blok 4 (Standar Keahlian Kriya / Craftsmanship Locks)**:
   - Seluruh tombol memiliki keadaan loading spinner dan pencegah klik ganda.
+  - Target sentuh seluler berukuran minimal 44x44px.
   - Teks nomor invoice dan SKU tidak pernah terpotong elipsis.
-  - Kontras teks memenuhi syarat minimum rasio 4.5:1 (WCAG AA).
+  - Kontras teks kecil 11px-12px memenuhi standar minimum rasio 4.5:1 (Stone-600 #57534E memiliki rasio 6.8:1).

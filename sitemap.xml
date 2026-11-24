@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Halaman Utama AryaStore (Storefront Root) -->
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Paket Bundling Promo Busana -->
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?bundle=BND-001</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-001&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-001&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-001"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?bundle=BND-002</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-002&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-002&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?bundle=BND-002"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- 19 Artikel Produk Busana Terkurasi AryaStore (Deep-Links) -->
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-001</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-001&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-001&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-001"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-002</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-002&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-002&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-002"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-003</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-003&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-003&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-003"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-004</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-004&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-004&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-004"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-005</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-005&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-005&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-005"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-006</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-006&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-006&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-006"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-007</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-007&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-007&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-007"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-008</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-008&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-008&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-008"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-009</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-009&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-009&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-009"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-010</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-010&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-010&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-010"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-011</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-011&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-011&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-011"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-012</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-012&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-012&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-012"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-013</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-013&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-013&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-013"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-014</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-014&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-014&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-014"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-015</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-015&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-015&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-015"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-016</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-016&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-016&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-016"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-017</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-017&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-017&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-017"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-018</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-018&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-018&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-018"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://sisigitadi.github.io/AryaStore/?product=PRD-019</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://sisigitadi.github.io/AryaStore/?product=PRD-019&amp;lang=id"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sisigitadi.github.io/AryaStore/?product=PRD-019&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sisigitadi.github.io/AryaStore/?product=PRD-019"/>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+</urlset>

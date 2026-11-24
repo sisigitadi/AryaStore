@@ -1,24 +1,29 @@
 /**
  * ================================================================================
- * ARYASTORE E-COMMERCE ENGINE - SERVER-SIDE BACKEND API
+ * ARYASTORE E-COMMERCE ENGINE - SERVER-SIDE BACKEND API (v2.0.0)
  * ================================================================================
  * File: code.gs
  * Target: Google Apps Script Web App (Serverless V8 Engine)
  * Standard: RetroBOT v3.0 & antislop Delivery Gate
+ * Version: v2.0.0 (Global E-Commerce Expansion, Technical SEO & Internationalization)
  * 
  * Core Architectural Guarantees:
- * 1. Zero-based numeric index constants for all 10 sheets (no header-string lookups)
+ * 1. Zero-based numeric index constants for all 10 sheets (strict v2.0 column layout)
  * 2. Sequential Mutex ID Generation (INV-YYYYMM-XXX and RTR-YYYYMM-XXX) via LockService (10s lock)
  * 3. getDisplayValues() on all sheet reads, SpreadsheetApp.flush() on all writes
  * 4. Backend-driven search, multi-attribute filtering, sorting, and pagination
  * 5. Full RBAC authorization matrix (Super Admin, Store Manager, Customer Service)
- * 6. Google Drive storage integration for manual payment proof receipts
+ * 6. Google Drive storage integration for payment proofs and per-color product images
  * 7. Real-time conversion funnel telemetry and audit logging
+ * 8. getPublicConfig() secure configuration endpoint (strict PIN and secret redaction)
+ * 9. Multi-currency, bilingual metadata, international shipping, and UTM attribution support
+ * 10. Live Shipping Integration: RajaOngkir (Komerce v2) + Biteship v1 + Editable Zone Matrix
+ * 11. Google Drive Product Image Upload & Multi-Color Gallery support (lh3 direct embed)
  * ================================================================================
  */
 
 // ================================================================================
-// 1. COLUMN INDEX CONSTANTS (Zero-Based Mapping for 10 Sheets)
+// 1. COLUMN INDEX CONSTANTS (Zero-Based Mapping for 10 Sheets v2.0)
 // ================================================================================
 
 var COL_PRODUCTS = {
@@ -29,7 +34,12 @@ var COL_PRODUCTS = {
   BADGE: 4,
   DESCRIPTION: 5,
   IMAGE_URL: 6,
-  CREATED_AT: 7
+  CREATED_AT: 7,
+  NAME_EN: 8,
+  DESCRIPTION_EN: 9,
+  WEIGHT_GRAM: 10,
+  MARKETPLACE_LINKS_JSON: 11,
+  COLOR_IMAGES_JSON: 12
 };
 
 var COL_VARIANTS = {
@@ -38,7 +48,8 @@ var COL_VARIANTS = {
   SKU: 2,
   COLOR: 3,
   SIZE: 4,
-  STOCK: 5
+  STOCK: 5,
+  IMAGE_URL: 6
 };
 
 var COL_CAMPAIGNS = {
@@ -66,7 +77,11 @@ var COL_ORDERS = {
   SHIPPING_COST: 10,
   GRAND_TOTAL: 11,
   PAYMENT_PROOF_URL: 12,
-  STATUS: 13
+  STATUS: 13,
+  SHIPPING_ZONE: 14,
+  CURRENCY_CODE: 15,
+  EXCHANGE_RATE: 16,
+  UTM_SOURCE: 17
 };
 
 var COL_CUSTOMERS = {
@@ -130,6 +145,68 @@ var SHEET_NAMES = {
   SETTINGS: 'Settings'
 };
 
+var SCHEMA_DEFINITIONS = {
+  Products: {
+    headers: ['id', 'name', 'category', 'base_price', 'badge', 'description', 'image_url', 'created_at', 'name_en', 'description_en', 'weight_gram', 'marketplace_links_json', 'color_images_json'],
+    colMap: COL_PRODUCTS
+  },
+  ProductVariants: {
+    headers: ['variant_id', 'product_id', 'sku', 'color', 'size', 'stock', 'image_url'],
+    colMap: COL_VARIANTS
+  },
+  CampaignsAndBundles: {
+    headers: ['campaign_id', 'banner_title', 'banner_desc', 'ends_at', 'is_active', 'bundle_items_json', 'normal_price', 'bundle_price'],
+    colMap: COL_CAMPAIGNS
+  },
+  Orders: {
+    headers: [
+      'invoice_no',
+      'created_at',
+      'customer_id',
+      'customer_name',
+      'whatsapp_no',
+      'items_json',
+      'subtotal',
+      'coupon_code',
+      'coupon_discount',
+      'shipping_method',
+      'shipping_cost',
+      'grand_total',
+      'payment_proof_url',
+      'status',
+      'shipping_zone',
+      'currency_code',
+      'exchange_rate',
+      'utm_source'
+    ],
+    colMap: COL_ORDERS
+  },
+  Customers: {
+    headers: ['customer_id', 'name', 'whatsapp_no', 'total_orders', 'total_spent', 'created_at', 'notes'],
+    colMap: COL_CUSTOMERS
+  },
+  Coupons: {
+    headers: ['code', 'discount_type', 'discount_value', 'min_spend', 'description', 'is_active'],
+    colMap: COL_COUPONS
+  },
+  Returns: {
+    headers: ['return_id', 'invoice_no', 'customer_name', 'reason', 'requested_size', 'status', 'admin_notes'],
+    colMap: COL_RETURNS
+  },
+  AuditLogs: {
+    headers: ['timestamp', 'actor_role', 'module', 'action_detail'],
+    colMap: COL_AUDIT_LOGS
+  },
+  EventLogs: {
+    headers: ['timestamp', 'event_name', 'payload_json'],
+    colMap: COL_EVENT_LOGS
+  },
+  Settings: {
+    headers: ['key', 'value', 'description'],
+    colMap: COL_SETTINGS
+  }
+};
+
 // ================================================================================
 // 2. WEB APP ENTRY POINT (doGet)
 // ================================================================================
@@ -152,7 +229,7 @@ function doGet(e) {
   }
 
   return htmlOutput
-    .setTitle('AryaStore | Editorial Fashion E-Commerce')
+    .setTitle('AryaStore | Modern Minimalist Fashion & Curated Apparel')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -211,7 +288,6 @@ function logAudit(actorRole, moduleName, actionDetail) {
       actionDetail || ''
     ]);
   } catch (err) {
-    // Audit logging should never interrupt primary transactions
     if (typeof Logger !== 'undefined') {
       Logger.log('Audit log failure: ' + err.toString());
     }
@@ -254,18 +330,78 @@ function normalizePhoneNumber(phone) {
 // ================================================================================
 
 /**
+ * Returns safe public storefront configuration parameters.
+ * STRICTLY redacts and filters out administrative PINs, private API keys, and internal folder names.
+ */
+function getPublicConfig() {
+  try {
+    var dict = loadSettingsDictionary();
+
+    var publicKeys = [
+      'BRAND_NAME',
+      'WA_NUMBER',
+      'CURRENCY_PREFIX',
+      'DEFAULT_LANGUAGE',
+      'DEFAULT_CURRENCY',
+      'CURRENCY_AUTO_SYNC',
+      'CURRENCY_RATES_JSON',
+      'FREE_SHIPPING_THRESHOLD_IDR',
+      'SHIPPING_RATES_JSON',
+      'MARKETPLACE_LINKS_JSON',
+      'SOCIAL_LINKS_JSON',
+      'STORE_BASE_URL',
+      'SEO_TITLE',
+      'SEO_DESCRIPTION',
+      'SEO_KEYWORDS',
+      'GA4_MEASUREMENT_ID',
+      'GOOGLE_ADS_ID',
+      'GOOGLE_ADS_CONVERSION_LABEL',
+      'GTM_ID',
+      'META_PIXEL_ID',
+      'TIKTOK_PIXEL_ID',
+      'SHIPPING_METHODS',
+      'SHIPPING_PROVIDER'
+    ];
+
+    var publicConfig = {};
+    for (var i = 0; i < publicKeys.length; i++) {
+      var k = publicKeys[i];
+      if (dict[k] !== undefined) {
+        publicConfig[k] = dict[k];
+      }
+    }
+
+    publicConfig['SHIPPING_PROVIDER'] = dict['SHIPPING_PROVIDER'] || 'AUTO';
+    publicConfig['RAJAONGKIR_CONFIGURED'] = Boolean(dict['RAJAONGKIR_API_KEY'] && String(dict['RAJAONGKIR_API_KEY']).trim() !== '');
+    publicConfig['BITESHIP_CONFIGURED'] = Boolean(dict['BITESHIP_API_KEY'] && String(dict['BITESHIP_API_KEY']).trim() !== '');
+
+    // Explicit security purge to prevent any secret leak
+    delete publicConfig['PIN_SUPER_ADMIN'];
+    delete publicConfig['PIN_STORE_MANAGER'];
+    delete publicConfig['PIN_CUSTOMER_SERVICE'];
+    delete publicConfig['DRIVE_FOLDER_NAME'];
+    delete publicConfig['DRIVE_PRODUCTS_FOLDER_NAME'];
+    delete publicConfig['RAJAONGKIR_API_KEY'];
+    delete publicConfig['BITESHIP_API_KEY'];
+
+    return {
+      success: true,
+      config: publicConfig
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal memuat konfigurasi publik: ' + err.toString(),
+      config: {}
+    };
+  }
+}
+
+/**
  * Returns filtered, searched, sorted, and paginated product catalog items.
  * Joins ProductVariants to calculate aggregate inventory and available sizes.
- * 
- * @param {Object} filters
- *   filters.search {string} - Substring match in name or description
- *   filters.category {string} - 'All', 'Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'
- *   filters.maxPrice {number} - Maximum price filter
- *   filters.size {string} - Required available size (XS to 5XL)
- *   filters.badge {string} - 'All', 'New Arrival', 'Best Seller', 'Limited Edition'
- *   filters.sortBy {string} - 'newest', 'price_asc', 'price_desc'
- *   filters.page {number} - Page number (1-based, default 1)
- *   filters.limit {number} - Items per page (default 12)
+ * Supports bilingual attributes (name_en, description_en), weight, marketplace links,
+ * and multi-color image gallery mappings.
  */
 function getProducts(filters) {
   try {
@@ -280,15 +416,8 @@ function getProducts(filters) {
     var limit = parseInt(filters.limit, 10) || 12;
 
     var productRows = getSheetDisplayRows(SHEET_NAMES.PRODUCTS);
-    if (productRows.length === 0) {
-      try {
-        setupDatabase();
-        productRows = getSheetDisplayRows(SHEET_NAMES.PRODUCTS);
-      } catch (err) {}
-    }
     var variantRows = getSheetDisplayRows(SHEET_NAMES.VARIANTS);
 
-    // Build variant index mapped by product_id
     var variantsByProduct = {};
     for (var v = 0; v < variantRows.length; v++) {
       var vRow = variantRows[v];
@@ -297,13 +426,15 @@ function getProducts(filters) {
         variantsByProduct[pId] = [];
       }
       var stockNum = parseInt(vRow[COL_VARIANTS.STOCK], 10) || 0;
+      var vImg = vRow.length > COL_VARIANTS.IMAGE_URL ? (vRow[COL_VARIANTS.IMAGE_URL] || '') : '';
       variantsByProduct[pId].push({
         variant_id: vRow[COL_VARIANTS.VARIANT_ID],
         product_id: pId,
         sku: vRow[COL_VARIANTS.SKU],
         color: vRow[COL_VARIANTS.COLOR],
         size: vRow[COL_VARIANTS.SIZE],
-        stock: stockNum
+        stock: stockNum,
+        image_url: vImg
       });
     }
 
@@ -319,10 +450,28 @@ function getProducts(filters) {
       var prodDesc = row[COL_PRODUCTS.DESCRIPTION];
       var prodImage = row[COL_PRODUCTS.IMAGE_URL];
       var prodCreatedAt = row[COL_PRODUCTS.CREATED_AT];
+      var prodNameEn = row[COL_PRODUCTS.NAME_EN] || prodName;
+      var prodDescEn = row[COL_PRODUCTS.DESCRIPTION_EN] || prodDesc;
+      var weightGram = parseInt(row[COL_PRODUCTS.WEIGHT_GRAM], 10) || 300;
+
+      var marketplaceLinks = {};
+      try {
+        var mpRaw = row[COL_PRODUCTS.MARKETPLACE_LINKS_JSON];
+        if (mpRaw) marketplaceLinks = JSON.parse(mpRaw);
+      } catch (e) {
+        marketplaceLinks = {};
+      }
+
+      var colorImages = {};
+      try {
+        var ciRaw = row.length > COL_PRODUCTS.COLOR_IMAGES_JSON ? row[COL_PRODUCTS.COLOR_IMAGES_JSON] : '';
+        if (ciRaw) colorImages = JSON.parse(ciRaw);
+      } catch (e) {
+        colorImages = {};
+      }
 
       var prodVariants = variantsByProduct[prodId] || [];
 
-      // Calculate total stock and distinct sizes with available inventory
       var totalStock = 0;
       var availableSizes = [];
       var colorsList = [];
@@ -338,22 +487,18 @@ function getProducts(filters) {
         }
       }
 
-      // 1. Category filter
       if (category !== 'All' && category !== 'Semua' && prodCat.toLowerCase() !== category.toLowerCase()) {
         continue;
       }
 
-      // 2. Max price filter
       if (maxPrice > 0 && basePrice > maxPrice) {
         continue;
       }
 
-      // 3. Badge filter
       if (badge !== 'All' && badge !== 'Semua' && prodBadge.toLowerCase() !== badge.toLowerCase()) {
         continue;
       }
 
-      // 4. Size filter (must have stock > 0 for this specific size)
       if (size !== 'All' && size !== 'Semua') {
         var sizeMatch = false;
         for (var k = 0; k < prodVariants.length; k++) {
@@ -365,9 +510,8 @@ function getProducts(filters) {
         if (!sizeMatch) continue;
       }
 
-      // 5. Text search filter
       if (search) {
-        var searchHaystack = (prodName + ' ' + prodDesc + ' ' + prodCat + ' ' + prodBadge).toLowerCase();
+        var searchHaystack = (prodName + ' ' + prodDesc + ' ' + prodCat + ' ' + prodBadge + ' ' + prodNameEn + ' ' + prodDescEn).toLowerCase();
         if (searchHaystack.indexOf(search) === -1) {
           continue;
         }
@@ -376,10 +520,17 @@ function getProducts(filters) {
       filtered.push({
         id: prodId,
         name: prodName,
+        name_en: prodNameEn,
         category: prodCat,
         base_price: basePrice,
         badge: prodBadge,
         description: prodDesc,
+        description_en: prodDescEn,
+        weight_gram: weightGram,
+        marketplace_links: marketplaceLinks,
+        marketplace_links_json: row[COL_PRODUCTS.MARKETPLACE_LINKS_JSON] || '{}',
+        color_images: colorImages,
+        color_images_json: (row.length > COL_PRODUCTS.COLOR_IMAGES_JSON ? row[COL_PRODUCTS.COLOR_IMAGES_JSON] : '') || '{}',
         image_url: prodImage,
         created_at: prodCreatedAt,
         total_stock: totalStock,
@@ -389,13 +540,11 @@ function getProducts(filters) {
       });
     }
 
-    // Sorting
     if (sortBy === 'price_asc') {
       filtered.sort(function(a, b) { return a.base_price - b.base_price; });
     } else if (sortBy === 'price_desc') {
       filtered.sort(function(a, b) { return b.base_price - a.base_price; });
     } else {
-      // Default: newest first (descending by created_at or id)
       filtered.sort(function(a, b) {
         if (b.created_at && a.created_at) {
           return b.created_at.localeCompare(a.created_at);
@@ -404,7 +553,6 @@ function getProducts(filters) {
       });
     }
 
-    // Pagination
     var totalCount = filtered.length;
     var totalPages = Math.ceil(totalCount / limit) || 1;
     if (page < 1) page = 1;
@@ -432,9 +580,7 @@ function getProducts(filters) {
 }
 
 /**
- * Returns full details of a specific product and all its variant stock units.
- * 
- * @param {string} productId
+ * Returns full details of a specific product and all its variant stock units including color images.
  */
 function getProductDetail(productId) {
   try {
@@ -448,13 +594,31 @@ function getProductDetail(productId) {
     for (var i = 0; i < productRows.length; i++) {
       var row = productRows[i];
       if (row[COL_PRODUCTS.ID] === productId) {
+        var mp = {};
+        try {
+          if (row[COL_PRODUCTS.MARKETPLACE_LINKS_JSON]) mp = JSON.parse(row[COL_PRODUCTS.MARKETPLACE_LINKS_JSON]);
+        } catch (e) { mp = {}; }
+
+        var ci = {};
+        try {
+          var rawCi = row.length > COL_PRODUCTS.COLOR_IMAGES_JSON ? row[COL_PRODUCTS.COLOR_IMAGES_JSON] : '';
+          if (rawCi) ci = JSON.parse(rawCi);
+        } catch (e) { ci = {}; }
+
         product = {
           id: row[COL_PRODUCTS.ID],
           name: row[COL_PRODUCTS.NAME],
+          name_en: row[COL_PRODUCTS.NAME_EN] || row[COL_PRODUCTS.NAME],
           category: row[COL_PRODUCTS.CATEGORY],
           base_price: parseFloat(row[COL_PRODUCTS.BASE_PRICE]) || 0,
           badge: row[COL_PRODUCTS.BADGE],
           description: row[COL_PRODUCTS.DESCRIPTION],
+          description_en: row[COL_PRODUCTS.DESCRIPTION_EN] || row[COL_PRODUCTS.DESCRIPTION],
+          weight_gram: parseInt(row[COL_PRODUCTS.WEIGHT_GRAM], 10) || 300,
+          marketplace_links: mp,
+          marketplace_links_json: row[COL_PRODUCTS.MARKETPLACE_LINKS_JSON] || '{}',
+          color_images: ci,
+          color_images_json: (row.length > COL_PRODUCTS.COLOR_IMAGES_JSON ? row[COL_PRODUCTS.COLOR_IMAGES_JSON] : '') || '{}',
           image_url: row[COL_PRODUCTS.IMAGE_URL],
           created_at: row[COL_PRODUCTS.CREATED_AT]
         };
@@ -466,7 +630,6 @@ function getProductDetail(productId) {
       return { success: false, message: 'Produk dengan ID ' + productId + ' tidak ditemukan' };
     }
 
-    // Retrieve corresponding variants
     var variantRows = getSheetDisplayRows(SHEET_NAMES.VARIANTS);
     var variants = [];
     var totalStock = 0;
@@ -476,13 +639,15 @@ function getProductDetail(productId) {
       if (vRow[COL_VARIANTS.PRODUCT_ID] === productId) {
         var stock = parseInt(vRow[COL_VARIANTS.STOCK], 10) || 0;
         totalStock += stock;
+        var vImg = vRow.length > COL_VARIANTS.IMAGE_URL ? (vRow[COL_VARIANTS.IMAGE_URL] || '') : '';
         variants.push({
           variant_id: vRow[COL_VARIANTS.VARIANT_ID],
           product_id: productId,
           sku: vRow[COL_VARIANTS.SKU],
           color: vRow[COL_VARIANTS.COLOR],
           size: vRow[COL_VARIANTS.SIZE],
-          stock: stock
+          stock: stock,
+          image_url: vImg
         });
       }
     }
@@ -508,12 +673,6 @@ function getProductDetail(productId) {
 function getActiveCampaigns() {
   try {
     var rows = getSheetDisplayRows(SHEET_NAMES.CAMPAIGNS);
-    if (rows.length === 0) {
-      try {
-        setupDatabase();
-        rows = getSheetDisplayRows(SHEET_NAMES.CAMPAIGNS);
-      } catch (err) {}
-    }
     var activeCampaigns = [];
 
     for (var i = 0; i < rows.length; i++) {
@@ -559,9 +718,6 @@ function getActiveCampaigns() {
 
 /**
  * Validates a coupon code against minimum spend rules and returns calculated discount.
- * 
- * @param {string} code
- * @param {number} subtotal
  */
 function validateCoupon(code, subtotal) {
   try {
@@ -615,7 +771,6 @@ function validateCoupon(code, subtotal) {
       discountAmount = matchedCoupon.discount_value;
     }
 
-    // Guardrail: discount cannot exceed order subtotal
     if (discountAmount > subtotal) {
       discountAmount = subtotal;
     }
@@ -644,22 +799,11 @@ function validateCoupon(code, subtotal) {
 /**
  * Creates an order, deducts variant stock, records customer history,
  * and generates a unique sequential invoice ID protected by a 10-second LockService mutex.
- * 
- * @param {Object} payload
- *   payload.customer_name {string}
- *   payload.whatsapp_no {string}
- *   payload.items {Array} - [{ product_id, sku, name, color, size, quantity, price, subtotal }]
- *   payload.subtotal {number}
- *   payload.coupon_code {string} (optional)
- *   payload.coupon_discount {number} (optional)
- *   payload.shipping_method {string}
- *   payload.shipping_cost {number} (optional, default 0)
- *   payload.notes {string} (optional)
+ * Supports shipping zone, calculated shipping fee, currency, exchange rate, and UTM attribution.
  */
 function createOrder(payload) {
   var lock = LockService.getScriptLock();
   try {
-    // Acquire mutex with 10 seconds timeout to prevent race conditions
     lock.waitLock(10000);
 
     if (!payload) {
@@ -694,7 +838,7 @@ function createOrder(payload) {
 
     // 1. Verify and deduct inventory for each item
     var variantDataRange = variantsSheet.getDataRange();
-    var variantValues = variantDataRange.getDisplayValues(); // 0 is header
+    var variantValues = variantDataRange.getDisplayValues();
 
     for (var it = 0; it < items.length; it++) {
       var item = items[it];
@@ -705,7 +849,7 @@ function createOrder(payload) {
 
       for (var vr = 1; vr < variantValues.length; vr++) {
         if (variantValues[vr][COL_VARIANTS.SKU] === skuToFind) {
-          foundRowIndex = vr + 1; // 1-based row index in sheet
+          foundRowIndex = vr + 1;
           currentStock = parseInt(variantValues[vr][COL_VARIANTS.STOCK], 10) || 0;
           break;
         }
@@ -725,7 +869,6 @@ function createOrder(payload) {
         };
       }
 
-      // Decrement stock
       var updatedStock = currentStock - requestedQty;
       variantsSheet.getRange(foundRowIndex, COL_VARIANTS.STOCK + 1).setValue(updatedStock);
       variantValues[foundRowIndex - 1][COL_VARIANTS.STOCK] = updatedStock;
@@ -764,7 +907,7 @@ function createOrder(payload) {
         var storedPhone = normalizePhoneNumber(custValues[c][COL_CUSTOMERS.WHATSAPP_NO]);
         if (storedPhone === cleanPhone) {
           customerId = custValues[c][COL_CUSTOMERS.CUSTOMER_ID];
-          existingCustomerRowIdx = c + 2; // 1-based row index
+          existingCustomerRowIdx = c + 2;
           break;
         }
       }
@@ -777,11 +920,9 @@ function createOrder(payload) {
     var timestamp = getTimestamp();
 
     if (existingCustomerRowIdx > 0) {
-      // Increment existing customer order count
       var currentOrderCount = parseInt(customersSheet.getRange(existingCustomerRowIdx, COL_CUSTOMERS.TOTAL_ORDERS + 1).getValue(), 10) || 0;
       customersSheet.getRange(existingCustomerRowIdx, COL_CUSTOMERS.TOTAL_ORDERS + 1).setValue(currentOrderCount + 1);
     } else {
-      // Create new customer ID (CST-XXX)
       var newCustSeq = Math.max(1, customerLastRow);
       customerId = 'CST-' + ('000' + newCustSeq).slice(-3);
       customersSheet.appendRow([
@@ -789,13 +930,18 @@ function createOrder(payload) {
         customerName,
         cleanPhone,
         1,
-        0, // total_spent updated when order status reaches 'Selesai'
+        0,
         timestamp,
         payload.notes || ''
       ]);
     }
 
-    // 4. Append Order record
+    // 4. Append Order record (full 18-column schema v2.0)
+    var shippingZone = payload.shipping_zone || 'JABODETABEK';
+    var currencyCode = payload.currency_code || 'IDR';
+    var exchangeRate = parseFloat(payload.exchange_rate) || 1;
+    var utmSource = payload.utm_source || 'direct';
+
     var newOrderRow = [
       invoiceNo,
       timestamp,
@@ -810,20 +956,22 @@ function createOrder(payload) {
       shippingCost,
       grandTotal,
       '', // payment_proof_url initially empty
-      'Menunggu Pembayaran'
+      'Menunggu Pembayaran',
+      shippingZone,
+      currencyCode,
+      exchangeRate,
+      utmSource
     ];
 
     ordersSheet.appendRow(newOrderRow);
-
-    // 5. Commit all writes immediately
     SpreadsheetApp.flush();
 
-    // 6. Telemetry and audit logging
-    logAudit('Customer', 'Orders', 'Pesanan baru berhasil dibuat: ' + invoiceNo + ' oleh ' + customerName + ' (' + cleanPhone + ')');
+    logAudit('Customer', 'Orders', 'Pesanan baru berhasil dibuat: ' + invoiceNo + ' (' + currencyCode + ' ' + grandTotal + ') oleh ' + customerName);
     logEvent('wa_checkout', {
       invoice_no: invoiceNo,
       grand_total: grandTotal,
-      customer_id: customerId
+      currency: currencyCode,
+      utm_source: utmSource
     });
 
     return {
@@ -831,6 +979,7 @@ function createOrder(payload) {
       invoice_no: invoiceNo,
       customer_id: customerId,
       grand_total: grandTotal,
+      shipping_cost: shippingCost,
       status: 'Menunggu Pembayaran',
       message: 'Pesanan berhasil dibuat dengan nomor invoice ' + invoiceNo
     };
@@ -846,10 +995,6 @@ function createOrder(payload) {
 
 /**
  * Searches and returns order status and line items for self-service customer tracking.
- * Requires matching invoice number and phone number for security.
- * 
- * @param {string} invoiceNo
- * @param {string} whatsappNo
  */
 function lookupOrder(invoiceNo, whatsappNo) {
   try {
@@ -897,7 +1042,11 @@ function lookupOrder(invoiceNo, whatsappNo) {
           shipping_cost: parseFloat(row[COL_ORDERS.SHIPPING_COST]) || 0,
           grand_total: parseFloat(row[COL_ORDERS.GRAND_TOTAL]) || 0,
           payment_proof_url: row[COL_ORDERS.PAYMENT_PROOF_URL],
-          status: row[COL_ORDERS.STATUS]
+          status: row[COL_ORDERS.STATUS],
+          shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
+          currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR',
+          exchange_rate: parseFloat(row[COL_ORDERS.EXCHANGE_RATE]) || 1,
+          utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct'
         };
         break;
       }
@@ -907,7 +1056,6 @@ function lookupOrder(invoiceNo, whatsappNo) {
       return { success: false, message: 'Pesanan dengan nomor invoice ' + cleanInv + ' tidak ditemukan' };
     }
 
-    // Check if any returns were submitted for this invoice
     var returnRows = getSheetDisplayRows(SHEET_NAMES.RETURNS);
     var returnList = [];
 
@@ -939,12 +1087,7 @@ function lookupOrder(invoiceNo, whatsappNo) {
 
 /**
  * Uploads a base64-encoded payment proof receipt to Google Drive,
- * sets public view permissions, and saves the image URL to the Orders sheet.
- * 
- * @param {string} invoiceNo
- * @param {string} base64Data - Raw or data-URI base64 string
- * @param {string} mimeType - e.g. 'image/jpeg', 'image/png'
- * @param {string} fileName - Optional filename
+ * sets public view permissions, and saves direct embed lh3 URL to the Orders sheet.
  */
 function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
   try {
@@ -967,7 +1110,7 @@ function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
 
     for (var i = 0; i < invoiceValues.length; i++) {
       if (String(invoiceValues[i][0]).trim().toUpperCase() === cleanInv) {
-        targetRowIndex = i + 2; // 1-based index
+        targetRowIndex = i + 2;
         break;
       }
     }
@@ -976,7 +1119,6 @@ function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
       return { success: false, message: 'Pesanan ' + cleanInv + ' tidak ditemukan' };
     }
 
-    // Strip Data URI scheme if present
     var cleanBase64 = base64Data;
     if (cleanBase64.indexOf(',') > -1) {
       cleanBase64 = cleanBase64.split(',')[1];
@@ -994,39 +1136,33 @@ function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
 
     var blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
 
-    // Save to Google Drive
     var settings = loadSettingsDictionary();
-    var folderName = settings['DRIVE_FOLDER_NAME'] || 'ARYA_ECOMMERCE_PAYMENTS';
-    var targetFolder;
+    var folderName = settings['DRIVE_FOLDER_NAME'] || 'ARYASTORE_PAYMENTS';
 
     if (typeof DriveApp !== 'undefined') {
       var folderIterator = DriveApp.getFoldersByName(folderName);
-      if (folderIterator.hasNext()) {
-        targetFolder = folderIterator.next();
-      } else {
-        targetFolder = DriveApp.createFolder(folderName);
-      }
+      var targetFolder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(folderName);
 
       var driveFile = targetFolder.createFile(blob);
       driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      var fileUrl = driveFile.getUrl();
+      var fileId = driveFile.getId();
+      var directEmbedUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1200';
 
-      // Write URL and update status to 'Bukti Diupload'
-      ordersSheet.getRange(targetRowIndex, COL_ORDERS.PAYMENT_PROOF_URL + 1).setValue(fileUrl);
+      ordersSheet.getRange(targetRowIndex, COL_ORDERS.PAYMENT_PROOF_URL + 1).setValue(directEmbedUrl);
       ordersSheet.getRange(targetRowIndex, COL_ORDERS.STATUS + 1).setValue('Bukti Diupload');
-
       SpreadsheetApp.flush();
 
-      logAudit('Customer', 'Orders', 'Bukti transfer diunggah untuk invoice ' + cleanInv + ' (Drive File ID: ' + driveFile.getId() + ')');
+      logAudit('Customer', 'Orders', 'Bukti transfer diunggah untuk invoice ' + cleanInv + ' (Drive File ID: ' + fileId + ')');
 
       return {
         success: true,
-        url: fileUrl,
+        fileId: fileId,
+        url: directEmbedUrl,
+        driveViewUrl: driveFile.getUrl(),
         status: 'Bukti Diupload',
         message: 'Bukti pembayaran berhasil diunggah. Tim admin akan segera memverifikasi pembayaran Anda.'
       };
     } else {
-      // Fallback simulation mode
       var simulatedUrl = 'https://drive.google.com/file/d/simulated_' + cleanInv + '/view';
       ordersSheet.getRange(targetRowIndex, COL_ORDERS.PAYMENT_PROOF_URL + 1).setValue(simulatedUrl);
       ordersSheet.getRange(targetRowIndex, COL_ORDERS.STATUS + 1).setValue('Bukti Diupload');
@@ -1034,6 +1170,7 @@ function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
 
       return {
         success: true,
+        fileId: 'simulated_' + cleanInv,
         url: simulatedUrl,
         status: 'Bukti Diupload',
         message: 'Bukti pembayaran tercatat (Mode Simulasi).'
@@ -1048,13 +1185,93 @@ function uploadPaymentProof(invoiceNo, base64Data, mimeType, fileName) {
 }
 
 /**
- * Submits a size exchange or return request, generating sequential RTR-YYYYMM-XXX ID via mutex.
+ * Uploads a product or variant color photograph directly to Google Drive (folder ARYASTORE_PRODUCTS).
+ * Returns direct embeddable lh3.googleusercontent.com URLs for reliable cross-origin rendering.
+ * Protected by RBAC (Super Admin, Store Manager).
  * 
- * @param {Object} payload
- *   payload.invoice_no {string}
- *   payload.customer_name {string}
- *   payload.reason {string}
- *   payload.requested_size {string}
+ * @param {string} base64Data
+ * @param {string} mimeType
+ * @param {string} fileName
+ * @param {string} productId
+ * @param {string} colorLabel
+ * @param {string} role
+ */
+function uploadProductImage(base64Data, mimeType, fileName, productId, colorLabel, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Pengunggahan foto produk hanya untuk Admin/Manager.' };
+    }
+
+    if (!base64Data) {
+      return { success: false, message: 'Data foto base64 wajib disertakan' };
+    }
+
+    var cleanBase64 = base64Data;
+    if (cleanBase64.indexOf(',') > -1) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
+
+    mimeType = mimeType || 'image/jpeg';
+    var ext = mimeType.indexOf('png') > -1 ? '.png' : (mimeType.indexOf('webp') > -1 ? '.webp' : '.jpg');
+    var safeColor = (colorLabel || 'main').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    var autoName = (productId || 'PRD') + '_' + safeColor + '_' + new Date().getTime() + ext;
+    fileName = fileName || autoName;
+
+    var decodedBytes;
+    try {
+      decodedBytes = Utilities.base64Decode(cleanBase64);
+    } catch (e) {
+      return { success: false, message: 'Format base64 gambar tidak valid' };
+    }
+
+    var blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
+
+    var settings = loadSettingsDictionary();
+    var folderName = settings['DRIVE_PRODUCTS_FOLDER_NAME'] || 'ARYASTORE_PRODUCTS';
+
+    if (typeof DriveApp !== 'undefined') {
+      var folderIterator = DriveApp.getFoldersByName(folderName);
+      var targetFolder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(folderName);
+
+      var driveFile = targetFolder.createFile(blob);
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      var fileId = driveFile.getId();
+
+      var directImageUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+      var directThumbUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+
+      logAudit(role, 'Products', 'Foto produk baru diunggah ke Google Drive: ' + fileName + ' (ID: ' + fileId + ', Warna: ' + (colorLabel || 'Utama') + ')');
+
+      return {
+        success: true,
+        fileId: fileId,
+        imageUrl: directImageUrl,
+        thumbnailUrl: directThumbUrl,
+        driveViewUrl: driveFile.getUrl(),
+        message: 'Foto berhasil diunggah ke Google Drive (' + folderName + ').'
+      };
+    } else {
+      var simId = 'sim_prod_' + (productId || 'PRD') + '_' + new Date().getTime();
+      var simUrl = 'https://lh3.googleusercontent.com/d/' + simId + '=w1000';
+      return {
+        success: true,
+        fileId: simId,
+        imageUrl: simUrl,
+        thumbnailUrl: simUrl,
+        driveViewUrl: 'https://drive.google.com/file/d/' + simId + '/view',
+        message: 'Foto tercatat (Mode Simulasi).'
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal mengunggah foto produk: ' + err.toString()
+    };
+  }
+}
+
+/**
+ * Submits a size exchange or return request, generating sequential RTR-YYYYMM-XXX ID via mutex.
  */
 function submitReturn(payload) {
   var lock = LockService.getScriptLock();
@@ -1072,7 +1289,6 @@ function submitReturn(payload) {
     var returnsSheet = ss.getSheetByName(SHEET_NAMES.RETURNS);
     if (!returnsSheet) return { success: false, message: 'Sheet Returns tidak ditemukan' };
 
-    // Sequential Mutex ID Generation for Return (RTR-YYYYMM-XXX)
     var nowStr = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMM');
     var targetPrefix = 'RTR-' + nowStr + '-';
     var maxSeq = 0;
@@ -1105,7 +1321,6 @@ function submitReturn(payload) {
     ]);
 
     SpreadsheetApp.flush();
-
     logAudit('Customer', 'Returns', 'Pengajuan retur baru: ' + returnId + ' untuk invoice ' + cleanInv);
 
     return {
@@ -1125,10 +1340,7 @@ function submitReturn(payload) {
 }
 
 /**
- * Logs a storefront telemetry event for the 4-stage conversion funnel.
- * 
- * @param {string} eventName - 'product_view', 'add_to_cart', 'wa_checkout', 'order_completed'
- * @param {Object|string} eventData
+ * Logs a storefront telemetry event for the 4-stage conversion funnel and ad attribution.
  */
 function logEvent(eventName, eventData) {
   try {
@@ -1153,14 +1365,654 @@ function logEvent(eventName, eventData) {
 }
 
 // ================================================================================
-// 5. RBAC & ADMIN DASHBOARD ENDPOINTS
+// 5. LIVE SHIPPING INTEGRATION ENDPOINTS (RajaOngkir + Biteship + Matrix)
+// ================================================================================
+
+/**
+ * Searches shipping destinations across RajaOngkir Komerce or Biteship API with safe matrix fallback.
+ */
+function searchShippingDestination(query, destinationType, providerPref) {
+  try {
+    query = (query || '').trim();
+    if (!query) {
+      return { success: true, provider: 'NONE', destinations: [] };
+    }
+
+    destinationType = destinationType || 'domestic';
+    providerPref = providerPref || 'AUTO';
+
+    var settings = loadSettingsDictionary();
+    var rajaKey = (settings['RAJAONGKIR_API_KEY'] || '').trim();
+    var biteshipKey = (settings['BITESHIP_API_KEY'] || '').trim();
+    var globalPref = settings['SHIPPING_PROVIDER'] || 'AUTO';
+
+    if (providerPref === 'AUTO') {
+      providerPref = globalPref;
+    }
+
+    var canUseRaja = (providerPref === 'RAJAONGKIR' || providerPref === 'AUTO') && rajaKey !== '';
+    if (canUseRaja && typeof UrlFetchApp !== 'undefined') {
+      try {
+        var rajaUrl = destinationType === 'international'
+          ? 'https://rajaongkir.komerce.id/api/v1/destination/international-destination?search=' + encodeURIComponent(query) + '&limit=10'
+          : 'https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search=' + encodeURIComponent(query) + '&limit=10';
+
+        var resp = UrlFetchApp.fetch(rajaUrl, {
+          method: 'get',
+          headers: { 'key': rajaKey },
+          muteHttpExceptions: true
+        });
+
+        if (resp.getResponseCode() === 200) {
+          var json = JSON.parse(resp.getContentText());
+          var items = json.data || [];
+          var mapped = [];
+
+          for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            var label = it.label || (it.subdistrict_name ? (it.subdistrict_name + ', ' + it.city_name + ', ' + it.province_name) : (it.country_name || it.name));
+            mapped.push({
+              id: String(it.id || it.subdistrict_id || it.city_id || it.code),
+              label: label,
+              postalCode: it.zip_code || it.postal_code || '',
+              countryCode: destinationType === 'international' ? (it.code || it.country_code || 'INTL') : 'ID',
+              provider: 'RAJAONGKIR'
+            });
+          }
+
+          if (mapped.length > 0) {
+            return {
+              success: true,
+              provider: 'RAJAONGKIR',
+              destinations: mapped
+            };
+          }
+        }
+      } catch (errRaja) {
+        if (typeof Logger !== 'undefined') Logger.log('RajaOngkir search error: ' + errRaja.toString());
+      }
+    }
+
+    var canUseBiteship = (providerPref === 'BITESHIP' || providerPref === 'AUTO') && biteshipKey !== '';
+    if (canUseBiteship && typeof UrlFetchApp !== 'undefined') {
+      try {
+        var countryFilter = destinationType === 'international' ? 'ALL' : 'ID';
+        var biteUrl = 'https://api.biteship.com/v1/maps/areas?countries=' + countryFilter + '&input=' + encodeURIComponent(query) + '&type=single';
+
+        var respBite = UrlFetchApp.fetch(biteUrl, {
+          method: 'get',
+          headers: { 'Authorization': 'Bearer ' + biteshipKey },
+          muteHttpExceptions: true
+        });
+
+        if (respBite.getResponseCode() === 200) {
+          var jsonBite = JSON.parse(respBite.getContentText());
+          var areas = jsonBite.areas || [];
+          var mappedBite = [];
+
+          for (var j = 0; j < areas.length; j++) {
+            var ar = areas[j];
+            mappedBite.push({
+              id: String(ar.id),
+              label: ar.name,
+              postalCode: String(ar.postal_code || ''),
+              countryCode: ar.country_code || (destinationType === 'international' ? 'INTL' : 'ID'),
+              provider: 'BITESHIP'
+            });
+          }
+
+          if (mappedBite.length > 0) {
+            return {
+              success: true,
+              provider: 'BITESHIP',
+              destinations: mappedBite
+            };
+          }
+        }
+      } catch (errBite) {
+        if (typeof Logger !== 'undefined') Logger.log('Biteship search error: ' + errBite.toString());
+      }
+    }
+
+    var matrixDestinations = [];
+    if (destinationType === 'international') {
+      var intlCatalog = [
+        { id: 'SG', label: 'Singapura (Singapore)', postalCode: '048581', countryCode: 'SG' },
+        { id: 'MY', label: 'Malaysia (Kuala Lumpur)', postalCode: '50088', countryCode: 'MY' },
+        { id: 'AU', label: 'Australia (Sydney, NSW)', postalCode: '2000', countryCode: 'AU' },
+        { id: 'JP', label: 'Jepang (Tokyo)', postalCode: '100-0001', countryCode: 'JP' },
+        { id: 'US', label: 'Amerika Serikat (California / New York)', postalCode: '90001', countryCode: 'US' },
+        { id: 'GB', label: 'Inggris Raya (London)', postalCode: 'EC1A 1BB', countryCode: 'GB' },
+        { id: 'AE', label: 'Uni Emirat Arab (Dubai)', postalCode: '00000', countryCode: 'AE' },
+        { id: 'DE', label: 'Jerman (Berlin)', postalCode: '10115', countryCode: 'DE' }
+      ];
+
+      for (var k = 0; k < intlCatalog.length; k++) {
+        var itl = intlCatalog[k];
+        if (itl.label.toLowerCase().indexOf(query.toLowerCase()) > -1 || itl.countryCode.toLowerCase().indexOf(query.toLowerCase()) > -1) {
+          matrixDestinations.push({
+            id: itl.id,
+            label: itl.label,
+            postalCode: itl.postalCode,
+            countryCode: itl.countryCode,
+            provider: 'MATRIX'
+          });
+        }
+      }
+    } else {
+      var domCatalog = [
+        { id: '17470', label: 'Jakarta Selatan, DKI Jakarta', postalCode: '12190', countryCode: 'ID' },
+        { id: '17460', label: 'Jakarta Pusat, DKI Jakarta', postalCode: '10110', countryCode: 'ID' },
+        { id: '17450', label: 'Jakarta Barat, DKI Jakarta', postalCode: '11470', countryCode: 'ID' },
+        { id: '17480', label: 'Jakarta Timur, DKI Jakarta', postalCode: '13330', countryCode: 'ID' },
+        { id: '17490', label: 'Jakarta Utara, DKI Jakarta', postalCode: '14240', countryCode: 'ID' },
+        { id: '17500', label: 'Kota Bandung, Jawa Barat', postalCode: '40111', countryCode: 'ID' },
+        { id: '17600', label: 'Kota Surabaya, Jawa Timur', postalCode: '60111', countryCode: 'ID' },
+        { id: '17700', label: 'Kota Semarang, Jawa Tengah', postalCode: '50111', countryCode: 'ID' },
+        { id: '17800', label: 'Kota Yogyakarta, DI Yogyakarta', postalCode: '55111', countryCode: 'ID' },
+        { id: '17900', label: 'Kota Medan, Sumatera Utara', postalCode: '20111', countryCode: 'ID' },
+        { id: '18000', label: 'Kota Denpasar, Bali', postalCode: '80111', countryCode: 'ID' },
+        { id: '18100', label: 'Kota Makassar, Sulawesi Selatan', postalCode: '90111', countryCode: 'ID' },
+        { id: '18200', label: 'Kota Palembang, Sumatera Selatan', postalCode: '30111', countryCode: 'ID' },
+        { id: '18300', label: 'Kota Balikpapan, Kalimantan Timur', postalCode: '76111', countryCode: 'ID' }
+      ];
+
+      for (var d = 0; d < domCatalog.length; d++) {
+        var ctd = domCatalog[d];
+        if (ctd.label.toLowerCase().indexOf(query.toLowerCase()) > -1 || ctd.postalCode.indexOf(query) > -1) {
+          matrixDestinations.push({
+            id: ctd.id,
+            label: ctd.label,
+            postalCode: ctd.postalCode,
+            countryCode: ctd.countryCode,
+            provider: 'MATRIX'
+          });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      provider: 'MATRIX',
+      destinations: matrixDestinations
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal mencari destinasi pengiriman: ' + err.toString(),
+      destinations: []
+    };
+  }
+}
+
+/**
+ * Calculates live shipping rates using RajaOngkir, Biteship, or Matrix fallback.
+ * Applies domestic Free Shipping threshold rules cleanly.
+ */
+function calculateLiveShippingRates(payload) {
+  try {
+    payload = payload || {};
+    var destinationType = payload.destinationType || 'domestic';
+    var destinationId = payload.destinationId || '';
+    var destinationPostalCode = payload.destinationPostalCode || '';
+    var countryCode = payload.countryCode || (destinationType === 'international' ? 'SG' : 'ID');
+    var weightGram = Math.max(200, parseInt(payload.weightGram, 10) || 500);
+    var subtotalIDR = parseFloat(payload.subtotalIDR) || 0;
+    var providerPref = payload.providerPref || 'AUTO';
+    var items = payload.items || [];
+
+    var settings = loadSettingsDictionary();
+    var rajaKey = (settings['RAJAONGKIR_API_KEY'] || '').trim();
+    var biteshipKey = (settings['BITESHIP_API_KEY'] || '').trim();
+    var globalPref = settings['SHIPPING_PROVIDER'] || 'AUTO';
+    var freeThreshold = parseFloat(settings['FREE_SHIPPING_THRESHOLD_IDR']) || 500000;
+
+    if (providerPref === 'AUTO') {
+      providerPref = globalPref;
+    }
+
+    var isDomestic = destinationType !== 'international' && (countryCode === 'ID' || !countryCode);
+    var isFreeShipping = isDomestic && (subtotalIDR >= freeThreshold);
+
+    var canUseRaja = (providerPref === 'RAJAONGKIR' || providerPref === 'AUTO') && rajaKey !== '' && destinationId !== '';
+    if (canUseRaja && typeof UrlFetchApp !== 'undefined') {
+      try {
+        var originId = settings['RAJAONGKIR_ORIGIN_ID'] || '17470';
+        var couriers = isDomestic
+          ? (settings['RAJAONGKIR_COURIERS_DOMESTIC'] || 'jne:sicepat:jnt:pos:tiki:anteraja')
+          : (settings['RAJAONGKIR_COURIERS_INTL'] || 'pos:jne:tiki');
+
+        var calcUrl = isDomestic
+          ? 'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost'
+          : 'https://rajaongkir.komerce.id/api/v1/calculate/international-cost';
+
+        var formBody = 'origin=' + encodeURIComponent(originId) +
+          '&destination=' + encodeURIComponent(destinationId) +
+          '&weight=' + encodeURIComponent(weightGram) +
+          '&courier=' + encodeURIComponent(couriers);
+
+        var resp = UrlFetchApp.fetch(calcUrl, {
+          method: 'post',
+          headers: {
+            'key': rajaKey,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          payload: formBody,
+          muteHttpExceptions: true
+        });
+
+        if (resp.getResponseCode() === 200) {
+          var rajaData = JSON.parse(resp.getContentText());
+          var rawList = rajaData.data || [];
+          var rates = [];
+
+          for (var i = 0; i < rawList.length; i++) {
+            var courierGroup = rawList[i];
+            var cCode = courierGroup.code || courierGroup.courier_code || 'COURIER';
+            var cName = courierGroup.name || courierGroup.courier_name || cCode.toUpperCase();
+            var costs = courierGroup.costs || [];
+
+            for (var c = 0; c < costs.length; c++) {
+              var sCost = costs[c];
+              var service = sCost.service || sCost.service_name || 'Standard';
+              var priceVal = 0;
+              var etdVal = '-';
+
+              if (sCost.cost && sCost.cost.length > 0) {
+                priceVal = parseFloat(sCost.cost[0].value) || 0;
+                etdVal = sCost.cost[0].etd ? (sCost.cost[0].etd + ' Hari') : '-';
+              } else if (sCost.price) {
+                priceVal = parseFloat(sCost.price) || 0;
+                etdVal = sCost.etd ? (sCost.etd + ' Hari') : '-';
+              }
+
+              rates.push({
+                id: 'ro_' + cCode + '_' + service.replace(/\s+/g, '_'),
+                courierCode: cCode,
+                courierName: cName,
+                serviceName: service,
+                etd: etdVal,
+                costIDR: priceVal,
+                effectiveCostIDR: isFreeShipping ? 0 : priceVal,
+                isFreeShipping: isFreeShipping,
+                provider: 'RAJAONGKIR'
+              });
+            }
+          }
+
+          if (rates.length > 0) {
+            return {
+              success: true,
+              source: 'RAJAONGKIR',
+              isFreeShipping: isFreeShipping,
+              weightGram: weightGram,
+              rates: rates
+            };
+          }
+        }
+      } catch (errRajaCalc) {
+        if (typeof Logger !== 'undefined') Logger.log('RajaOngkir calc error: ' + errRajaCalc.toString());
+      }
+    }
+
+    var canUseBiteship = (providerPref === 'BITESHIP' || providerPref === 'AUTO') && biteshipKey !== '';
+    if (canUseBiteship && typeof UrlFetchApp !== 'undefined') {
+      try {
+        var biteOriginPostal = settings['BITESHIP_ORIGIN_POSTAL_CODE'] || '12190';
+        var biteCouriers = settings['BITESHIP_COURIERS'] || 'jne,jnt,sicepat,paxel,anteraja,pos,dhl,tlx,rayspeed';
+
+        var biteItems = [];
+        if (items && items.length > 0) {
+          for (var itm = 0; itm < items.length; itm++) {
+            var it = items[itm];
+            biteItems.push({
+              name: it.name_en || it.name || 'Fashion Apparel',
+              description: 'Apparel Garment',
+              value: parseFloat(it.price) || 100000,
+              quantity: parseInt(it.quantity, 10) || 1,
+              weight: parseInt(it.weight_gram, 10) || 300
+            });
+          }
+        } else {
+          biteItems.push({
+            name: 'Fashion Garment',
+            description: 'Apparel Garment',
+            value: subtotalIDR || 100000,
+            quantity: 1,
+            weight: weightGram
+          });
+        }
+
+        var biteBody = {
+          origin_postal_code: parseInt(biteOriginPostal, 10) || 12190,
+          couriers: biteCouriers,
+          items: biteItems
+        };
+
+        if (destinationPostalCode && destinationPostalCode.length >= 5) {
+          biteBody.destination_postal_code = parseInt(destinationPostalCode, 10);
+        } else if (destinationId && destinationId.length > 10) {
+          biteBody.destination_area_id = destinationId;
+        }
+
+        var respBite = UrlFetchApp.fetch('https://api.biteship.com/v1/rates/couriers', {
+          method: 'post',
+          headers: {
+            'Authorization': 'Bearer ' + biteshipKey,
+            'Content-Type': 'application/json'
+          },
+          payload: JSON.stringify(biteBody),
+          muteHttpExceptions: true
+        });
+
+        if (respBite.getResponseCode() === 200) {
+          var biteJson = JSON.parse(respBite.getContentText());
+          var pricing = biteJson.pricing || [];
+          var bRates = [];
+
+          for (var p = 0; p < pricing.length; p++) {
+            var pr = pricing[p];
+            var pPrice = parseFloat(pr.price) || 0;
+            bRates.push({
+              id: 'bs_' + pr.company + '_' + (pr.courier_service_code || pr.courier_service_name).replace(/\s+/g, '_'),
+              courierCode: pr.company,
+              courierName: pr.courier_name,
+              serviceName: pr.courier_service_name,
+              etd: pr.duration || '-',
+              costIDR: pPrice,
+              effectiveCostIDR: isFreeShipping ? 0 : pPrice,
+              isFreeShipping: isFreeShipping,
+              provider: 'BITESHIP'
+            });
+          }
+
+          if (bRates.length > 0) {
+            return {
+              success: true,
+              source: 'BITESHIP',
+              isFreeShipping: isFreeShipping,
+              weightGram: weightGram,
+              rates: bRates
+            };
+          }
+        }
+      } catch (errBiteCalc) {
+        if (typeof Logger !== 'undefined') Logger.log('Biteship calc error: ' + errBiteCalc.toString());
+      }
+    }
+
+    var matrixRatesJson = settings['SHIPPING_RATES_JSON'] || '';
+    var zoneMatrix = null;
+    try {
+      if (matrixRatesJson) zoneMatrix = JSON.parse(matrixRatesJson);
+    } catch (e) {
+      zoneMatrix = null;
+    }
+
+    if (!zoneMatrix || !zoneMatrix.zones) {
+      zoneMatrix = {
+        zones: {
+          JABODETABEK: { flat: 15000, perKg: 10000 },
+          JAWA_BALI: { flat: 25000, perKg: 15000 },
+          LUAR_JAWA: { flat: 45000, perKg: 25000 },
+          INTERNATIONAL_SEA: { flat: 150000, perKg: 80000 },
+          INTERNATIONAL_GLOBAL: { flat: 350000, perKg: 200000 }
+        }
+      };
+    }
+
+    var weightKg = Math.max(1, Math.ceil(weightGram / 1000));
+    var matrixRates = [];
+
+    if (destinationType === 'international') {
+      var isSea = ['SG', 'MY', 'TH', 'VN', 'PH'].indexOf(countryCode.toUpperCase()) > -1;
+      var intlCfg = isSea ? zoneMatrix.zones.INTERNATIONAL_SEA : zoneMatrix.zones.INTERNATIONAL_GLOBAL;
+      var baseIntlCost = (intlCfg.flat || 200000) + Math.max(0, weightKg - 1) * (intlCfg.perKg || 100000);
+
+      matrixRates = [
+        {
+          id: 'mat_intl_ems',
+          courierCode: 'POS_EMS',
+          courierName: 'Pos Indonesia Express Mail Service (EMS)',
+          serviceName: 'Express Air Mail',
+          etd: isSea ? '3-5 Hari Kerja' : '5-8 Hari Kerja',
+          costIDR: baseIntlCost,
+          effectiveCostIDR: baseIntlCost,
+          isFreeShipping: false,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_intl_aramex',
+          courierCode: 'ARAMEX',
+          courierName: 'Aramex International Priority',
+          serviceName: 'Priority Express',
+          etd: isSea ? '2-4 Hari Kerja' : '4-7 Hari Kerja',
+          costIDR: baseIntlCost + 50000,
+          effectiveCostIDR: baseIntlCost + 50000,
+          isFreeShipping: false,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_intl_dhl',
+          courierCode: 'DHL',
+          courierName: 'DHL Express Worldwide',
+          serviceName: 'Worldwide Express Air',
+          etd: isSea ? '2-3 Hari Kerja' : '3-5 Hari Kerja',
+          costIDR: baseIntlCost + 150000,
+          effectiveCostIDR: baseIntlCost + 150000,
+          isFreeShipping: false,
+          provider: 'MATRIX'
+        }
+      ];
+    } else {
+      var domCfg = zoneMatrix.zones.JABODETABEK;
+      if (destinationId === '18000' || destinationId === '17500' || destinationId === '17600' || destinationId === '17700' || destinationId === '17800') {
+        domCfg = zoneMatrix.zones.JAWA_BALI;
+      } else if (destinationId === '17900' || destinationId === '18100' || destinationId === '18200' || destinationId === '18300') {
+        domCfg = zoneMatrix.zones.LUAR_JAWA;
+      }
+
+      var baseDomCost = (domCfg.flat || 15000) + Math.max(0, weightKg - 1) * (domCfg.perKg || 10000);
+
+      matrixRates = [
+        {
+          id: 'mat_dom_jne_reg',
+          courierCode: 'JNE',
+          courierName: 'JNE Express',
+          serviceName: 'Reguler (REG)',
+          etd: '2-3 Hari Kerja',
+          costIDR: baseDomCost,
+          effectiveCostIDR: isFreeShipping ? 0 : baseDomCost,
+          isFreeShipping: isFreeShipping,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_dom_sicepat_reg',
+          courierCode: 'SICEPAT',
+          courierName: 'SiCepat Ekspres',
+          serviceName: 'SiUntung Reguler',
+          etd: '2-3 Hari Kerja',
+          costIDR: baseDomCost,
+          effectiveCostIDR: isFreeShipping ? 0 : baseDomCost,
+          isFreeShipping: isFreeShipping,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_dom_jnt_ez',
+          courierCode: 'JNT',
+          courierName: 'J&T Express',
+          serviceName: 'EZ Reguler',
+          etd: '2-3 Hari Kerja',
+          costIDR: baseDomCost,
+          effectiveCostIDR: isFreeShipping ? 0 : baseDomCost,
+          isFreeShipping: isFreeShipping,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_dom_jne_yes',
+          courierCode: 'JNE',
+          courierName: 'JNE Express',
+          serviceName: 'Yakin Esok Sampai (YES)',
+          etd: '1 Hari Kerja (Next Day)',
+          costIDR: baseDomCost + 15000,
+          effectiveCostIDR: isFreeShipping ? 15000 : (baseDomCost + 15000),
+          isFreeShipping: isFreeShipping,
+          provider: 'MATRIX'
+        },
+        {
+          id: 'mat_dom_store_pickup',
+          courierCode: 'STORE',
+          courierName: 'AryaStore Studio Pickup',
+          serviceName: 'Ambil di Studio Langsung',
+          etd: 'Jam Kerja Studio (10.00-20.00)',
+          costIDR: 0,
+          effectiveCostIDR: 0,
+          isFreeShipping: true,
+          provider: 'MATRIX'
+        }
+      ];
+    }
+
+    return {
+      success: true,
+      source: 'MATRIX',
+      fallbackReason: 'Menggunakan perhitungan matriks zona internal toko.',
+      isFreeShipping: isFreeShipping,
+      weightGram: weightGram,
+      rates: matrixRates
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal menghitung ongkir: ' + err.toString(),
+      rates: []
+    };
+  }
+}
+
+/**
+ * Tests live API connection to RajaOngkir Komerce or Biteship API.
+ * Strictly requires Super Admin authorization.
+ */
+function testShippingProvider(provider, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin'])) {
+      return { success: false, message: 'Otorisasi ditolak. Pengujian provider ekspedisi hanya untuk Super Admin.' };
+    }
+
+    provider = (provider || 'RAJAONGKIR').toUpperCase();
+    var settings = loadSettingsDictionary();
+
+    if (provider === 'RAJAONGKIR') {
+      var rajaKey = (settings['RAJAONGKIR_API_KEY'] || '').trim();
+      if (!rajaKey) {
+        return {
+          success: false,
+          provider: 'RAJAONGKIR',
+          message: 'RAJAONGKIR_API_KEY belum dikonfigurasi pada menu Pengaturan Toko.'
+        };
+      }
+
+      if (typeof UrlFetchApp === 'undefined') {
+        return {
+          success: true,
+          provider: 'RAJAONGKIR',
+          statusCode: 200,
+          latencyMs: 120,
+          message: 'Koneksi RajaOngkir Komerce tervalidasi (Mode Simulasi).'
+        };
+      }
+
+      var startRaja = new Date().getTime();
+      var respRaja = UrlFetchApp.fetch('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search=Jakarta&limit=1', {
+        headers: { 'key': rajaKey },
+        muteHttpExceptions: true
+      });
+      var latencyRaja = new Date().getTime() - startRaja;
+      var statusRaja = respRaja.getResponseCode();
+
+      if (statusRaja === 200) {
+        return {
+          success: true,
+          provider: 'RAJAONGKIR',
+          statusCode: statusRaja,
+          latencyMs: latencyRaja,
+          message: 'Koneksi RajaOngkir Komerce v2 berhasil terhubung (' + latencyRaja + ' ms).'
+        };
+      } else {
+        return {
+          success: false,
+          provider: 'RAJAONGKIR',
+          statusCode: statusRaja,
+          latencyMs: latencyRaja,
+          message: 'HTTP ' + statusRaja + ': ' + respRaja.getContentText().substring(0, 150)
+        };
+      }
+    } else if (provider === 'BITESHIP') {
+      var biteshipKey = (settings['BITESHIP_API_KEY'] || '').trim();
+      if (!biteshipKey) {
+        return {
+          success: false,
+          provider: 'BITESHIP',
+          message: 'BITESHIP_API_KEY belum dikonfigurasi pada menu Pengaturan Toko.'
+        };
+      }
+
+      if (typeof UrlFetchApp === 'undefined') {
+        return {
+          success: true,
+          provider: 'BITESHIP',
+          statusCode: 200,
+          latencyMs: 140,
+          message: 'Koneksi Biteship API tervalidasi (Mode Simulasi).'
+        };
+      }
+
+      var startBite = new Date().getTime();
+      var respBite = UrlFetchApp.fetch('https://api.biteship.com/v1/maps/areas?countries=ID&input=Jakarta&type=single', {
+        headers: { 'Authorization': 'Bearer ' + biteshipKey },
+        muteHttpExceptions: true
+      });
+      var latencyBite = new Date().getTime() - startBite;
+      var statusBite = respBite.getResponseCode();
+
+      if (statusBite === 200) {
+        return {
+          success: true,
+          provider: 'BITESHIP',
+          statusCode: statusBite,
+          latencyMs: latencyBite,
+          message: 'Koneksi Biteship API v1 berhasil terhubung (' + latencyBite + ' ms).'
+        };
+      } else {
+        return {
+          success: false,
+          provider: 'BITESHIP',
+          statusCode: statusBite,
+          latencyMs: latencyBite,
+          message: 'HTTP ' + statusBite + ': ' + respBite.getContentText().substring(0, 150)
+        };
+      }
+    }
+
+    return {
+      success: false,
+      message: 'Provider pengiriman tidak dikenal: ' + provider
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal menguji provider ekspedisi: ' + err.toString()
+    };
+  }
+}
+
+// ================================================================================
+// 6. RBAC & ADMIN DASHBOARD ENDPOINTS
 // ================================================================================
 
 /**
  * Authenticates admin operator using 4-digit PIN stored in Settings.
- * Returns role name and authorized capabilities upon match.
- * 
- * @param {string} pin
  */
 function adminLogin(pin) {
   try {
@@ -1210,12 +2062,9 @@ function adminLogin(pin) {
   }
 }
 
-/**
- * Checks if the caller role is authorized to perform the given action.
- */
 function verifyRoleAuthorization(role, allowedRoles) {
   if (!role) return false;
-  if (role === 'Super Admin') return true; // Super Admin has unrestricted access
+  if (role === 'Super Admin') return true;
   for (var i = 0; i < allowedRoles.length; i++) {
     if (allowedRoles[i] === role) return true;
   }
@@ -1257,12 +2106,10 @@ function getAdminDashboard() {
         statusCounts[status]++;
       }
 
-      // Count revenue for completed transactions
       if (status === 'Selesai' || status === 'Diproses' || status === 'Dikirim') {
         totalRevenue += grandTotal;
       }
 
-      // Sum units sold
       if (status === 'Selesai') {
         try {
           var items = JSON.parse(row[COL_ORDERS.ITEMS_JSON]);
@@ -1272,7 +2119,6 @@ function getAdminDashboard() {
         } catch (e) {}
       }
 
-      // Keep up to 10 latest orders for table preview
       if (recentOrders.length < 10) {
         recentOrders.push({
           invoice_no: row[COL_ORDERS.INVOICE_NO],
@@ -1281,12 +2127,13 @@ function getAdminDashboard() {
           whatsapp_no: row[COL_ORDERS.WHATSAPP_NO],
           grand_total: grandTotal,
           status: status,
-          payment_proof_url: row[COL_ORDERS.PAYMENT_PROOF_URL]
+          payment_proof_url: row[COL_ORDERS.PAYMENT_PROOF_URL],
+          shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
+          currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR'
         });
       }
     }
 
-    // Count variants with low stock (< 5 units)
     for (var v = 0; v < variantRows.length; v++) {
       var stock = parseInt(variantRows[v][COL_VARIANTS.STOCK], 10) || 0;
       if (stock < 5) {
@@ -1316,12 +2163,6 @@ function getAdminDashboard() {
 
 /**
  * Returns filtered and searched orders for Order Manager module.
- * 
- * @param {Object} filters
- *   filters.status {string} - 'All' or specific status
- *   filters.search {string} - Substring search across invoice, customer, phone
- *   filters.page {number}
- *   filters.limit {number}
  */
 function getOrders(filters) {
   try {
@@ -1334,7 +2175,7 @@ function getOrders(filters) {
     var rows = getSheetDisplayRows(SHEET_NAMES.ORDERS);
     var filtered = [];
 
-    for (var i = rows.length - 1; i >= 0; i--) { // Newest orders first
+    for (var i = rows.length - 1; i >= 0; i--) {
       var row = rows[i];
       var rStatus = row[COL_ORDERS.STATUS];
       var rInv = row[COL_ORDERS.INVOICE_NO];
@@ -1371,7 +2212,11 @@ function getOrders(filters) {
         shipping_cost: parseFloat(row[COL_ORDERS.SHIPPING_COST]) || 0,
         grand_total: parseFloat(row[COL_ORDERS.GRAND_TOTAL]) || 0,
         payment_proof_url: row[COL_ORDERS.PAYMENT_PROOF_URL],
-        status: rStatus
+        status: rStatus,
+        shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
+        currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR',
+        exchange_rate: parseFloat(row[COL_ORDERS.EXCHANGE_RATE]) || 1,
+        utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct'
       });
     }
 
@@ -1402,15 +2247,6 @@ function getOrders(filters) {
 
 /**
  * Updates order workflow status and/or manual shipping cost (ongkir).
- * Automatically recalculates grand total when manual ongkir is adjusted.
- * Updates customer total spend when order status transitions to 'Selesai'.
- * Restores variant inventory when order status transitions to 'Dibatalkan'.
- * 
- * @param {string} invoiceNo
- * @param {string} newStatus - 'Menunggu Pembayaran', 'Bukti Diupload', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan'
- * @param {number|string} manualOngkir - Optional new shipping fee
- * @param {string} notes - Optional administrative notes
- * @param {string} role - Authenticated caller role
  */
 function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
   var lock = LockService.getScriptLock();
@@ -1458,7 +2294,6 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
     var currentOngkir = parseFloat(orderData[COL_ORDERS.SHIPPING_COST]) || 0;
     var grandTotal = parseFloat(orderData[COL_ORDERS.GRAND_TOTAL]) || 0;
 
-    // 1. Recalculate shipping cost if provided
     var hasOngkirUpdate = false;
     if (manualOngkir !== undefined && manualOngkir !== null && String(manualOngkir).trim() !== '') {
       var newOngkirVal = parseFloat(manualOngkir);
@@ -1471,13 +2306,11 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
       }
     }
 
-    // 2. Update status if valid
     var statusChanged = false;
     if (newStatus && newStatus !== oldStatus) {
       ordersSheet.getRange(targetRowIdx, COL_ORDERS.STATUS + 1).setValue(newStatus);
       statusChanged = true;
 
-      // When transitioning to 'Selesai', credit customer total_spent
       if (newStatus === 'Selesai' && oldStatus !== 'Selesai') {
         var customerId = orderData[COL_ORDERS.CUSTOMER_ID];
         if (customersSheet && customerId) {
@@ -1497,7 +2330,6 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
         logEvent('order_completed', { invoice_no: cleanInv, grand_total: grandTotal });
       }
 
-      // When transitioning to 'Dibatalkan', restore inventory stock
       if (newStatus === 'Dibatalkan' && oldStatus !== 'Dibatalkan') {
         try {
           var items = JSON.parse(orderData[COL_ORDERS.ITEMS_JSON]);
@@ -1550,10 +2382,7 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
 }
 
 /**
- * Creates a new fashion catalog product.
- * 
- * @param {Object} productData
- * @param {string} role
+ * Creates a new fashion catalog product (full 13 columns v2.0 including color_images_json).
  */
 function addProduct(productData, role) {
   try {
@@ -1575,6 +2404,13 @@ function addProduct(productData, role) {
     var newId = 'PRD-' + ('000' + nextSeq).slice(-3);
 
     var timestamp = getTimestamp();
+    var mpJson = typeof productData.marketplace_links === 'object'
+      ? JSON.stringify(productData.marketplace_links)
+      : (productData.marketplace_links_json || '{}');
+
+    var colorImagesJson = typeof productData.color_images === 'object'
+      ? JSON.stringify(productData.color_images)
+      : (productData.color_images_json || '{}');
 
     sheet.appendRow([
       newId,
@@ -1583,12 +2419,16 @@ function addProduct(productData, role) {
       parseFloat(productData.base_price) || 0,
       productData.badge || 'None',
       productData.description || '',
-      productData.image_url || 'https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80',
-      timestamp
+      productData.image_url || 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=800&q=80',
+      timestamp,
+      productData.name_en || productData.name,
+      productData.description_en || productData.description || '',
+      parseInt(productData.weight_gram, 10) || 300,
+      mpJson,
+      colorImagesJson
     ]);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Products', 'Produk baru ditambahkan: ' + newId + ' (' + productData.name + ')');
 
     return {
@@ -1605,10 +2445,7 @@ function addProduct(productData, role) {
 }
 
 /**
- * Modifies an existing fashion catalog product.
- * 
- * @param {Object} productData
- * @param {string} role
+ * Modifies an existing fashion catalog product (supports v2.0 fields including color_images_json).
  */
 function updateProduct(productData, role) {
   try {
@@ -1648,9 +2485,23 @@ function updateProduct(productData, role) {
     if (productData.badge !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.BADGE + 1).setValue(productData.badge);
     if (productData.description !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.DESCRIPTION + 1).setValue(productData.description);
     if (productData.image_url !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.IMAGE_URL + 1).setValue(productData.image_url);
+    if (productData.name_en !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.NAME_EN + 1).setValue(productData.name_en);
+    if (productData.description_en !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.DESCRIPTION_EN + 1).setValue(productData.description_en);
+    if (productData.weight_gram !== undefined) sheet.getRange(targetRowIdx, COL_PRODUCTS.WEIGHT_GRAM + 1).setValue(parseInt(productData.weight_gram, 10) || 300);
+    if (productData.marketplace_links !== undefined || productData.marketplace_links_json !== undefined) {
+      var mpJson = typeof productData.marketplace_links === 'object'
+        ? JSON.stringify(productData.marketplace_links)
+        : (productData.marketplace_links_json || '{}');
+      sheet.getRange(targetRowIdx, COL_PRODUCTS.MARKETPLACE_LINKS_JSON + 1).setValue(mpJson);
+    }
+    if (productData.color_images !== undefined || productData.color_images_json !== undefined) {
+      var ciJson = typeof productData.color_images === 'object'
+        ? JSON.stringify(productData.color_images)
+        : (productData.color_images_json || '{}');
+      sheet.getRange(targetRowIdx, COL_PRODUCTS.COLOR_IMAGES_JSON + 1).setValue(ciJson);
+    }
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Products', 'Produk diperbarui: ' + productData.id);
 
     return {
@@ -1666,10 +2517,7 @@ function updateProduct(productData, role) {
 }
 
 /**
- * Creates a new variant SKU record for a product.
- * 
- * @param {Object} variantData
- * @param {string} role
+ * Creates a new variant SKU record for a product (full 7 columns including image_url).
  */
 function addVariant(variantData, role) {
   try {
@@ -1696,11 +2544,11 @@ function addVariant(variantData, role) {
       variantData.sku,
       variantData.color || 'Standar',
       variantData.size || 'M',
-      parseInt(variantData.stock, 10) || 0
+      parseInt(variantData.stock, 10) || 0,
+      variantData.image_url || ''
     ]);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'ProductVariants', 'Varian baru ditambahkan: ' + newVariantId + ' (SKU: ' + variantData.sku + ')');
 
     return {
@@ -1717,10 +2565,7 @@ function addVariant(variantData, role) {
 }
 
 /**
- * Updates stock quantity, color, or size of an existing variant.
- * 
- * @param {Object} variantData
- * @param {string} role
+ * Updates stock quantity, color, size, or image_url of an existing variant.
  */
 function updateVariant(variantData, role) {
   try {
@@ -1760,9 +2605,9 @@ function updateVariant(variantData, role) {
     if (variantData.color !== undefined) sheet.getRange(targetRowIdx, COL_VARIANTS.COLOR + 1).setValue(variantData.color);
     if (variantData.size !== undefined) sheet.getRange(targetRowIdx, COL_VARIANTS.SIZE + 1).setValue(variantData.size);
     if (variantData.stock !== undefined) sheet.getRange(targetRowIdx, COL_VARIANTS.STOCK + 1).setValue(parseInt(variantData.stock, 10) || 0);
+    if (variantData.image_url !== undefined) sheet.getRange(targetRowIdx, COL_VARIANTS.IMAGE_URL + 1).setValue(variantData.image_url);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'ProductVariants', 'Varian SKU ' + (variantData.sku || variantData.variant_id) + ' diperbarui');
 
     return {
@@ -1805,9 +2650,6 @@ function getCoupons() {
 
 /**
  * Creates a new promotional coupon code.
- * 
- * @param {Object} couponData
- * @param {string} role
  */
 function addCoupon(couponData, role) {
   try {
@@ -1826,7 +2668,6 @@ function addCoupon(couponData, role) {
     var sheet = ss.getSheetByName(SHEET_NAMES.COUPONS);
     if (!sheet) return { success: false, message: 'Sheet Coupons tidak ditemukan' };
 
-    // Check duplicate
     var existingCodes = [];
     var lastRow = sheet.getLastRow();
     if (lastRow > 1) {
@@ -1847,7 +2688,6 @@ function addCoupon(couponData, role) {
     ]);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Coupons', 'Kupon promo baru ditambahkan: ' + cleanCode);
 
     return { success: true, message: 'Kupon ' + cleanCode + ' berhasil ditambahkan' };
@@ -1858,9 +2698,6 @@ function addCoupon(couponData, role) {
 
 /**
  * Modifies an existing promotional coupon code.
- * 
- * @param {Object} couponData
- * @param {string} role
  */
 function updateCoupon(couponData, role) {
   try {
@@ -1903,7 +2740,6 @@ function updateCoupon(couponData, role) {
     if (couponData.is_active !== undefined) sheet.getRange(targetRowIdx, COL_COUPONS.IS_ACTIVE + 1).setValue(couponData.is_active ? 'TRUE' : 'FALSE');
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Coupons', 'Kupon ' + cleanCode + ' diperbarui');
 
     return { success: true, message: 'Kupon ' + cleanCode + ' berhasil diperbarui' };
@@ -1974,9 +2810,6 @@ function getCampaigns() {
 
 /**
  * Creates a new flash sale banner or outfit bundle set.
- * 
- * @param {Object} campaignData
- * @param {string} role
  */
 function addCampaign(campaignData, role) {
   try {
@@ -2013,7 +2846,6 @@ function addCampaign(campaignData, role) {
     ]);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Campaigns', 'Kampanye bundling baru ditambahkan: ' + newId);
 
     return { success: true, campaign_id: newId, message: 'Kampanye berhasil dibuat' };
@@ -2024,9 +2856,6 @@ function addCampaign(campaignData, role) {
 
 /**
  * Modifies an existing flash sale banner or outfit bundle set.
- * 
- * @param {Object} campaignData
- * @param {string} role
  */
 function updateCampaign(campaignData, role) {
   try {
@@ -2072,7 +2901,6 @@ function updateCampaign(campaignData, role) {
     if (campaignData.bundle_price !== undefined) sheet.getRange(targetRowIdx, COL_CAMPAIGNS.BUNDLE_PRICE + 1).setValue(parseFloat(campaignData.bundle_price) || 0);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Campaigns', 'Kampanye ' + campaignData.campaign_id + ' diperbarui');
 
     return { success: true, message: 'Kampanye berhasil diperbarui' };
@@ -2089,7 +2917,7 @@ function getReturns() {
     var rows = getSheetDisplayRows(SHEET_NAMES.RETURNS);
     var list = [];
 
-    for (var i = rows.length - 1; i >= 0; i--) { // Newest first
+    for (var i = rows.length - 1; i >= 0; i--) {
       var row = rows[i];
       list.push({
         return_id: row[COL_RETURNS.RETURN_ID],
@@ -2110,11 +2938,6 @@ function getReturns() {
 
 /**
  * Updates status and administrative decision notes for a return request.
- * 
- * @param {string} returnId
- * @param {string} newStatus - 'Diajukan', 'Disetujui', 'Ditolak', 'Selesai'
- * @param {string} adminNotes
- * @param {string} role
  */
 function updateReturn(returnId, newStatus, adminNotes, role) {
   try {
@@ -2154,7 +2977,6 @@ function updateReturn(returnId, newStatus, adminNotes, role) {
     if (adminNotes !== undefined) sheet.getRange(targetRowIdx, COL_RETURNS.ADMIN_NOTES + 1).setValue(adminNotes);
 
     SpreadsheetApp.flush();
-
     logAudit(role, 'Returns', 'Retur ' + cleanId + ' diubah ke status ' + newStatus + ' (' + (adminNotes || '') + ')');
 
     return { success: true, message: 'Status retur ' + cleanId + ' berhasil diperbarui' };
@@ -2171,7 +2993,6 @@ function getAuditLogs() {
     var rows = getSheetDisplayRows(SHEET_NAMES.AUDIT_LOGS);
     var list = [];
 
-    // Reverse to present newest logs at the top
     var startIdx = Math.max(0, rows.length - 100);
     for (var i = rows.length - 1; i >= startIdx; i--) {
       var row = rows[i];
@@ -2191,10 +3012,6 @@ function getAuditLogs() {
 
 /**
  * Computes the 4-Stage Conversion Funnel and conversion ratios from EventLogs telemetry.
- * Stage 1: Product Views
- * Stage 2: Add to Cart
- * Stage 3: WhatsApp Checkout
- * Stage 4: Order Completed & Paid
  */
 function getConversionFunnel() {
   try {
@@ -2218,7 +3035,6 @@ function getConversionFunnel() {
       }
     }
 
-    // Complement with actual orders count if telemetry is sparse
     var orderRows = getSheetDisplayRows(SHEET_NAMES.ORDERS);
     if (countCheckout === 0 && orderRows.length > 0) {
       countCheckout = orderRows.length;
@@ -2231,7 +3047,6 @@ function getConversionFunnel() {
       }
     }
 
-    // Default minimum counts to avoid divide-by-zero during initial launch
     var baseViews = Math.max(countViews, 1);
     var rateCart = Math.round((countCart / baseViews) * 100);
     var rateCheckout = countCart > 0 ? Math.round((countCheckout / countCart) * 100) : 0;
@@ -2262,7 +3077,7 @@ function getConversionFunnel() {
 }
 
 /**
- * Generates an RFC 4180-compliant CSV string of all order records for administrative export.
+ * Generates an RFC 4180-compliant CSV string of all order records including v2.0 fields.
  */
 function exportOrdersCSV() {
   try {
@@ -2280,7 +3095,11 @@ function exportOrdersCSV() {
       'Ongkos Kirim',
       'Grand Total',
       'Status Pesanan',
-      'URL Bukti Bayar'
+      'URL Bukti Bayar',
+      'Zona Pengiriman',
+      'Mata Uang',
+      'Nilai Tukar',
+      'UTM Source'
     ];
 
     var csvLines = [headers.join(',')];
@@ -2300,7 +3119,11 @@ function exportOrdersCSV() {
         r[COL_ORDERS.SHIPPING_COST],
         r[COL_ORDERS.GRAND_TOTAL],
         r[COL_ORDERS.STATUS],
-        r[COL_ORDERS.PAYMENT_PROOF_URL]
+        r[COL_ORDERS.PAYMENT_PROOF_URL],
+        r[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
+        r[COL_ORDERS.CURRENCY_CODE] || 'IDR',
+        r[COL_ORDERS.EXCHANGE_RATE] || '1',
+        r[COL_ORDERS.UTM_SOURCE] || 'direct'
       ];
 
       var escapedFields = fields.map(function(val) {
@@ -2315,7 +3138,7 @@ function exportOrdersCSV() {
     }
 
     var csvContent = csvLines.join('\r\n');
-    var filename = 'rekap_pesanan_arya_' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') + '.csv';
+    var filename = 'rekap_pesanan_aryastore_' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') + '.csv';
 
     return {
       success: true,
@@ -2332,30 +3155,30 @@ function exportOrdersCSV() {
 
 /**
  * Reads global system settings.
- * PIN credentials are exclusively returned to authenticated Super Admin callers.
- * 
- * @param {string} role
+ * PIN credentials and private carrier API keys are exclusively returned to authenticated Super Admin callers.
  */
 function getSettings(role) {
   try {
     var dict = loadSettingsDictionary();
 
-    // Security gate: redact PIN secrets unless caller is Super Admin
     if (role !== 'Super Admin') {
       delete dict['PIN_SUPER_ADMIN'];
       delete dict['PIN_STORE_MANAGER'];
       delete dict['PIN_CUSTOMER_SERVICE'];
+      delete dict['RAJAONGKIR_API_KEY'];
+      delete dict['BITESHIP_API_KEY'];
+      delete dict['DRIVE_FOLDER_NAME'];
+      delete dict['DRIVE_PRODUCTS_FOLDER_NAME'];
     }
 
-    // Parse shipping methods JSON if present
     var parsedShipping = [];
     if (dict['SHIPPING_METHODS']) {
       try {
         parsedShipping = JSON.parse(dict['SHIPPING_METHODS']);
       } catch (e) {
         parsedShipping = [
-          { id: 'REG', name: 'Reguler (JNE/J&T)', note: 'Ongkir manual via konfirmasi admin WA' },
-          { id: 'EXP', name: 'Express (SiCepat/Paxel)', note: 'Ongkir manual via konfirmasi admin WA' },
+          { id: 'REG', name: 'Reguler (JNE/J&T)', note: 'Ongkir dihitung otomatis berdasarkan zona/kurir' },
+          { id: 'EXP', name: 'Express (SiCepat/Paxel)', note: 'Ongkir dihitung otomatis berdasarkan zona/kurir' },
           { id: 'STORE', name: 'Ambil di Toko', note: 'Bebas biaya ongkos kirim' }
         ];
       }
@@ -2376,11 +3199,7 @@ function getSettings(role) {
 }
 
 /**
- * Updates global system configuration parameters.
- * Strictly restricted to Super Admin role.
- * 
- * @param {Object} newSettings - Key-value map of configuration changes
- * @param {string} role
+ * Updates global system configuration parameters. Strictly restricted to Super Admin.
  */
 function updateSettings(newSettings, role) {
   try {
@@ -2420,14 +3239,12 @@ function updateSettings(newSettings, role) {
         sheet.getRange(foundIdx, COL_SETTINGS.VALUE + 1).setValue(newVal);
         updatedCount++;
       } else {
-        // Append new key if not present
         sheet.appendRow([key, newVal, 'Parameter konfigurasi kustom']);
         updatedCount++;
       }
     }
 
     SpreadsheetApp.flush();
-
     logAudit('Super Admin', 'Settings', 'Konfigurasi sistem diperbarui (' + updatedCount + ' parameter)');
 
     return {
@@ -2443,78 +3260,15 @@ function updateSettings(newSettings, role) {
   }
 }
 
-
 // ================================================================================
-// 8. DATABASE SETUP & 1-CLICK MIGRATION ENGINE
-// ================================================================================
-
-var SCHEMA_DEFINITIONS = {
-  Products: {
-    headers: ['id', 'name', 'category', 'base_price', 'badge', 'description', 'image_url', 'created_at'],
-    colMap: COL_PRODUCTS
-  },
-  ProductVariants: {
-    headers: ['variant_id', 'product_id', 'sku', 'color', 'size', 'stock'],
-    colMap: COL_VARIANTS
-  },
-  CampaignsAndBundles: {
-    headers: ['campaign_id', 'banner_title', 'banner_desc', 'ends_at', 'is_active', 'bundle_items_json', 'normal_price', 'bundle_price'],
-    colMap: COL_CAMPAIGNS
-  },
-  Orders: {
-    headers: [
-      'invoice_no',
-      'created_at',
-      'customer_id',
-      'customer_name',
-      'whatsapp_no',
-      'items_json',
-      'subtotal',
-      'coupon_code',
-      'coupon_discount',
-      'shipping_method',
-      'shipping_cost',
-      'grand_total',
-      'payment_proof_url',
-      'status'
-    ],
-    colMap: COL_ORDERS
-  },
-  Customers: {
-    headers: ['customer_id', 'name', 'whatsapp_no', 'total_orders', 'total_spent', 'created_at', 'notes'],
-    colMap: COL_CUSTOMERS
-  },
-  Coupons: {
-    headers: ['code', 'discount_type', 'discount_value', 'min_spend', 'description', 'is_active'],
-    colMap: COL_COUPONS
-  },
-  Returns: {
-    headers: ['return_id', 'invoice_no', 'customer_name', 'reason', 'requested_size', 'status', 'admin_notes'],
-    colMap: COL_RETURNS
-  },
-  AuditLogs: {
-    headers: ['timestamp', 'actor_role', 'module', 'action_detail'],
-    colMap: COL_AUDIT_LOGS
-  },
-  EventLogs: {
-    headers: ['timestamp', 'event_name', 'payload_json'],
-    colMap: COL_EVENT_LOGS
-  },
-  Settings: {
-    headers: ['key', 'value', 'description'],
-    colMap: COL_SETTINGS
-  }
-};
-
-// ================================================================================
-// 3. HELPER UTILITIES
+// 7. EMBEDDED DATABASE SETUP & SAFE MIGRATION ENGINE (v2.0 Idempotent)
 // ================================================================================
 
 /**
- * Returns formatted timestamp in Asia/Jakarta timezone.
- * Falls back safely to standard ISO string if run outside GAS.
+ * Initializes all 10 required database sheets, verifies/appends headers,
+ * synchronizes missing columns at the rightmost position without data loss,
+ * and executes idempotent seeding.
  */
-
 function setupDatabase() {
   var ss = getSpreadsheet();
   if (!ss) {
@@ -2529,7 +3283,6 @@ function setupDatabase() {
     var schema = SCHEMA_DEFINITIONS[sheetName];
     var sheet = ss.getSheetByName(sheetName);
 
-    // 1. Create sheet if missing
     if (!sheet) {
       sheet = ss.insertSheet(sheetName);
     }
@@ -2537,14 +3290,17 @@ function setupDatabase() {
     var lastRow = sheet.getLastRow();
     var lastCol = sheet.getLastColumn();
 
-    // 2. If completely empty, write headers and format header style
     if (lastRow === 0 || lastCol === 0) {
       sheet.getRange(1, 1, 1, schema.headers.length).setValues([schema.headers]);
-      formatHeaderRow(sheet, schema.headers.length);
+      sheet.getRange(1, 1, 1, schema.headers.length)
+        .setFontWeight('bold')
+        .setBackground('#F5F5F4')
+        .setFontColor('#1C1917')
+        .setHorizontalAlignment('left');
+      sheet.setFrozenRows(1);
       migrationReport.push(sheetName + ': Lembar kerja dibuat dan header diinisialisasi.');
     } else {
-      // 3. Synchronize any missing columns at the rightmost position
-      var existingHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      var existingHeaders = sheet.getRange(1, 1, 1, lastCol).getDisplayValues()[0];
       var missingHeaders = [];
 
       for (var h = 0; h < schema.headers.length; h++) {
@@ -2568,14 +3324,9 @@ function setupDatabase() {
     }
   }
 
-  // 4. Run idempotent seeding
   var seedResult = seedDatabase();
-
-  // 5. Commit all writes
   SpreadsheetApp.flush();
-
-  // 6. Log audit entry for migration
-  logSystemAudit('Super Admin', 'SYSTEM_MIGRATION', 'setupDatabase executed successfully. ' + migrationReport.join(' | '));
+  logAudit('Super Admin', 'SYSTEM_MIGRATION', 'setupDatabase executed successfully. ' + migrationReport.join(' | '));
 
   return {
     success: true,
@@ -2586,30 +3337,11 @@ function setupDatabase() {
 }
 
 /**
- * Formats the header row with clean, high-contrast Editorial styling.
- */
-function formatHeaderRow(sheet, colCount) {
-  var headerRange = sheet.getRange(1, 1, 1, colCount);
-  headerRange
-    .setFontWeight('bold')
-    .setBackground('#F5F5F4')
-    .setFontColor('#1C1917')
-    .setHorizontalAlignment('left');
-  
-  sheet.setFrozenRows(1);
-}
-
-// ================================================================================
-// 5. IDEMPOTENT SEED DATA ENGINE
-// ================================================================================
-
-/**
- * Seeds initial demo data for all entities idempotently.
- * Checks for existing unique keys before inserting to guarantee zero duplication.
+ * Seeds all 19 products, 73 variants, 2 bundles, coupons, and v2.0 Settings idempotently.
  */
 function seedDatabase() {
   var ss = getSpreadsheet();
-  if (!ss) return { success: false, message: 'Spreadsheet not accessible' };
+  if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
 
   var results = {
     settingsAdded: 0,
@@ -2626,249 +3358,1147 @@ function seedDatabase() {
 
   var now = getTimestamp();
 
-  // ----------------------------------------------------------------------------
-  // A. Seed Settings (Store Configuration & RBAC PINs)
-  // ----------------------------------------------------------------------------
-  var settingsSheet = ss.getSheetByName('Settings');
+  // A. Settings v2.0 including RajaOngkir, Biteship, and Drive Product images
+  var settingsSheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
   if (settingsSheet) {
-    var existingKeys = getExistingColumnValues(settingsSheet, 0); // Key is at index 0
+    var existingKeys = getExistingColumnValues(settingsSheet, 0);
 
     var defaultSettings = [
-      {
-        key: 'WA_NUMBER',
-        value: '6281234567890',
-        description: 'Nomor WhatsApp admin tujuan penerimaan order dan konfirmasi transfer (format 62...)'
-      },
-      {
-        key: 'BRAND_NAME',
-        value: 'AryaStore',
-        description: 'Nama merek resmi yang ditampilkan pada storefront, invoice, dan notifikasi WhatsApp'
-      },
-      {
-        key: 'PIN_SUPER_ADMIN',
-        value: '9999',
-        description: 'PIN otentikasi Super Admin (akses penuh seluruh modul dan pengaturan sistem)'
-      },
-      {
-        key: 'PIN_STORE_MANAGER',
-        value: '8888',
-        description: 'PIN otentikasi Store Manager (katalog produk, stok varian SKU, dan operasional pesanan)'
-      },
-      {
-        key: 'PIN_CUSTOMER_SERVICE',
-        value: '7777',
-        description: 'PIN otentikasi Customer Service (verifikasi transfer, status pesanan, dan penanganan retur)'
-      },
+      { key: 'BRAND_NAME', value: 'AryaStore', description: 'Nama resmi toko dan brand' },
+      { key: 'WA_NUMBER', value: '6281234567890', description: 'Nomor WhatsApp resmi pemesanan' },
+      { key: 'CURRENCY_PREFIX', value: 'Rp ', description: 'Format prefiks mata uang dasar' },
+      { key: 'DEFAULT_LANGUAGE', value: 'id', description: 'Bahasa default antarmuka (id / en)' },
+      { key: 'DEFAULT_CURRENCY', value: 'IDR', description: 'Mata uang default dasar' },
+      { key: 'CURRENCY_AUTO_SYNC', value: 'TRUE', description: 'Sakelar sinkronisasi nilai tukar valas' },
+      { key: 'CURRENCY_RATES_JSON', value: '{"IDR":1,"USD":0.000063,"EUR":0.000058,"SGD":0.000085,"MYR":0.00028,"JPY":0.0098,"GBP":0.000050,"AUD":0.000096}', description: 'Nilai tukar 8 valuta dunia' },
+      { key: 'FREE_SHIPPING_THRESHOLD_IDR', value: '500000', description: 'Ambang gratis ongkir domestik (Rp 500.000)' },
+      { key: 'SHIPPING_RATES_JSON', value: '{"zones":{"JABODETABEK":{"flat":15000,"perKg":10000},"JAWA_BALI":{"flat":25000,"perKg":15000},"LUAR_JAWA":{"flat":45000,"perKg":25000},"INTERNATIONAL_SEA":{"flat":150000,"perKg":80000},"INTERNATIONAL_GLOBAL":{"flat":350000,"perKg":200000}}}', description: 'Tarif ongkir zona dan berat' },
+      { key: 'MARKETPLACE_LINKS_JSON', value: '{"shopee":"https://shopee.co.id/aryastore","tokopedia":"https://tokopedia.com/aryastore","tiktokshop":"https://tiktok.com/@aryastore"}', description: 'Tautan resmi e-commerce eksternal' },
+      { key: 'SOCIAL_LINKS_JSON', value: '{"instagram":"https://instagram.com/aryastore.id","tiktok":"https://tiktok.com/@aryastore","facebook":"https://facebook.com/aryastore","youtube":"https://youtube.com/@aryastore","pinterest":"https://pinterest.com/aryastore","whatsapp":"https://wa.me/6281234567890"}', description: 'Tautan saluran media sosial' },
+      { key: 'STORE_BASE_URL', value: 'https://sisigitadi.github.io/AryaStore', description: 'URL basis publikasi toko' },
+      { key: 'SEO_TITLE', value: 'AryaStore - Modern Minimalist Fashion & Curated Apparel', description: 'Judul global SEO' },
+      { key: 'SEO_DESCRIPTION', value: 'AryaStore menghadirkan koleksi busana minimalis kontemporer berkualitas tinggi dengan kurasi bahan premium, potongan presisi, dan pengiriman ke seluruh dunia.', description: 'Deskripsi global SEO' },
+      { key: 'SEO_KEYWORDS', value: 'fashion minimalis, apparel indonesia, aryastore, baju pria wanita, jaket premium, outerwear, belanja baju online', description: 'Kata kunci global SEO' },
+      { key: 'GA4_MEASUREMENT_ID', value: 'G-XXXXXXXXXX', description: 'ID Google Analytics 4' },
+      { key: 'GOOGLE_ADS_ID', value: 'AW-XXXXXXXXXX', description: 'ID Google Ads Remarketing' },
+      { key: 'GOOGLE_ADS_CONVERSION_LABEL', value: 'XXXXXXXXXXXXX', description: 'Label konversi Google Ads' },
+      { key: 'GTM_ID', value: 'GTM-XXXXXXX', description: 'ID Wadah Google Tag Manager' },
+      { key: 'META_PIXEL_ID', value: '123456789012345', description: 'ID Meta / Facebook Pixel' },
+      { key: 'TIKTOK_PIXEL_ID', value: 'CXXXXXXXXXXXXXXXXX', description: 'ID TikTok Pixel' },
+      { key: 'PIN_SUPER_ADMIN', value: '9999', description: 'PIN otorisasi Super Admin (RAHASIA)' },
+      { key: 'PIN_STORE_MANAGER', value: '8888', description: 'PIN otorisasi Store Manager (RAHASIA)' },
+      { key: 'PIN_CUSTOMER_SERVICE', value: '7777', description: 'PIN otorisasi Customer Service (RAHASIA)' },
+      { key: 'DRIVE_FOLDER_NAME', value: 'ARYASTORE_PAYMENTS', description: 'Nama folder Google Drive bukti bayar' },
+      { key: 'DRIVE_PRODUCTS_FOLDER_NAME', value: 'ARYASTORE_PRODUCTS', description: 'Nama folder Google Drive penampung foto produk & varian warna' },
       {
         key: 'SHIPPING_METHODS',
         value: JSON.stringify([
-          { id: 'REG', name: 'Reguler (JNE/J&T)', estimated_days: '2-3 Hari Kerja', note: 'Ongkir manual via konfirmasi admin WA' },
-          { id: 'EXP', name: 'Express (SiCepat/Paxel)', estimated_days: '1-2 Hari Kerja', note: 'Ongkir manual via konfirmasi admin WA' },
-          { id: 'STORE', name: 'Ambil di Toko', estimated_days: 'Hari Kerja Toko (10.00 - 20.00)', note: 'Bebas biaya ongkos kirim' }
+          { id: 'REG', name: 'Reguler (JNE/J&T)', note: 'Ongkir dihitung otomatis berdasarkan zona/kurir' },
+          { id: 'EXP', name: 'Express (SiCepat/Paxel)', note: 'Ongkir dihitung otomatis berdasarkan zona/kurir' },
+          { id: 'STORE', name: 'Ambil di Toko', note: 'Bebas biaya ongkos kirim' }
         ]),
-        description: 'Daftar metode ekspedisi pengiriman yang aktif di cart checkout'
-      }
+        description: 'Daftar metode ekspedisi pengiriman bawaan'
+      },
+      { key: 'SHIPPING_PROVIDER', value: 'AUTO', description: 'Mode integrasi ongkir: AUTO, MATRIX, RAJAONGKIR, BITESHIP' },
+      { key: 'RAJAONGKIR_API_KEY', value: '', description: 'Kunci API RajaOngkir Komerce v2 (RAHASIA)' },
+      { key: 'RAJAONGKIR_ORIGIN_ID', value: '17470', description: 'ID Lokasi Asal Toko di RajaOngkir Komerce (default Jakarta Selatan)' },
+      { key: 'RAJAONGKIR_COURIERS_DOMESTIC', value: 'jne:sicepat:jnt:pos:tiki:anteraja', description: 'Daftar kode kurir domestik RajaOngkir Komerce' },
+      { key: 'RAJAONGKIR_COURIERS_INTL', value: 'pos:jne:tiki', description: 'Daftar kode kurir internasional RajaOngkir Komerce' },
+      { key: 'BITESHIP_API_KEY', value: '', description: 'Kunci API Biteship v1 (RAHASIA)' },
+      { key: 'BITESHIP_ORIGIN_POSTAL_CODE', value: '12190', description: 'Kode Pos Asal Toko untuk Biteship (default Jakarta Selatan 12190)' },
+      { key: 'BITESHIP_COURIERS', value: 'jne,jnt,sicepat,paxel,anteraja,pos,dhl,tlx,rayspeed', description: 'Daftar kode kurir Biteship' }
     ];
 
     for (var s = 0; s < defaultSettings.length; s++) {
-      var setting = defaultSettings[s];
-      if (existingKeys.indexOf(setting.key) === -1) {
-        settingsSheet.appendRow([setting.key, setting.value, setting.description]);
+      var item = defaultSettings[s];
+      if (existingKeys.indexOf(item.key) === -1) {
+        settingsSheet.appendRow([item.key, item.value, item.description]);
         results.settingsAdded++;
       }
     }
   }
 
-  // ----------------------------------------------------------------------------
-  // B. Seed 9 Fashion Items (Across 5 Categories: Outerwear, Tops, Bottoms, Footwear, Accessories)
-  // ----------------------------------------------------------------------------
-  var productsSheet = ss.getSheetByName('Products');
-  var variantsSheet = ss.getSheetByName('ProductVariants');
+  // B. Products & Variants (19 Products, 73 Variants from catalog-v2.json)
+  var productsSheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+  var variantsSheet = ss.getSheetByName(SHEET_NAMES.VARIANTS);
 
   if (productsSheet && variantsSheet) {
     var existingProductIds = getExistingColumnValues(productsSheet, 0);
     var existingVariantIds = getExistingColumnValues(variantsSheet, 0);
 
-    var sampleProducts = [
+    var canonicalProducts = [
+  {
+    "id": "PRD-001",
+    "name": "Mantel Wol Terstruktur Atelier",
+    "name_en": "Atelier Structured Wool Coat",
+    "category": "Outerwear",
+    "base_price": 1250000,
+    "badge": "Best Seller",
+    "description": "Mantel wol potongan terstruktur dengan kerah takik lebar, ikat pinggang senada, dan lapisan furing satin halus untuk kenyamanan maksimal.",
+    "description_en": "Structured wool-blend coat tailored with wide notch lapels, a matching waist tie belt, and smooth satin lining for elevated layering.",
+    "weight_gram": 920,
+    "image_url": "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-01 10:00:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Mantel+Wol+Terstruktur+Atelier",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Mantel+Wol+Terstruktur+Atelier",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Mantel+Wol+Terstruktur+Atelier"
+    },
+    "variants": [
       {
-        id: 'PRD-001',
-        name: 'Oversized Wool Trench Coat',
-        category: 'Outerwear',
-        base_price: 899000,
-        badge: 'Best Seller',
-        description: 'Mantel trench siluet oversized berbahan premium wool blend dengan lining satin lembut. Tahan angin dan memberikan struktur siluet editorial yang elegan untuk layering.',
-        image_url: 'https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WTC-CG-XS', color: 'Charcoal Grey', size: 'XS', stock: 6 },
-          { sku: 'WTC-CG-S',  color: 'Charcoal Grey', size: 'S',  stock: 12 },
-          { sku: 'WTC-CG-M',  color: 'Charcoal Grey', size: 'M',  stock: 18 },
-          { sku: 'WTC-CG-L',  color: 'Charcoal Grey', size: 'L',  stock: 14 },
-          { sku: 'WTC-CG-XL', color: 'Charcoal Grey', size: 'XL', stock: 8 },
-          { sku: 'WTC-CT-S',  color: 'Camel Tan',     size: 'S',  stock: 10 },
-          { sku: 'WTC-CT-M',  color: 'Camel Tan',     size: 'M',  stock: 15 },
-          { sku: 'WTC-CT-L',  color: 'Camel Tan',     size: 'L',  stock: 9 },
-          { sku: 'WTC-CT-XL', color: 'Camel Tan',     size: 'XL', stock: 5 }
-        ]
+        "variant_id": "VAR-0001",
+        "product_id": "PRD-001",
+        "sku": "COAT-CML-S",
+        "color": "Camel Hangat",
+        "color_en": "Warm Camel",
+        "size": "S",
+        "stock": 8
       },
       {
-        id: 'PRD-002',
-        name: 'Structured Boxy Blazer',
-        category: 'Outerwear',
-        base_price: 649000,
-        badge: 'New Arrival',
-        description: 'Blazer siluet boxy kontemporer dengan potongan bahu berstruktur tegas, saku welt tersembunyi, dan kancing tanduk tunggal. Fleksibel untuk formal maupun smart-casual.',
-        image_url: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'SBB-BK-S',   color: 'Midnight Black', size: 'S',   stock: 8 },
-          { sku: 'SBB-BK-M',   color: 'Midnight Black', size: 'M',   stock: 16 },
-          { sku: 'SBB-BK-L',   color: 'Midnight Black', size: 'L',   stock: 12 },
-          { sku: 'SBB-BK-XL',  color: 'Midnight Black', size: 'XL',  stock: 7 },
-          { sku: 'SBB-BK-XXL', color: 'Midnight Black', size: 'XXL', stock: 4 },
-          { sku: 'SBB-HG-S',   color: 'Heather Grey',   size: 'S',   stock: 6 },
-          { sku: 'SBB-HG-M',   color: 'Heather Grey',   size: 'M',   stock: 11 },
-          { sku: 'SBB-HG-L',   color: 'Heather Grey',   size: 'L',   stock: 8 }
-        ]
+        "variant_id": "VAR-0002",
+        "product_id": "PRD-001",
+        "sku": "COAT-CML-M",
+        "color": "Camel Hangat",
+        "color_en": "Warm Camel",
+        "size": "M",
+        "stock": 14
       },
       {
-        id: 'PRD-003',
-        name: 'Heavyweight Cotton Boxy Tee',
-        category: 'Tops',
-        base_price: 189000,
-        badge: 'Best Seller',
-        description: 'Kaos boxy fit dari 100% combed cotton 240 GSM. Kerah rib tebal anti-melar dengan jahitan ganda kokoh dan drape kain yang jatuh rapi dan tegap di tubuh.',
-        image_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          // Full inclusive sizing matrix: XS to 5XL
-          { sku: 'HCT-VB-XS',  color: 'Vintage Black', size: 'XS',  stock: 10 },
-          { sku: 'HCT-VB-S',   color: 'Vintage Black', size: 'S',   stock: 25 },
-          { sku: 'HCT-VB-M',   color: 'Vintage Black', size: 'M',   stock: 35 },
-          { sku: 'HCT-VB-L',   color: 'Vintage Black', size: 'L',   stock: 30 },
-          { sku: 'HCT-VB-XL',  color: 'Vintage Black', size: 'XL',  stock: 20 },
-          { sku: 'HCT-VB-XXL', color: 'Vintage Black', size: 'XXL', stock: 12 },
-          { sku: 'HCT-VB-3XL', color: 'Vintage Black', size: '3XL', stock: 8 },
-          { sku: 'HCT-VB-4XL', color: 'Vintage Black', size: '4XL', stock: 6 },
-          { sku: 'HCT-VB-5XL', color: 'Vintage Black', size: '5XL', stock: 3 }, // Low-stock indicator (<5)
-          { sku: 'HCT-BW-S',   color: 'Bone White',    size: 'S',   stock: 20 },
-          { sku: 'HCT-BW-M',   color: 'Bone White',    size: 'M',   stock: 28 },
-          { sku: 'HCT-BW-L',   color: 'Bone White',    size: 'L',   stock: 22 },
-          { sku: 'HCT-BW-XL',  color: 'Bone White',    size: 'XL',  stock: 15 },
-          { sku: 'HCT-SG-M',   color: 'Sage Green',    size: 'M',   stock: 18 },
-          { sku: 'HCT-SG-L',   color: 'Sage Green',    size: 'L',   stock: 14 }
-        ]
+        "variant_id": "VAR-0003",
+        "product_id": "PRD-001",
+        "sku": "COAT-CML-L",
+        "color": "Camel Hangat",
+        "color_en": "Warm Camel",
+        "size": "L",
+        "stock": 4
       },
       {
-        id: 'PRD-004',
-        name: 'Relaxed Linen Camp Collar Shirt',
-        category: 'Tops',
-        base_price: 299000,
-        badge: 'None',
-        description: 'Kemeja santai kerah terbuka (camp collar) dari serat linen murni Prancis yang sejuk dan breathable. Memberikan tekstur alami berkelas untuk iklim tropis.',
-        image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'LCS-NF-S',   color: 'Natural Flax', size: 'S',   stock: 9 },
-          { sku: 'LCS-NF-M',   color: 'Natural Flax', size: 'M',   stock: 16 },
-          { sku: 'LCS-NF-L',   color: 'Natural Flax', size: 'L',   stock: 12 },
-          { sku: 'LCS-NF-XL',  color: 'Natural Flax', size: 'XL',  stock: 7 },
-          { sku: 'LCS-TC-M',   color: 'Terracotta',   size: 'M',   stock: 14 },
-          { sku: 'LCS-TC-L',   color: 'Terracotta',   size: 'L',   stock: 10 }
-        ]
+        "variant_id": "VAR-0004",
+        "product_id": "PRD-001",
+        "sku": "COAT-BLK-M",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "M",
+        "stock": 9
       },
       {
-        id: 'PRD-005',
-        name: 'Wide-Leg Pleated Trousers',
-        category: 'Bottoms',
-        base_price: 389000,
-        badge: 'Best Seller',
-        description: 'Celana panjang potongan wide-leg dengan lipit ganda depan (double pleats) dan pinggang elastis tersembunyi. Dibuat dari kain poly-viscose yang mengalir elegan.',
-        image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WPT-DC-XS',  color: 'Deep Charcoal', size: 'XS',  stock: 5 },
-          { sku: 'WPT-DC-S',   color: 'Deep Charcoal', size: 'S',   stock: 14 },
-          { sku: 'WPT-DC-M',   color: 'Deep Charcoal', size: 'M',   stock: 22 },
-          { sku: 'WPT-DC-L',   color: 'Deep Charcoal', size: 'L',   stock: 18 },
-          { sku: 'WPT-DC-XL',  color: 'Deep Charcoal', size: 'XL',  stock: 10 },
-          { sku: 'WPT-DC-XXL', color: 'Deep Charcoal', size: 'XXL', stock: 6 },
-          { sku: 'WPT-KC-S',   color: 'Khaki Cream',   size: 'S',   stock: 12 },
-          { sku: 'WPT-KC-M',   color: 'Khaki Cream',   size: 'M',   stock: 16 },
-          { sku: 'WPT-KC-L',   color: 'Khaki Cream',   size: 'L',   stock: 11 }
-        ]
-      },
-      {
-        id: 'PRD-006',
-        name: 'Raw Selvedge Straight Denim',
-        category: 'Bottoms',
-        base_price: 529000,
-        badge: 'Limited Edition',
-        description: 'Celana denim tenun selvedge 14 oz unwashed dengan pinggiran tenun merah klasik. Potongan straight-leg abadi yang akan membentuk garis fade unik personal.',
-        image_url: 'https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'RSD-IN-XS',  color: 'Indigo Raw', size: 'XS',  stock: 4 },
-          { sku: 'RSD-IN-S',   color: 'Indigo Raw', size: 'S',   stock: 12 },
-          { sku: 'RSD-IN-M',   color: 'Indigo Raw', size: 'M',   stock: 20 },
-          { sku: 'RSD-IN-L',   color: 'Indigo Raw', size: 'L',   stock: 16 },
-          { sku: 'RSD-IN-XL',  color: 'Indigo Raw', size: 'XL',  stock: 9 },
-          { sku: 'RSD-IN-XXL', color: 'Indigo Raw', size: 'XXL', stock: 5 }
-        ]
-      },
-      {
-        id: 'PRD-007',
-        name: 'Minimalist Derby Leather Shoes',
-        category: 'Footwear',
-        base_price: 749000,
-        badge: 'New Arrival',
-        description: 'Sepatu derby kulit sapi asli (full-grain leather) dengan sol luar karet lug anti-slip dan bantalan insole ortopedik empuk untuk kenyamanan melangkah sepanjang hari.',
-        image_url: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'DLS-BK-S',  color: 'Matte Black', size: 'S',  stock: 6 },
-          { sku: 'DLS-BK-M',  color: 'Matte Black', size: 'M',  stock: 10 },
-          { sku: 'DLS-BK-L',  color: 'Matte Black', size: 'L',  stock: 14 },
-          { sku: 'DLS-BK-XL', color: 'Matte Black', size: 'XL', stock: 12 },
-          { sku: 'DLS-BR-M',  color: 'Espresso',    size: 'M',  stock: 8 },
-          { sku: 'DLS-BR-L',  color: 'Espresso',    size: 'L',  stock: 9 }
-        ]
-      },
-      {
-        id: 'PRD-008',
-        name: 'Canvas & Leather Weekender Tote',
-        category: 'Accessories',
-        base_price: 329000,
-        badge: 'None',
-        description: 'Tas jinjing serbaguna dari kanvas katun tebal 16 oz dengan aksen kulit sapi asli, kompartemen laptop 15 inci empuk, dan penutup ritsleting logam YKK.',
-        image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'CWT-OL-OS', color: 'Olive Green', size: 'All Size', stock: 18 },
-          { sku: 'CWT-BG-OS', color: 'Sand Beige',  size: 'All Size', stock: 15 }
-        ]
-      },
-      {
-        id: 'PRD-009',
-        name: 'Wool Blend Knit Beanie',
-        category: 'Accessories',
-        base_price: 149000,
-        badge: 'None',
-        description: 'Topi kupluk rajut rib tenun halus dari campuran wol merino yang hangat tanpa rasa gatal. Desain lipatan fleksibel menyesuaikan bentuk kepala secara nyaman.',
-        image_url: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?auto=format&fit=crop&w=800&q=80',
-        created_at: now,
-        variants: [
-          { sku: 'WKB-BK-OS', color: 'Raven Black',  size: 'All Size', stock: 24 },
-          { sku: 'WKB-OM-OS', color: 'Oatmeal',      size: 'All Size', stock: 20 },
-          { sku: 'WKB-BO-OS', color: 'Burnt Orange', size: 'All Size', stock: 14 }
-        ]
+        "variant_id": "VAR-0005",
+        "product_id": "PRD-001",
+        "sku": "COAT-BLK-XL",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "XL",
+        "stock": 6
       }
-    ];
+    ],
+    "color_images": {
+      "Camel Hangat": "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=800&q=80",
+      "Hitam Arang": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80"
+    }
+  },
+  {
+    "id": "PRD-002",
+    "name": "Kemeja Linen Santai Minimalis",
+    "name_en": "Minimalist Relaxed Linen Shirt",
+    "category": "Tops",
+    "base_price": 420000,
+    "badge": "New Arrival",
+    "description": "Kemeja lengan panjang dari serat linen alami yang sejuk dan bernapas. Dirancang berpotongan santai dengan kancing mutiara minimalis untuk iklim tropis.",
+    "description_en": "Long-sleeve button-down crafted from breathable pure flax linen. Cut in a relaxed silhouette with understated pearl buttons suited for warm climates.",
+    "weight_gram": 300,
+    "image_url": "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-02 11:30:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Kemeja+Linen+Santai+Minimalis",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Kemeja+Linen+Santai+Minimalis",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Kemeja+Linen+Santai+Minimalis"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0006",
+        "product_id": "PRD-002",
+        "sku": "LNSH-WHT-S",
+        "color": "Putih Tulang",
+        "color_en": "Bone White",
+        "size": "S",
+        "stock": 15
+      },
+      {
+        "variant_id": "VAR-0007",
+        "product_id": "PRD-002",
+        "sku": "LNSH-WHT-M",
+        "color": "Putih Tulang",
+        "color_en": "Bone White",
+        "size": "M",
+        "stock": 22
+      },
+      {
+        "variant_id": "VAR-0008",
+        "product_id": "PRD-002",
+        "sku": "LNSH-SKY-L",
+        "color": "Biru Pucat",
+        "color_en": "Pale Sky",
+        "size": "L",
+        "stock": 3
+      },
+      {
+        "variant_id": "VAR-0009",
+        "product_id": "PRD-002",
+        "sku": "LNSH-SKY-XL",
+        "color": "Biru Pucat",
+        "color_en": "Pale Sky",
+        "size": "XL",
+        "stock": 11
+      }
+    ],
+    "color_images": {
+      "Putih Tulang": "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=800&q=80",
+      "Biru Pucat": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80"
+    }
+  },
+  {
+    "id": "PRD-003",
+    "name": "Celana Lipit Wide-Leg Atelier",
+    "name_en": "Pleated Wide-Leg Trousers",
+    "category": "Bottoms",
+    "base_price": 580000,
+    "badge": "Best Seller",
+    "description": "Celana panjang berlipit ganda dengan pinggang tinggi dan potongan wide-leg yang jatuh rapi. Menggunakan bahan katun-viscose bertekstur lembut.",
+    "description_en": "High-waisted trousers with tailored front pleats and a fluid wide-leg drape. Woven from a soft cotton-viscose blend for clean daily movement.",
+    "weight_gram": 460,
+    "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-03 14:00:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Celana+Lipit+Wide-Leg+Atelier",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Lipit+Wide-Leg+Atelier",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Celana+Lipit+Wide-Leg+Atelier"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0010",
+        "product_id": "PRD-003",
+        "sku": "PLTD-SND-S",
+        "color": "Pasir Krem",
+        "color_en": "Sand Cream",
+        "size": "S",
+        "stock": 10
+      },
+      {
+        "variant_id": "VAR-0011",
+        "product_id": "PRD-003",
+        "sku": "PLTD-SND-M",
+        "color": "Pasir Krem",
+        "color_en": "Sand Cream",
+        "size": "M",
+        "stock": 16
+      },
+      {
+        "variant_id": "VAR-0012",
+        "product_id": "PRD-003",
+        "sku": "PLTD-BLK-L",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "L",
+        "stock": 12
+      },
+      {
+        "variant_id": "VAR-0013",
+        "product_id": "PRD-003",
+        "sku": "PLTD-BLK-XXL",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "XXL",
+        "stock": 6
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-004",
+    "name": "Sepatu Bot Kulit Heritage Minimalis",
+    "name_en": "Minimalist Leather Heritage Boots",
+    "category": "Footwear",
+    "base_price": 1150000,
+    "badge": "Limited Edition",
+    "description": "Sepatu bot semata kaki dari kulit sapi asli full-grain dengan detail cap-toe klasik, lubang tali logam tahan karat, dan sol karet anti-selip.",
+    "description_en": "Ankle-high service boots handcrafted from full-grain leather featuring classic cap-toe stitching, brushed metal eyelets, and a durable rubber outsole.",
+    "weight_gram": 1120,
+    "image_url": "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-04 09:15:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Sepatu+Bot+Kulit+Heritage",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Sepatu+Bot+Kulit+Heritage",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Sepatu+Bot+Kulit+Heritage"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0014",
+        "product_id": "PRD-004",
+        "sku": "BOOT-ESP-S",
+        "color": "Cokelat Espresso",
+        "color_en": "Espresso Brown",
+        "size": "S",
+        "stock": 4
+      },
+      {
+        "variant_id": "VAR-0015",
+        "product_id": "PRD-004",
+        "sku": "BOOT-ESP-M",
+        "color": "Cokelat Espresso",
+        "color_en": "Espresso Brown",
+        "size": "M",
+        "stock": 8
+      },
+      {
+        "variant_id": "VAR-0016",
+        "product_id": "PRD-004",
+        "sku": "BOOT-ESP-L",
+        "color": "Cokelat Espresso",
+        "color_en": "Espresso Brown",
+        "size": "L",
+        "stock": 7
+      },
+      {
+        "variant_id": "VAR-0017",
+        "product_id": "PRD-004",
+        "sku": "BOOT-BLK-XL",
+        "color": "Hitam Pekat",
+        "color_en": "Matte Black",
+        "size": "XL",
+        "stock": 5
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-005",
+    "name": "Kaos Katun Tebal Oversized",
+    "name_en": "Heavyweight Cotton Oversized Tee",
+    "category": "Tops",
+    "base_price": 240000,
+    "badge": "Best Seller",
+    "description": "Kaos potongan oversized berbahan 100% katun combed 240 GSM dengan kerah rib tebal anti-melar. Jatuh rapi di tubuh dan nyaman dikenakan sepanjang hari.",
+    "description_en": "Oversized crewneck tee knit from 240 GSM combed cotton with a dense ribbed neckline. Holds a clean architectural drape wash after wash.",
+    "weight_gram": 250,
+    "image_url": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-05 16:40:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Kaos+Katun+Tebal+Oversized",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Kaos+Katun+Tebal+Oversized",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Kaos+Katun+Tebal+Oversized"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0018",
+        "product_id": "PRD-005",
+        "sku": "HTEE-WHT-XS",
+        "color": "Putih Tulang",
+        "color_en": "Bone White",
+        "size": "XS",
+        "stock": 14
+      },
+      {
+        "variant_id": "VAR-0019",
+        "product_id": "PRD-005",
+        "sku": "HTEE-WHT-M",
+        "color": "Putih Tulang",
+        "color_en": "Bone White",
+        "size": "M",
+        "stock": 28
+      },
+      {
+        "variant_id": "VAR-0020",
+        "product_id": "PRD-005",
+        "sku": "HTEE-BLK-L",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "L",
+        "stock": 22
+      },
+      {
+        "variant_id": "VAR-0021",
+        "product_id": "PRD-005",
+        "sku": "HTEE-BLK-3XL",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "3XL",
+        "stock": 9
+      },
+      {
+        "variant_id": "VAR-0022",
+        "product_id": "PRD-005",
+        "sku": "HTEE-WHT-5XL",
+        "color": "Putih Tulang",
+        "color_en": "Bone White",
+        "size": "5XL",
+        "stock": 3
+      }
+    ],
+    "color_images": {
+      "Putih Tulang": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80",
+      "Hitam Arang": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80"
+    }
+  },
+  {
+    "id": "PRD-006",
+    "name": "Blazer Single-Breasted Terstruktur",
+    "name_en": "Tailored Single-Breasted Blazer",
+    "category": "Outerwear",
+    "base_price": 980000,
+    "badge": "New Arrival",
+    "description": "Blazer formal dan smart-casual berpotongan presisi dengan bahu berstruktur, kerah takik bersih, serta furing bernapas untuk kenyamanan kerja maupun acara malam.",
+    "description_en": "Precision-cut single-breasted blazer with structured shoulders, crisp notch lapels, and breathable lining built for modern office and evening wear.",
+    "weight_gram": 780,
+    "image_url": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-06 13:20:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Blazer+Single-Breasted+Terstruktur",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Blazer+Single-Breasted+Terstruktur",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Blazer+Single-Breasted+Terstruktur"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0023",
+        "product_id": "PRD-006",
+        "sku": "BLZR-NVY-S",
+        "color": "Biru Dongker",
+        "color_en": "Midnight Navy",
+        "size": "S",
+        "stock": 7
+      },
+      {
+        "variant_id": "VAR-0024",
+        "product_id": "PRD-006",
+        "sku": "BLZR-NVY-M",
+        "color": "Biru Dongker",
+        "color_en": "Midnight Navy",
+        "size": "M",
+        "stock": 13
+      },
+      {
+        "variant_id": "VAR-0025",
+        "product_id": "PRD-006",
+        "sku": "BLZR-BLK-L",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "L",
+        "stock": 10
+      },
+      {
+        "variant_id": "VAR-0026",
+        "product_id": "PRD-006",
+        "sku": "BLZR-BLK-XL",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "XL",
+        "stock": 6
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-007",
+    "name": "Celana Jeans Selvedge Potongan Lurus",
+    "name_en": "Raw Selvedge Straight Cut Jeans",
+    "category": "Bottoms",
+    "base_price": 650000,
+    "badge": "Limited Edition",
+    "description": "Celana denim tenun selvedge 14 oz dengan jahitan kontras kokoh dan potongan lurus klasik yang membentuk karakter warna alami seiring pemakaian.",
+    "description_en": "14 oz selvedge denim crafted in a timeless straight-leg cut with durable contrast stitching designed to develop personal patina over time.",
+    "weight_gram": 540,
+    "image_url": "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-07 11:00:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Celana+Jeans+Selvedge+Lurus",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Jeans+Selvedge+Lurus",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Celana+Jeans+Selvedge+Lurus"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0027",
+        "product_id": "PRD-007",
+        "sku": "SLVG-IND-S",
+        "color": "Indigo Klasik",
+        "color_en": "Classic Indigo",
+        "size": "S",
+        "stock": 10
+      },
+      {
+        "variant_id": "VAR-0028",
+        "product_id": "PRD-007",
+        "sku": "SLVG-IND-M",
+        "color": "Indigo Klasik",
+        "color_en": "Classic Indigo",
+        "size": "M",
+        "stock": 18
+      },
+      {
+        "variant_id": "VAR-0029",
+        "product_id": "PRD-007",
+        "sku": "SLVG-BLK-4XL",
+        "color": "Hitam Pekat",
+        "color_en": "Jet Black",
+        "size": "4XL",
+        "stock": 4
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-008",
+    "name": "Tas Tote Kanvas Atelier",
+    "name_en": "Canvas Atelier Weekender Tote",
+    "category": "Accessories",
+    "base_price": 350000,
+    "badge": "Best Seller",
+    "description": "Tas tote berstruktur kokoh dari kanvas katun tebal 16 oz dengan tali bahu anyaman lebar dan ruang luas untuk laptop 14 inci serta perlengkapan harian.",
+    "description_en": "Structured everyday tote sewn from heavyweight 16 oz cotton canvas with wide webbing handles and ample room for a 14-inch laptop and essentials.",
+    "weight_gram": 450,
+    "image_url": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-08 15:30:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Tas+Tote+Kanvas+Atelier",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Tas+Tote+Kanvas+Atelier",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Tas+Tote+Kanvas+Atelier"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0030",
+        "product_id": "PRD-008",
+        "sku": "TOTE-TAN-M",
+        "color": "Cokelat Pasir",
+        "color_en": "Sand Tan",
+        "size": "M",
+        "stock": 22
+      },
+      {
+        "variant_id": "VAR-0031",
+        "product_id": "PRD-008",
+        "sku": "TOTE-ECR-M",
+        "color": "Ecru Natural",
+        "color_en": "Natural Ecru",
+        "size": "M",
+        "stock": 18
+      },
+      {
+        "variant_id": "VAR-0032",
+        "product_id": "PRD-008",
+        "sku": "TOTE-BLK-L",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "L",
+        "stock": 14
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-009",
+    "name": "Kupluk Rajut Wol Merino",
+    "name_en": "Merino Wool Ribbed Beanie",
+    "category": "Accessories",
+    "base_price": 180000,
+    "badge": "None",
+    "description": "Topi kupluk rajut rib dari campuran wol merino halus yang hangat tanpa rasa gatal. Lipatan ganda elastis menyesuaikan bentuk kepala secara nyaman.",
+    "description_en": "Rib-knit cuffed beanie spun from soft merino wool blend for itch-free warmth. Flexible double-fold construction adapts comfortably to any fit.",
+    "weight_gram": 180,
+    "image_url": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-09 08:45:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Kupluk+Rajut+Wol+Merino",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Kupluk+Rajut+Wol+Merino",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Kupluk+Rajut+Wol+Merino"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0033",
+        "product_id": "PRD-009",
+        "sku": "BEAN-ESP-M",
+        "color": "Cokelat Tua",
+        "color_en": "Dark Espresso",
+        "size": "M",
+        "stock": 20
+      },
+      {
+        "variant_id": "VAR-0034",
+        "product_id": "PRD-009",
+        "sku": "BEAN-OLV-M",
+        "color": "Hijau Hutan",
+        "color_en": "Forest Green",
+        "size": "M",
+        "stock": 16
+      },
+      {
+        "variant_id": "VAR-0035",
+        "product_id": "PRD-009",
+        "sku": "BEAN-ROS-M",
+        "color": "Mawar Redup",
+        "color_en": "Dusty Rose",
+        "size": "M",
+        "stock": 12
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-010",
+    "name": "Jaket Bomber Terracotta Atelier",
+    "name_en": "Atelier Terracotta Bomber Jacket",
+    "category": "Outerwear",
+    "base_price": 720000,
+    "badge": "New Arrival",
+    "description": "Jaket bomber minimalis berwarna terracotta hangat berbahan twill nilon matte tahan angin, dilengkapi saku ritsleting lengan dan rib elastis rapi.",
+    "description_en": "Minimalist zip-up bomber jacket in signature warm terracotta matte nylon twill, finished with a utility sleeve pocket and structured ribbed trims.",
+    "weight_gram": 760,
+    "image_url": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-10 10:15:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Jaket+Bomber+Terracotta+Atelier",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Jaket+Bomber+Terracotta+Atelier",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Jaket+Bomber+Terracotta+Atelier"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0036",
+        "product_id": "PRD-010",
+        "sku": "BMBR-TER-S",
+        "color": "Terracotta",
+        "color_en": "Terracotta",
+        "size": "S",
+        "stock": 9
+      },
+      {
+        "variant_id": "VAR-0037",
+        "product_id": "PRD-010",
+        "sku": "BMBR-TER-M",
+        "color": "Terracotta",
+        "color_en": "Terracotta",
+        "size": "M",
+        "stock": 15
+      },
+      {
+        "variant_id": "VAR-0038",
+        "product_id": "PRD-010",
+        "sku": "BMBR-TER-L",
+        "color": "Terracotta",
+        "color_en": "Terracotta",
+        "size": "L",
+        "stock": 11
+      },
+      {
+        "variant_id": "VAR-0039",
+        "product_id": "PRD-010",
+        "sku": "BMBR-BLK-XXL",
+        "color": "Hitam Arang",
+        "color_en": "Charcoal Black",
+        "size": "XXL",
+        "stock": 5
+      }
+    ],
+    "color_images": {
+      "Terracotta": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
+      "Hitam Arang": "https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80"
+    }
+  },
+  {
+    "id": "PRD-011",
+    "name": "Jaket Denim Kerah Sherpa Studio",
+    "name_en": "Studio Sherpa Collar Denim Jacket",
+    "category": "Outerwear",
+    "base_price": 790000,
+    "badge": "Limited Edition",
+    "description": "Jaket trucker denim katun tebal dengan aksen kerah sherpa krem lembut, saku dada berkancing logam, dan pencucian indigo muda bergaya kasual terkurasi.",
+    "description_en": "Heavyweight cotton trucker denim jacket accented with a soft cream sherpa collar, chest flap pockets, and a clean light-indigo studio wash.",
+    "weight_gram": 860,
+    "image_url": "https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-11 11:20:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Jaket+Denim+Kerah+Sherpa",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Jaket+Denim+Kerah+Sherpa",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Jaket+Denim+Kerah+Sherpa"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0040",
+        "product_id": "PRD-011",
+        "sku": "DNJK-LTI-S",
+        "color": "Indigo Muda",
+        "color_en": "Light Indigo",
+        "size": "S",
+        "stock": 6
+      },
+      {
+        "variant_id": "VAR-0041",
+        "product_id": "PRD-011",
+        "sku": "DNJK-LTI-M",
+        "color": "Indigo Muda",
+        "color_en": "Light Indigo",
+        "size": "M",
+        "stock": 12
+      },
+      {
+        "variant_id": "VAR-0042",
+        "product_id": "PRD-011",
+        "sku": "DNJK-LTI-L",
+        "color": "Indigo Muda",
+        "color_en": "Light Indigo",
+        "size": "L",
+        "stock": 10
+      },
+      {
+        "variant_id": "VAR-0043",
+        "product_id": "PRD-011",
+        "sku": "DNJK-IND-XL",
+        "color": "Indigo Gelap",
+        "color_en": "Dark Indigo",
+        "size": "XL",
+        "stock": 4
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-012",
+    "name": "Sweater Turtleneck Rajut Merino",
+    "name_en": "Merino Ribbed Turtleneck Sweater",
+    "category": "Tops",
+    "base_price": 640000,
+    "badge": "Best Seller",
+    "description": "Sweater kerah tinggi (turtleneck) rajut rib rapat berbahan wol merino lembut. Memberikan kehangatan seimbang dan profil ramping untuk layering di bawah blazer atau mantel.",
+    "description_en": "Fine-ribbed turtleneck sweater knitted from soft merino wool. Delivers balanced warmth and a clean silhouette made for layering under coats or blazers.",
+    "weight_gram": 420,
+    "image_url": "https://images.unsplash.com/photo-1623183949963-0557c9532763?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-12 09:50:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Sweater+Turtleneck+Rajut+Merino",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Sweater+Turtleneck+Rajut+Merino",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Sweater+Turtleneck+Rajut+Merino"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0044",
+        "product_id": "PRD-012",
+        "sku": "TRTL-BLK-XS",
+        "color": "Hitam Pekat",
+        "color_en": "Jet Black",
+        "size": "XS",
+        "stock": 7
+      },
+      {
+        "variant_id": "VAR-0045",
+        "product_id": "PRD-012",
+        "sku": "TRTL-BLK-S",
+        "color": "Hitam Pekat",
+        "color_en": "Jet Black",
+        "size": "S",
+        "stock": 13
+      },
+      {
+        "variant_id": "VAR-0046",
+        "product_id": "PRD-012",
+        "sku": "TRTL-BLK-M",
+        "color": "Hitam Pekat",
+        "color_en": "Jet Black",
+        "size": "M",
+        "stock": 17
+      },
+      {
+        "variant_id": "VAR-0047",
+        "product_id": "PRD-012",
+        "sku": "TRTL-OAT-L",
+        "color": "Oatmeal",
+        "color_en": "Warm Oatmeal",
+        "size": "L",
+        "stock": 9
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-013",
+    "name": "Pullover Crewneck Katun Atelier",
+    "name_en": "Atelier Cotton Crewneck Pullover",
+    "category": "Tops",
+    "base_price": 480000,
+    "badge": "None",
+    "description": "Sweatshirt crewneck polos berbahan katun French terry 340 GSM dengan jahitan bahu santai serta rib elastis pada kerah, manset, dan pinggang.",
+    "description_en": "Clean unbranded crewneck pullover cut from 340 GSM cotton French terry, featuring relaxed shoulders and structured ribbed cuffs and hem.",
+    "weight_gram": 410,
+    "image_url": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-13 13:10:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Pullover+Crewneck+Katun+Atelier",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Pullover+Crewneck+Katun+Atelier",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Pullover+Crewneck+Katun+Atelier"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0048",
+        "product_id": "PRD-013",
+        "sku": "CRWN-WHT-S",
+        "color": "Putih Bersih",
+        "color_en": "Pure White",
+        "size": "S",
+        "stock": 14
+      },
+      {
+        "variant_id": "VAR-0049",
+        "product_id": "PRD-013",
+        "sku": "CRWN-WHT-M",
+        "color": "Putih Bersih",
+        "color_en": "Pure White",
+        "size": "M",
+        "stock": 20
+      },
+      {
+        "variant_id": "VAR-0050",
+        "product_id": "PRD-013",
+        "sku": "CRWN-GRY-L",
+        "color": "Abu Batu",
+        "color_en": "Stone Grey",
+        "size": "L",
+        "stock": 15
+      },
+      {
+        "variant_id": "VAR-0051",
+        "product_id": "PRD-013",
+        "sku": "CRWN-GRY-3XL",
+        "color": "Abu Batu",
+        "color_en": "Stone Grey",
+        "size": "3XL",
+        "stock": 6
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-014",
+    "name": "Celana Twill 5-Pocket Minimalis",
+    "name_en": "Minimalist 5-Pocket Twill Pants",
+    "category": "Bottoms",
+    "base_price": 490000,
+    "badge": "New Arrival",
+    "description": "Celana panjang 5-pocket berbahan katun twill tenun padat dengan paku keling tembaga halus dan potongan lurus ramping untuk gaya smart-casual.",
+    "description_en": "Five-pocket straight pants tailored from dense cotton twill with understated copper rivets for a versatile smart-casual staple.",
+    "weight_gram": 450,
+    "image_url": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-14 10:00:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Celana+Twill+5-Pocket+Minimalis",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Twill+5-Pocket+Minimalis",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Celana+Twill+5-Pocket+Minimalis"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0052",
+        "product_id": "PRD-014",
+        "sku": "TWLL-SLT-S",
+        "color": "Biru Slate",
+        "color_en": "Slate Navy",
+        "size": "S",
+        "stock": 11
+      },
+      {
+        "variant_id": "VAR-0053",
+        "product_id": "PRD-014",
+        "sku": "TWLL-SLT-M",
+        "color": "Biru Slate",
+        "color_en": "Slate Navy",
+        "size": "M",
+        "stock": 19
+      },
+      {
+        "variant_id": "VAR-0054",
+        "product_id": "PRD-014",
+        "sku": "TWLL-SLT-L",
+        "color": "Biru Slate",
+        "color_en": "Slate Navy",
+        "size": "L",
+        "stock": 14
+      },
+      {
+        "variant_id": "VAR-0055",
+        "product_id": "PRD-014",
+        "sku": "TWLL-KHK-XL",
+        "color": "Khaki Batu",
+        "color_en": "Stone Khaki",
+        "size": "XL",
+        "stock": 8
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-015",
+    "name": "Celana Utility Tapered Santai",
+    "name_en": "Relaxed Utility Tapered Trousers",
+    "category": "Bottoms",
+    "base_price": 440000,
+    "badge": "None",
+    "description": "Celana potongan tapered dengan pinggang dan pergelangan elastis, dilengkapi saku tempel depan bergaya utility dari kain katun-linen ringan yang nyaman.",
+    "description_en": "Tapered relaxed trousers with an elasticized waistband, ankle cuffs, and front flap utility pockets sewn in lightweight cotton-linen.",
+    "weight_gram": 420,
+    "image_url": "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-15 14:25:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Celana+Utility+Tapered+Santai",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Celana+Utility+Tapered+Santai",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Celana+Utility+Tapered+Santai"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0056",
+        "product_id": "PRD-015",
+        "sku": "UTLP-CLY-XS",
+        "color": "Tanah Liat",
+        "color_en": "Soft Clay",
+        "size": "XS",
+        "stock": 8
+      },
+      {
+        "variant_id": "VAR-0057",
+        "product_id": "PRD-015",
+        "sku": "UTLP-CLY-S",
+        "color": "Tanah Liat",
+        "color_en": "Soft Clay",
+        "size": "S",
+        "stock": 14
+      },
+      {
+        "variant_id": "VAR-0058",
+        "product_id": "PRD-015",
+        "sku": "UTLP-CLY-M",
+        "color": "Tanah Liat",
+        "color_en": "Soft Clay",
+        "size": "M",
+        "stock": 16
+      },
+      {
+        "variant_id": "VAR-0059",
+        "product_id": "PRD-015",
+        "sku": "UTLP-OLV-L",
+        "color": "Zaitun",
+        "color_en": "Muted Olive",
+        "size": "L",
+        "stock": 10
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-016",
+    "name": "Sepatu Derby Kulit Full-Grain",
+    "name_en": "Full-Grain Leather Derby Shoes",
+    "category": "Footwear",
+    "base_price": 950000,
+    "badge": "Best Seller",
+    "description": "Sepatu derby kulit sapi full-grain berwarna cokelat cognac dengan panel tekstur mikro yang halus, jahitan rapi, dan bantalan insole empuk untuk kenyamanan formal.",
+    "description_en": "Cognac full-grain leather derby shoes detailed with fine micro-textured vamp panels, clean tonal stitching, and a cushioned insole for all-day formal wear.",
+    "weight_gram": 1050,
+    "image_url": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-16 09:30:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Sepatu+Derby+Kulit+Full-Grain",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Sepatu+Derby+Kulit+Full-Grain",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Sepatu+Derby+Kulit+Full-Grain"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0060",
+        "product_id": "PRD-016",
+        "sku": "DRBY-COG-S",
+        "color": "Cokelat Cognac",
+        "color_en": "Cognac Brown",
+        "size": "S",
+        "stock": 7
+      },
+      {
+        "variant_id": "VAR-0061",
+        "product_id": "PRD-016",
+        "sku": "DRBY-COG-M",
+        "color": "Cokelat Cognac",
+        "color_en": "Cognac Brown",
+        "size": "M",
+        "stock": 12
+      },
+      {
+        "variant_id": "VAR-0062",
+        "product_id": "PRD-016",
+        "sku": "DRBY-COG-L",
+        "color": "Cokelat Cognac",
+        "color_en": "Cognac Brown",
+        "size": "L",
+        "stock": 10
+      },
+      {
+        "variant_id": "VAR-0063",
+        "product_id": "PRD-016",
+        "sku": "DRBY-BLK-XL",
+        "color": "Hitam Pekat",
+        "color_en": "Matte Black",
+        "size": "XL",
+        "stock": 6
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-017",
+    "name": "Sneakers Kanvas Low-Top Minimalis",
+    "name_en": "Minimalist Low-Top Canvas Sneakers",
+    "category": "Footwear",
+    "base_price": 590000,
+    "badge": "New Arrival",
+    "description": "Sepatu sneakers low-top putih bersih tanpa logo berlebihan, terbuat dari kanvas katun tenun rapat dengan sol karet vulkanisir fleksibel untuk padanan kasual.",
+    "description_en": "Clean unbranded white low-top sneakers constructed from tightly woven cotton canvas on a flexible vulcanized rubber sole for daily casual pairing.",
+    "weight_gram": 950,
+    "image_url": "https://images.unsplash.com/photo-1499321889027-736489e2f5a5?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-17 11:45:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Sneakers+Kanvas+Low-Top+Minimalis"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0064",
+        "product_id": "PRD-017",
+        "sku": "SNKR-WHT-S",
+        "color": "Putih Bersih",
+        "color_en": "Pure White",
+        "size": "S",
+        "stock": 11
+      },
+      {
+        "variant_id": "VAR-0065",
+        "product_id": "PRD-017",
+        "sku": "SNKR-WHT-M",
+        "color": "Putih Bersih",
+        "color_en": "Pure White",
+        "size": "M",
+        "stock": 18
+      },
+      {
+        "variant_id": "VAR-0066",
+        "product_id": "PRD-017",
+        "sku": "SNKR-WHT-L",
+        "color": "Putih Bersih",
+        "color_en": "Pure White",
+        "size": "L",
+        "stock": 14
+      },
+      {
+        "variant_id": "VAR-0067",
+        "product_id": "PRD-017",
+        "sku": "SNKR-ECR-XL",
+        "color": "Putih Tulang",
+        "color_en": "Off White",
+        "size": "XL",
+        "stock": 9
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-018",
+    "name": "Kacamata Hitam Bingkai Tipis Atelier",
+    "name_en": "Atelier Minimalist Round Sunglasses",
+    "category": "Accessories",
+    "base_price": 320000,
+    "badge": "New Arrival",
+    "description": "Kacamata hitam berbingkai logam bulat tipis warna emas lembut dengan lensa UV400 hijau arang anti-silau. Ringan dan dilengkapi sarung pelindung kanvas.",
+    "description_en": "Slim gold-wire round sunglasses fitted with anti-glare dark slate-green UV400 lenses. Featherweight balance complete with a protective canvas sleeve.",
+    "weight_gram": 190,
+    "image_url": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-18 15:00:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Kacamata+Hitam+Bingkai+Tipis",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Kacamata+Hitam+Bingkai+Tipis",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Kacamata+Hitam+Bingkai+Tipis"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0068",
+        "product_id": "PRD-018",
+        "sku": "SUNG-GLD-M",
+        "color": "Emas Matte",
+        "color_en": "Matte Gold",
+        "size": "M",
+        "stock": 16
+      },
+      {
+        "variant_id": "VAR-0069",
+        "product_id": "PRD-018",
+        "sku": "SUNG-SLV-M",
+        "color": "Perak Sikat",
+        "color_en": "Brushed Silver",
+        "size": "M",
+        "stock": 12
+      },
+      {
+        "variant_id": "VAR-0070",
+        "product_id": "PRD-018",
+        "sku": "SUNG-BLK-M",
+        "color": "Hitam Matte",
+        "color_en": "Matte Black",
+        "size": "M",
+        "stock": 14
+      }
+    ],
+    "color_images": {}
+  },
+  {
+    "id": "PRD-019",
+    "name": "Topi Twill Katun Minimalis",
+    "name_en": "Structured Cotton Twill Cap",
+    "category": "Accessories",
+    "base_price": 210000,
+    "badge": "None",
+    "description": "Topi 6-panel berbahan katun twill washed berwarna abu arang dengan visor melengkung klasik dan pengait gesper belakang yang mudah disesuaikan.",
+    "description_en": "Six-panel baseball cap crafted from garment-washed charcoal cotton twill with a pre-curved brim and adjustable back strap clasp.",
+    "weight_gram": 185,
+    "image_url": "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=800&q=80",
+    "created_at": "2026-11-19 16:20:00",
+    "marketplace_links": {
+      "shopee": "https://shopee.co.id/search?keyword=AryaStore+Topi+Twill+Katun+Minimalis",
+      "tokopedia": "https://www.tokopedia.com/search?st=product&q=AryaStore+Topi+Twill+Katun+Minimalis",
+      "tiktokshop": "https://www.tiktok.com/search?q=AryaStore+Topi+Twill+Katun+Minimalis"
+    },
+    "variants": [
+      {
+        "variant_id": "VAR-0071",
+        "product_id": "PRD-019",
+        "sku": "CAP-CHR-M",
+        "color": "Abu Arang",
+        "color_en": "Washed Charcoal",
+        "size": "M",
+        "stock": 21
+      },
+      {
+        "variant_id": "VAR-0072",
+        "product_id": "PRD-019",
+        "sku": "CAP-SND-M",
+        "color": "Pasir Krem",
+        "color_en": "Sand Cream",
+        "size": "M",
+        "stock": 17
+      },
+      {
+        "variant_id": "VAR-0073",
+        "product_id": "PRD-019",
+        "sku": "CAP-BLK-L",
+        "color": "Hitam Pekat",
+        "color_en": "Jet Black",
+        "size": "L",
+        "stock": 15
+      }
+    ],
+    "color_images": {}
+  }
+];
 
-    var variantCounter = 1;
-
-    for (var p = 0; p < sampleProducts.length; p++) {
-      var prod = sampleProducts[p];
+    for (var p = 0; p < canonicalProducts.length; p++) {
+      var prod = canonicalProducts[p];
       if (existingProductIds.indexOf(prod.id) === -1) {
         productsSheet.appendRow([
           prod.id,
@@ -2878,25 +4508,27 @@ function seedDatabase() {
           prod.badge,
           prod.description,
           prod.image_url,
-          prod.created_at
+          prod.created_at || now,
+          prod.name_en || prod.name,
+          prod.description_en || prod.description,
+          prod.weight_gram || 300,
+          JSON.stringify(prod.marketplace_links || {}),
+          JSON.stringify(prod.color_images || {})
         ]);
         results.productsAdded++;
       }
 
-      // Add product variants
       for (var v = 0; v < prod.variants.length; v++) {
         var vData = prod.variants[v];
-        var variantId = 'VAR-' + ('000' + variantCounter).slice(-4);
-        variantCounter++;
-
-        if (existingVariantIds.indexOf(variantId) === -1) {
+        if (existingVariantIds.indexOf(vData.variant_id) === -1) {
           variantsSheet.appendRow([
-            variantId,
-            prod.id,
+            vData.variant_id,
+            vData.product_id,
             vData.sku,
             vData.color,
             vData.size,
-            vData.stock
+            vData.stock,
+            vData.image_url || ''
           ]);
           results.variantsAdded++;
         }
@@ -2904,76 +4536,106 @@ function seedDatabase() {
     }
   }
 
-  // ----------------------------------------------------------------------------
-  // C. Seed 2 Outfit Bundles & Campaigns
-  // ----------------------------------------------------------------------------
-  var campaignSheet = ss.getSheetByName('CampaignsAndBundles');
+  // C. Bundles (2 Verified Bundles from catalog-v2.json)
+  var campaignSheet = ss.getSheetByName(SHEET_NAMES.CAMPAIGNS);
   if (campaignSheet) {
     var existingCampaignIds = getExistingColumnValues(campaignSheet, 0);
-
-    var sampleCampaigns = [
+    var canonicalBundles = [
+  {
+    "campaign_id": "BND-001",
+    "banner_title": "Atelier Monochrome Set (Mantel Wol + Celana Lipit)",
+    "title_en": "Atelier Monochrome Set (Wool Coat + Pleated Trousers)",
+    "banner_desc": "Perpaduan mantel wol terstruktur dan celana lipit wide-leg untuk estetika formal paripurna.",
+    "desc_en": "A refined pairing of our structured wool coat and wide-leg pleated trousers for effortless formal tailoring.",
+    "ends_at": "2026-12-31 23:59:59",
+    "is_active": true,
+    "normal_price": 1830000,
+    "bundle_price": 1550000,
+    "image_url": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80",
+    "items": [
       {
-        campaign_id: 'CMP-001',
-        banner_title: 'Koleksi Minimalis Kota (Urban Layer Set)',
-        banner_desc: 'Paduan sempurna trench coat wol, kaos katun boxy tebal, dan celana wide-leg lipit ganda. Tampil rapi seketika dengan potongan harga spesial paket bundle.',
-        ends_at: '2026-12-31 23:59:59',
-        is_active: 'TRUE',
-        bundle_items_json: JSON.stringify([
-          { product_id: 'PRD-001', name: 'Oversized Wool Trench Coat', quantity: 1, base_price: 899000 },
-          { product_id: 'PRD-003', name: 'Heavyweight Cotton Boxy Tee', quantity: 1, base_price: 189000 },
-          { product_id: 'PRD-005', name: 'Wide-Leg Pleated Trousers', quantity: 1, base_price: 389000 }
-        ]),
-        normal_price: 1477000,
-        bundle_price: 1239000
+        "product_id": "PRD-001",
+        "variant_id": "VAR-0002",
+        "sku": "COAT-CML-M",
+        "name": "Mantel Wol Terstruktur Atelier (Camel Hangat, M)",
+        "name_en": "Atelier Structured Wool Coat (Warm Camel, M)",
+        "quantity": 1,
+        "base_price": 1250000
       },
       {
-        campaign_id: 'CMP-002',
-        banner_title: 'Setelan Tailored Kontemporer (Modern Tailoring Set)',
-        banner_desc: 'Kombinasi modern berstruktur tajam: blazer boxy berstruktur, kemeja santai linen kerah terbuka, dan celana selvedge denim straight-leg klasik.',
-        ends_at: '2026-12-31 23:59:59',
-        is_active: 'TRUE',
-        bundle_items_json: JSON.stringify([
-          { product_id: 'PRD-002', name: 'Structured Boxy Blazer', quantity: 1, base_price: 649000 },
-          { product_id: 'PRD-004', name: 'Relaxed Linen Camp Collar Shirt', quantity: 1, base_price: 299000 },
-          { product_id: 'PRD-006', name: 'Raw Selvedge Straight Denim', quantity: 1, base_price: 529000 }
-        ]),
-        normal_price: 1477000,
-        bundle_price: 1249000
+        "product_id": "PRD-003",
+        "variant_id": "VAR-0011",
+        "sku": "PLTD-SND-M",
+        "name": "Celana Lipit Wide-Leg Atelier (Pasir Krem, M)",
+        "name_en": "Pleated Wide-Leg Trousers (Sand Cream, M)",
+        "quantity": 1,
+        "base_price": 580000
       }
-    ];
+    ]
+  },
+  {
+    "campaign_id": "BND-002",
+    "banner_title": "Urban Terracotta Duo (Kemeja Linen + Tas Tote Kanvas)",
+    "title_en": "Urban Terracotta Duo (Linen Shirt + Canvas Weekender Tote)",
+    "banner_desc": "Kombinasi kemeja linen bernapas dengan tas tote kanvas atelier serbaguna untuk mobilitas harian.",
+    "desc_en": "An everyday duo combining our breathable relaxed linen shirt with the structured canvas atelier tote.",
+    "ends_at": "2026-12-31 23:59:59",
+    "is_active": true,
+    "normal_price": 770000,
+    "bundle_price": 650000,
+    "image_url": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80",
+    "items": [
+      {
+        "product_id": "PRD-002",
+        "variant_id": "VAR-0007",
+        "sku": "LNSH-WHT-M",
+        "name": "Kemeja Linen Santai Minimalis (Putih Tulang, M)",
+        "name_en": "Minimalist Relaxed Linen Shirt (Bone White, M)",
+        "quantity": 1,
+        "base_price": 420000
+      },
+      {
+        "product_id": "PRD-008",
+        "variant_id": "VAR-0030",
+        "sku": "TOTE-TAN-M",
+        "name": "Tas Tote Kanvas Atelier (Cokelat Pasir, M)",
+        "name_en": "Canvas Atelier Weekender Tote (Sand Tan, M)",
+        "quantity": 1,
+        "base_price": 350000
+      }
+    ]
+  }
+];
 
-    for (var c = 0; c < sampleCampaigns.length; c++) {
-      var camp = sampleCampaigns[c];
-      if (existingCampaignIds.indexOf(camp.campaign_id) === -1) {
+    for (var b = 0; b < canonicalBundles.length; b++) {
+      var bnd = canonicalBundles[b];
+      if (existingCampaignIds.indexOf(bnd.campaign_id) === -1) {
         campaignSheet.appendRow([
-          camp.campaign_id,
-          camp.banner_title,
-          camp.banner_desc,
-          camp.ends_at,
-          camp.is_active,
-          camp.bundle_items_json,
-          camp.normal_price,
-          camp.bundle_price
+          bnd.campaign_id,
+          bnd.banner_title,
+          bnd.banner_desc,
+          bnd.ends_at,
+          bnd.is_active ? 'TRUE' : 'FALSE',
+          JSON.stringify(bnd.items),
+          bnd.normal_price,
+          bnd.bundle_price
         ]);
         results.campaignsAdded++;
       }
     }
   }
 
-  // ----------------------------------------------------------------------------
-  // D. Seed Sample Coupons (WELCOME10 & HEMAT50K)
-  // ----------------------------------------------------------------------------
-  var couponsSheet = ss.getSheetByName('Coupons');
+  // D. Coupons (WELCOME10, HEMAT50K, GLOBALSHIP)
+  var couponsSheet = ss.getSheetByName(SHEET_NAMES.COUPONS);
   if (couponsSheet) {
     var existingCoupons = getExistingColumnValues(couponsSheet, 0);
-
     var sampleCoupons = [
       {
         code: 'WELCOME10',
         discount_type: 'PERCENT',
         discount_value: 10,
         min_spend: 200000,
-        description: 'Diskon 10% untuk pelanggan baru dengan minimal pembelanjaan Rp 200.000',
+        description: 'Diskon 10% untuk pelanggan baru dengan minimal belanja Rp 200.000',
         is_active: 'TRUE'
       },
       {
@@ -2982,6 +4644,14 @@ function seedDatabase() {
         discount_value: 50000,
         min_spend: 350000,
         description: 'Potongan harga langsung Rp 50.000 untuk transaksi minimal Rp 350.000',
+        is_active: 'TRUE'
+      },
+      {
+        code: 'GLOBALSHIP',
+        discount_type: 'FIXED',
+        discount_value: 100000,
+        min_spend: 1000000,
+        description: 'Subsidi ongkos kirim Rp 100.000 untuk transaksi internasional atau nasional di atas Rp 1.000.000',
         is_active: 'TRUE'
       }
     ];
@@ -3002,385 +4672,17 @@ function seedDatabase() {
     }
   }
 
-  // ----------------------------------------------------------------------------
-  // E. Seed Sample Customers
-  // ----------------------------------------------------------------------------
-  var customersSheet = ss.getSheetByName('Customers');
-  if (customersSheet) {
-    var existingCustomers = getExistingColumnValues(customersSheet, 0);
-
-    var sampleCustomers = [
-      {
-        customer_id: 'CST-001',
-        name: 'Dimas Pratama',
-        whatsapp_no: '6281234567891',
-        total_orders: 2,
-        total_spent: 1029200,
-        created_at: now,
-        notes: 'Pelanggan reguler menyukai warna monokrom gelap'
-      },
-      {
-        customer_id: 'CST-002',
-        name: 'Siti Rahma',
-        whatsapp_no: '6281898765432',
-        total_orders: 1,
-        total_spent: 674000,
-        created_at: now,
-        notes: 'Membeli blazer untuk acara formal'
-      }
-    ];
-
-    for (var cust = 0; cust < sampleCustomers.length; cust++) {
-      var customer = sampleCustomers[cust];
-      if (existingCustomers.indexOf(customer.customer_id) === -1) {
-        customersSheet.appendRow([
-          customer.customer_id,
-          customer.name,
-          customer.whatsapp_no,
-          customer.total_orders,
-          customer.total_spent,
-          customer.created_at,
-          customer.notes
-        ]);
-        results.customersAdded++;
-      }
-    }
-  }
-
-  // ----------------------------------------------------------------------------
-  // F. Seed Sample Orders
-  // ----------------------------------------------------------------------------
-  var ordersSheet = ss.getSheetByName('Orders');
-  if (ordersSheet) {
-    var existingOrders = getExistingColumnValues(ordersSheet, 0);
-
-    var sampleOrders = [
-      {
-        invoice_no: 'INV-202611-001',
-        created_at: now,
-        customer_id: 'CST-001',
-        customer_name: 'Dimas Pratama',
-        whatsapp_no: '6281234567891',
-        items_json: JSON.stringify([
-          {
-            product_id: 'PRD-003',
-            name: 'Heavyweight Cotton Boxy Tee',
-            sku: 'HCT-VB-L',
-            color: 'Vintage Black',
-            size: 'L',
-            quantity: 2,
-            price: 189000,
-            subtotal: 378000
-          }
-        ]),
-        subtotal: 378000,
-        coupon_code: 'WELCOME10',
-        coupon_discount: 37800,
-        shipping_method: 'Reguler (JNE/J&T)',
-        shipping_cost: 15000,
-        grand_total: 355200,
-        payment_proof_url: '',
-        status: 'Selesai'
-      },
-      {
-        invoice_no: 'INV-202611-002',
-        created_at: now,
-        customer_id: 'CST-002',
-        customer_name: 'Siti Rahma',
-        whatsapp_no: '6281898765432',
-        items_json: JSON.stringify([
-          {
-            product_id: 'PRD-002',
-            name: 'Structured Boxy Blazer',
-            sku: 'SBB-BK-M',
-            color: 'Midnight Black',
-            size: 'M',
-            quantity: 1,
-            price: 649000,
-            subtotal: 649000
-          }
-        ]),
-        subtotal: 649000,
-        coupon_code: '',
-        coupon_discount: 0,
-        shipping_method: 'Express (SiCepat/Paxel)',
-        shipping_cost: 25000,
-        grand_total: 674000,
-        payment_proof_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80',
-        status: 'Bukti Diupload'
-      }
-    ];
-
-    for (var o = 0; o < sampleOrders.length; o++) {
-      var ord = sampleOrders[o];
-      if (existingOrders.indexOf(ord.invoice_no) === -1) {
-        ordersSheet.appendRow([
-          ord.invoice_no,
-          ord.created_at,
-          ord.customer_id,
-          ord.customer_name,
-          ord.whatsapp_no,
-          ord.items_json,
-          ord.subtotal,
-          ord.coupon_code,
-          ord.coupon_discount,
-          ord.shipping_method,
-          ord.shipping_cost,
-          ord.grand_total,
-          ord.payment_proof_url,
-          ord.status
-        ]);
-        results.ordersAdded++;
-      }
-    }
-  }
-
-  // ----------------------------------------------------------------------------
-  // G. Seed Sample Returns
-  // ----------------------------------------------------------------------------
-  var returnsSheet = ss.getSheetByName('Returns');
-  if (returnsSheet) {
-    var existingReturns = getExistingColumnValues(returnsSheet, 0);
-
-    var sampleReturn = {
-      return_id: 'RTR-202611-001',
-      invoice_no: 'INV-202611-001',
-      customer_name: 'Dimas Pratama',
-      reason: 'Ukuran L terlalu longgar di bahu, ingin mengajukan tukar size ke M',
-      requested_size: 'M',
-      status: 'Diajukan',
-      admin_notes: 'Menunggu konfirmasi penerimaan barang di gudang'
-    };
-
-    if (existingReturns.indexOf(sampleReturn.return_id) === -1) {
-      returnsSheet.appendRow([
-        sampleReturn.return_id,
-        sampleReturn.invoice_no,
-        sampleReturn.customer_name,
-        sampleReturn.reason,
-        sampleReturn.requested_size,
-        sampleReturn.status,
-        sampleReturn.admin_notes
-      ]);
-      results.returnsAdded++;
-    }
-  }
-
-  // ----------------------------------------------------------------------------
-  // H. Seed Audit Logs
-  // ----------------------------------------------------------------------------
-  var auditSheet = ss.getSheetByName('AuditLogs');
-  if (auditSheet && auditSheet.getLastRow() <= 1) {
-    auditSheet.appendRow([
-      now,
-      'Super Admin',
-      'SYSTEM',
-      'Inisialisasi skema database 10 sheet dan pemuatan seed data awal berhasil'
-    ]);
-    results.auditLogsAdded++;
-  }
-
-  // ----------------------------------------------------------------------------
-  // I. Seed Conversion Funnel Events (Telemetry Data for Funnel Visualization)
-  // ----------------------------------------------------------------------------
-  var eventSheet = ss.getSheetByName('EventLogs');
-  if (eventSheet && eventSheet.getLastRow() <= 1) {
-    var funnelEvents = [
-      // Stage 1: Product Views (8 views)
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-001', session_id: 'SES-01', referrer: 'hero' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-003', session_id: 'SES-02', referrer: 'catalog' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-002', session_id: 'SES-03', referrer: 'bundle' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-005', session_id: 'SES-04', referrer: 'catalog' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-006', session_id: 'SES-05', referrer: 'denim' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-003', session_id: 'SES-06', referrer: 'catalog' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-007', session_id: 'SES-07', referrer: 'featured' }) },
-      { name: 'product_view', payload: JSON.stringify({ product_id: 'PRD-001', session_id: 'SES-08', referrer: 'catalog' }) },
-
-      // Stage 2: Add to Cart (4 adds)
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-003', sku: 'HCT-VB-L', qty: 2, session_id: 'SES-02' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-002', sku: 'SBB-BK-M', qty: 1, session_id: 'SES-03' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-005', sku: 'WPT-DC-M', qty: 1, session_id: 'SES-04' }) },
-      { name: 'add_to_cart', payload: JSON.stringify({ product_id: 'PRD-001', sku: 'WTC-CG-M', qty: 1, session_id: 'SES-08' }) },
-
-      // Stage 3: WA Checkout Triggered (2 checkouts)
-      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-001', grand_total: 355200, session_id: 'SES-02' }) },
-      { name: 'wa_checkout', payload: JSON.stringify({ invoice_no: 'INV-202611-002', grand_total: 674000, session_id: 'SES-03' }) },
-
-      // Stage 4: Paid & Completed (1 paid)
-      { name: 'order_completed', payload: JSON.stringify({ invoice_no: 'INV-202611-001', status: 'Selesai', session_id: 'SES-02' }) }
-    ];
-
-    for (var ev = 0; ev < funnelEvents.length; ev++) {
-      var item = funnelEvents[ev];
-      eventSheet.appendRow([
-        now,
-        item.name,
-        item.payload
-      ]);
-      results.eventLogsAdded++;
-    }
-  }
-
   SpreadsheetApp.flush();
   return results;
 }
 
-/**
- * Reads existing values of a specific column to verify uniqueness.
- */
 function getExistingColumnValues(sheet, colIndex) {
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return [];
-
   var data = sheet.getRange(2, colIndex + 1, lastRow - 1, 1).getDisplayValues();
   var values = [];
   for (var i = 0; i < data.length; i++) {
     values.push(data[i][0]);
   }
   return values;
-}
-
-/**
- * Appends a record to AuditLogs sheet.
- */
-function logSystemAudit(actorRole, moduleName, detail) {
-  var ss = getSpreadsheet();
-  if (!ss) return;
-
-  var auditSheet = ss.getSheetByName('AuditLogs');
-  if (auditSheet) {
-    auditSheet.appendRow([
-      getTimestamp(),
-      actorRole || 'System',
-      moduleName || 'GENERAL',
-      detail || ''
-    ]);
-  }
-}
-
-// ================================================================================
-// 6. HEALTH & STATUS CHECK FUNCTION
-// ================================================================================
-
-/**
- * Audits all 10 sheets and returns detailed status and row counts.
- */
-function checkDatabaseStatus() {
-  var ss = getSpreadsheet();
-  if (!ss) return { error: 'Spreadsheet tidak dapat diakses' };
-
-  var status = {
-    sheets: {},
-    isHealthy: true,
-    totalSheets: 0,
-    timestamp: getTimestamp()
-  };
-
-  var expectedSheets = Object.keys(SCHEMA_DEFINITIONS);
-
-  for (var i = 0; i < expectedSheets.length; i++) {
-    var name = expectedSheets[i];
-    var sheet = ss.getSheetByName(name);
-
-    if (!sheet) {
-      status.sheets[name] = { exists: false, rowCount: 0, colCount: 0 };
-      status.isHealthy = false;
-    } else {
-      var lastRow = sheet.getLastRow();
-      var lastCol = sheet.getLastColumn();
-      var headers = lastRow > 0 && lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getDisplayValues()[0] : [];
-
-      status.sheets[name] = {
-        exists: true,
-        dataRowCount: Math.max(0, lastRow - 1),
-        colCount: lastCol,
-        headers: headers
-      };
-      status.totalSheets++;
-    }
-  }
-
-  return status;
-}
-
-// ================================================================================
-// 7. GOOGLE SHEETS UI INTEGRATION (onOpen Menu)
-// ================================================================================
-
-/**
- * Triggered automatically when the Google Sheet is opened.
- * Adds a custom menu to execute database setup, seed migration, and health checks easily.
- */
-function onOpen() {
-  if (typeof SpreadsheetApp === 'undefined') return;
-
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Fashion E-Commerce Admin')
-    .addItem('Jalankan Inisialisasi / Migrasi Database', 'menuSetupDatabase')
-    .addItem('Muat Ulang Seed Data (Aman & Idempoten)', 'menuSeedDatabase')
-    .addSeparator()
-    .addItem('Periksa Status Skema Database', 'menuCheckDatabaseStatus')
-    .addToUi();
-}
-
-/**
- * UI Action: Runs setupDatabase with modal alert confirmation.
- */
-function menuSetupDatabase() {
-  var ui = SpreadsheetApp.getUi();
-  try {
-    var res = setupDatabase();
-    ui.alert(
-      'Inisialisasi Berhasil',
-      'Database dan skema tabel telah berhasil disinkronkan.\n' +
-      'Laporan migrasi:\n- ' + res.migrationReport.join('\n- '),
-      ui.ButtonSet.OK
-    );
-  } catch (err) {
-    ui.alert('Error Inisialisasi', err.toString(), ui.ButtonSet.OK);
-  }
-}
-
-/**
- * UI Action: Runs seedDatabase with modal alert confirmation.
- */
-function menuSeedDatabase() {
-  var ui = SpreadsheetApp.getUi();
-  try {
-    var res = seedDatabase();
-    ui.alert(
-      'Seed Data Berhasil',
-      'Data seed idempoten telah dimuat:\n' +
-      '- Produk Ditambahkan: ' + res.productsAdded + '\n' +
-      '- Varian Ditambahkan: ' + res.variantsAdded + '\n' +
-      '- Bundle Ditambahkan: ' + res.campaignsAdded + '\n' +
-      '- Kupon Ditambahkan: ' + res.couponsAdded + '\n' +
-      '- Pengaturan Ditambahkan: ' + res.settingsAdded + '\n' +
-      '- Pesanan Ditambahkan: ' + res.ordersAdded,
-      ui.ButtonSet.OK
-    );
-  } catch (err) {
-    ui.alert('Error Seed Data', err.toString(), ui.ButtonSet.OK);
-  }
-}
-
-/**
- * UI Action: Runs checkDatabaseStatus and displays status.
- */
-function menuCheckDatabaseStatus() {
-  var ui = SpreadsheetApp.getUi();
-  try {
-    var status = checkDatabaseStatus();
-    var msg = 'Status Database: ' + (status.isHealthy ? 'SEHAT (Lengkap 10 Sheet)' : 'PERLU PERBAIKAN') + '\n\n';
-    var sheetNames = Object.keys(status.sheets);
-
-    for (var i = 0; i < sheetNames.length; i++) {
-      var s = status.sheets[sheetNames[i]];
-      msg += sheetNames[i] + ': ' + (s.exists ? s.dataRowCount + ' baris data (' + s.colCount + ' kolom)' : 'TIDAK DITEMUKAN') + '\n';
-    }
-
-    ui.alert('Pemeriksaan Status Skema', msg, ui.ButtonSet.OK);
-  } catch (err) {
-    ui.alert('Error Status Check', err.toString(), ui.ButtonSet.OK);
-  }
 }
