@@ -1524,18 +1524,83 @@
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 flex flex-col md:flex-row gap-6">
       
       <!-- Admin Sidebar Navigation (Role-Based Visibility) -->
-      <aside class="w-full md:w-56 shrink-0 flex md:flex-col overflow-x-auto md:overflow-visible gap-1.5 md:space-y-1 pb-2 md:pb-0 scrollbar-none">
-        <button onclick="switchAdminTab('overview')" id="tab-nav-overview" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] whitespace-nowrap active:scale-95">1. Ringkasan & KPI</button>
-        <button onclick="switchAdminTab('products')" id="tab-nav-products" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">2. Produk & Varian</button>
-        <button onclick="switchAdminTab('orders')" id="tab-nav-orders" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">3. Pesanan</button>
-        <button onclick="switchAdminTab('returns')" id="tab-nav-returns" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">4. Retur & Pengembalian</button>
-        <button onclick="switchAdminTab('coupons')" id="tab-nav-coupons" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">5. Kupon & Promo</button>
-        <button onclick="switchAdminTab('customers')" id="tab-nav-customers" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">6. Direktori Pelanggan</button>
-        <button onclick="switchAdminTab('bundles')" id="tab-nav-bundles" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">7. Flash Sale & Bundle</button>
-        <button onclick="switchAdminTab('content')" id="tab-nav-content" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">8. Konten & Tampilan</button>
-        <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">9. Analitik & Atribusi UTM</button>
-        <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">10. Log Audit & Event</button>
-        <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">11. Pengaturan Toko</button>
+      <aside class="w-full md:w-60 shrink-0">
+        <!-- Mobile Web Navigation Selector (No horizontal tab geser) -->
+        <div class="md:hidden bg-[#FAFAF9] border border-[#E7E5E4] p-3 rounded-sm mb-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-mono text-[#57534E] font-bold uppercase tracking-wider">Modul Navigasi Konsol</span>
+            <span id="mobile-admin-active-badge" class="text-[10px] font-mono px-2 py-0.5 bg-[#1C1917] text-white rounded-xs">Aktif</span>
+          </div>
+          <div class="relative">
+            <select id="mobile-admin-tab-select" onchange="switchAdminTab(this.value)" class="w-full bg-white border border-[#E7E5E4] rounded-sm py-2.5 pl-3.5 pr-10 text-xs font-semibold text-[#1C1917] shadow-xs appearance-none focus:outline-none focus:border-[#1C1917]">
+              <option value="overview">1. Ringkasan & KPI</option>
+              <option value="products">2. Produk & Varian</option>
+              <option value="orders">3. Pesanan</option>
+              <option value="returns">4. Retur & Pengembalian</option>
+              <option value="coupons">5. Kupon & Promo</option>
+              <option value="customers">6. Direktori Pelanggan</option>
+              <option value="bundles">7. Flash Sale & Bundle</option>
+              <option value="content">8. Konten & Tampilan</option>
+              <option value="analytics">9. Analitik & Atribusi UTM</option>
+              <option value="audit">10. Log Audit & Event</option>
+              <option value="settings">11. Pengaturan Toko</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#57534E]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Vertical Sidebar Navigation (Clean Web Standard) -->
+        <div class="hidden md:flex md:flex-col space-y-1 bg-[#FAFAF9] border border-[#E7E5E4] p-2.5 rounded-sm shadow-xs">
+          <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-[#78716C] font-semibold border-b border-[#E7E5E4] mb-1">
+            Menu Operasional
+          </div>
+          <button onclick="switchAdminTab('overview')" id="tab-nav-overview" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] transition-all flex items-center justify-between">
+            <span>1. Ringkasan & KPI</span>
+            <span class="tab-indicator text-[11px] opacity-100">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('products')" id="tab-nav-products" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>2. Produk & Varian</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('orders')" id="tab-nav-orders" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>3. Pesanan</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('returns')" id="tab-nav-returns" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>4. Retur & Pengembalian</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('coupons')" id="tab-nav-coupons" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>5. Kupon & Promo</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('customers')" id="tab-nav-customers" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>6. Direktori Pelanggan</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('bundles')" id="tab-nav-bundles" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>7. Flash Sale & Bundle</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('content')" id="tab-nav-content" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>8. Konten & Tampilan</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>9. Analitik & Atribusi UTM</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>10. Log Audit & Event</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+          <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between">
+            <span>11. Pengaturan Toko</span>
+            <span class="tab-indicator text-[11px] opacity-0">&rarr;</span>
+          </button>
+        </div>
       </aside>
 
       <!-- Admin Tab Panels Container -->
@@ -1645,6 +1710,20 @@
                   Feed TikTok
                 </button>
               </div>
+            </div>
+          </div>
+
+          <!-- Filter & Pencarian Inventaris Katalog Admin -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#FAFAF9] p-3 border border-[#E7E5E4]">
+            <div class="flex-1 max-w-sm">
+              <input type="text" id="admin-prod-search" placeholder="Cari nama artikel, SKU, kategori..." oninput="filterAdminProductsSearch(this.value)" class="w-full px-3 py-2 bg-white border border-[#E7E5E4] text-xs rounded-xs focus:outline-none focus:border-[#1C1917]">
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+              <button onclick="filterAdminProductsStock('all')" id="prod-stock-filter-all" class="px-2.5 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold rounded-xs">Semua</button>
+              <button onclick="filterAdminProductsStock('ready')" id="prod-stock-filter-ready" class="px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] rounded-xs">Ready Stock</button>
+              <button onclick="filterAdminProductsStock('low')" id="prod-stock-filter-low" class="px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] rounded-xs">Stok Menipis (<= 5)</button>
+              <button onclick="filterAdminProductsStock('out')" id="prod-stock-filter-out" class="px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] rounded-xs">Stok Habis (0)</button>
             </div>
           </div>
 
@@ -4885,6 +4964,9 @@ const AppState = {
       adminUser: null,
       adminActiveTab: 'overview',
       adminOrdersFilter: '',
+      adminProductsSearch: '',
+      adminProductsStockFilter: 'all',
+      expandedProductVariants: new Set(),
       consent: JSON.parse(localStorage.getItem('aryastore_consent') || '{"analytics":true,"ads":true}'),
       utm: {},
       diagnosticsEvents: [],
@@ -5102,8 +5184,31 @@ const AppState = {
             : coupon.discount_value;
           return { success: true, discount: discount, coupon: coupon };
 
-        case 'createOrder':
+        case 'createOrder': {
           const payload = args[0] || {};
+          const orderItems = payload.items || [];
+          
+          // Verify and deduct inventory in MockDB
+          for (const it of orderItems) {
+            const qty = parseInt(it.quantity, 10) || 1;
+            let foundVar = null;
+            for (const p of MockDB.products) {
+              if (p.variants) {
+                foundVar = p.variants.find(v => v.sku === it.sku || v.variant_id === it.variant_id);
+                if (foundVar) {
+                  if (foundVar.stock < qty) {
+                    return {
+                      success: false,
+                      message: 'Stok tidak mencukupi untuk item ' + it.name + ' (' + (foundVar.sku || it.sku) + '). Tersisa: ' + foundVar.stock + ' unit.'
+                    };
+                  }
+                  foundVar.stock -= qty;
+                  break;
+                }
+              }
+            }
+          }
+
           const invNo = 'INV-' + new Date().toISOString().slice(0,7).replace('-','') + '-' + ('000' + (MockDB.orders.length + 1)).slice(-3);
           const newOrder = {
             invoice_no: invNo,
@@ -5127,6 +5232,7 @@ const AppState = {
           };
           MockDB.orders.unshift(newOrder);
           return { success: true, invoice_no: invNo, grand_total: newOrder.grand_total, status: newOrder.status };
+        }
 
         case 'lookupOrder':
           const searchInv = (args[0] || '').trim().toUpperCase();
@@ -5244,13 +5350,55 @@ const AppState = {
         case 'updateVariant':
           const editVar = args[0];
           for (let p of MockDB.products) {
-            const vIndex = p.variants.findIndex(v => v.variant_id === editVar.variant_id);
+            const vIndex = (p.variants || []).findIndex(v => v.variant_id === editVar.variant_id || (editVar.sku && v.sku === editVar.sku));
             if (vIndex !== -1) {
               p.variants[vIndex] = Object.assign(p.variants[vIndex], editVar);
               return { success: true, variant: p.variants[vIndex] };
             }
           }
           return { success: false, message: 'Varian tidak ditemukan' };
+
+        case 'deleteProduct': {
+          const delProdId = args[0];
+          const pIdx = MockDB.products.findIndex(p => p.id === delProdId);
+          if (pIdx !== -1) {
+            const removed = MockDB.products.splice(pIdx, 1)[0];
+            return { success: true, message: 'Produk ' + delProdId + ' (' + removed.name + ') berhasil dihapus' };
+          }
+          return { success: false, message: 'Produk tidak ditemukan' };
+        }
+
+        case 'deleteVariant': {
+          const delVarId = args[0];
+          for (const p of MockDB.products) {
+            if (p.variants) {
+              const vIdx = p.variants.findIndex(v => v.variant_id === delVarId || v.sku === delVarId);
+              if (vIdx !== -1) {
+                const removedVar = p.variants.splice(vIdx, 1)[0];
+                return { success: true, message: 'Varian SKU ' + (removedVar.sku || delVarId) + ' berhasil dihapus' };
+              }
+            }
+          }
+          return { success: false, message: 'Varian SKU tidak ditemukan' };
+        }
+
+        case 'updateVariantStock': {
+          const targetVarId = args[0];
+          const newStockVal = parseInt(args[1], 10);
+          if (isNaN(newStockVal) || newStockVal < 0) {
+            return { success: false, message: 'Nilai stok harus berupa angka non-negatif' };
+          }
+          for (const p of MockDB.products) {
+            if (p.variants) {
+              const vObj = p.variants.find(v => v.variant_id === targetVarId || v.sku === targetVarId);
+              if (vObj) {
+                vObj.stock = newStockVal;
+                return { success: true, variant_id: targetVarId, new_stock: newStockVal, message: 'Stok berhasil diperbarui' };
+              }
+            }
+          }
+          return { success: false, message: 'Varian SKU tidak ditemukan' };
+        }
 
         case 'getCoupons':
           return { success: true, coupons: MockDB.coupons };
@@ -6382,6 +6530,9 @@ const AppState = {
         const title = isEn && p.name_en ? p.name_en : p.name;
         const isWish = AppState.wishlist.includes(p.id);
         const variantsCount = (p.variants || []).length;
+        const totalStock = (p.variants || []).reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0);
+        const isOutOfStock = totalStock <= 0;
+        const isLowStock = totalStock > 0 && totalStock <= 5;
 
         // Collect color entries for interactive card dots
         let colorEntries = [];
@@ -6411,9 +6562,11 @@ const AppState = {
         return `
           <div class="product-card reveal-on-scroll bg-white border border-[#E7E5E4] hover:border-[#1C1917] transition-all flex flex-col justify-between group">
             <div class="relative aspect-[3/4] bg-[#FAFAF9] overflow-hidden group">
-              <img id="card-img-${p.id}" src="${resolveDriveImageUrl(p.image_url)}" alt="${title}" loading="lazy" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out">
+              <img id="card-img-${p.id}" src="${resolveDriveImageUrl(p.image_url)}" alt="${title}" loading="lazy" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out ${isOutOfStock ? 'grayscale opacity-75' : ''}">
               
-              ${p.badge ? `<span class="absolute top-2.5 left-2.5 bg-[#1C1917] text-white text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 shadow-sm">${p.badge}</span>` : ''}
+              ${isOutOfStock 
+                ? `<span class="absolute top-2.5 left-2.5 bg-red-700 text-white text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 shadow-sm font-semibold">${isEn ? 'SOLD OUT' : 'STOK HABIS'}</span>` 
+                : (p.badge ? `<span class="absolute top-2.5 left-2.5 bg-[#1C1917] text-white text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 shadow-sm">${p.badge}</span>` : '')}
               
               <!-- Tombol Wishlist -->
               <button onclick="toggleWishlist('${p.id}')" class="absolute top-2.5 right-2.5 p-2 bg-white/90 hover:bg-white text-[#1C1917] shadow-sm rounded-sm transition-all active:scale-90 z-10" title="Simpan ke Wishlist">
@@ -6432,16 +6585,22 @@ const AppState = {
               <div>
                 <div class="flex items-center justify-between text-[10px] font-mono text-[#57534E]">
                   <span>${p.category}</span>
-                  <span>${variantsCount} ${t('product_variants')}</span>
+                  <div class="flex items-center space-x-1.5">
+                    ${isLowStock ? `<span class="text-[9px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-1.5 py-0.2 rounded-xs">${isEn ? 'Low Stock' : 'Stok Menipis'}</span>` : ''}
+                    <span>${variantsCount} ${t('product_variants')}</span>
+                  </div>
                 </div>
                 <h3 class="font-serif font-bold text-sm text-[#1C1917] leading-snug line-clamp-2 mt-0.5 hover:text-[#C2410C] transition-colors cursor-pointer" onclick="openProductDetailModal('${p.id}')">${title}</h3>
                 ${colorChipsHtml}
               </div>
 
               <div class="pt-2 border-t border-[#E7E5E4] flex items-center justify-between">
-                <span class="font-mono text-xs sm:text-sm font-bold text-[#1C1917]">${formatMoney(p.base_price)}</span>
-                <button onclick="openProductDetailModal('${p.id}')" class="interactive-btn text-[11px] font-semibold text-[#1C1917] hover:text-[#C2410C] uppercase tracking-wider flex items-center space-x-1 group/btn">
-                  <span>${t('product_view_detail')}</span>
+                <div>
+                  <span class="font-mono text-xs sm:text-sm font-bold text-[#1C1917]">${formatMoney(p.base_price)}</span>
+                  ${isOutOfStock ? `<span class="block text-[10px] font-mono font-bold text-red-700 leading-none mt-0.5">${isEn ? 'Sold Out' : 'Stok Habis'}</span>` : ''}
+                </div>
+                <button onclick="openProductDetailModal('${p.id}')" class="interactive-btn text-[11px] font-semibold ${isOutOfStock ? 'text-red-700 hover:text-red-900' : 'text-[#1C1917] hover:text-[#C2410C]'} uppercase tracking-wider flex items-center space-x-1 group/btn">
+                  <span>${isOutOfStock ? (isEn ? 'Lihat Produk' : 'Lihat Produk') : t('product_view_detail')}</span>
                   <span class="inline-block transform group-hover/btn:translate-x-1 transition-transform">&rarr;</span>
                 </button>
               </div>
@@ -6723,6 +6882,7 @@ const AppState = {
       if (!variant) return;
 
       AppState.selectedDetailVariant = variant;
+      const isEn = AppState.language === 'en';
 
       // Update button styling
       (prod.variants || []).forEach(v => {
@@ -6739,21 +6899,32 @@ const AppState = {
       // Stock status feedback
       const notice = document.getElementById('detail-stock-notice');
       const addBtn = document.getElementById('detail-add-to-cart-btn');
+      const btnText = addBtn ? (addBtn.querySelector('span') || addBtn) : null;
+
       if (variant.stock <= 0) {
         notice.className = 'text-[11px] font-mono text-red-700 font-bold';
-        notice.textContent = t('modal_stock_out_warning');
-        addBtn.disabled = true;
-        addBtn.className = 'flex-1 bg-stone-300 text-stone-500 py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest cursor-not-allowed';
+        notice.textContent = isEn ? 'This variant is currently out of stock.' : 'Stok varian ini sedang habis.';
+        if (addBtn) {
+          addBtn.disabled = true;
+          addBtn.className = 'flex-1 bg-stone-300 text-stone-500 py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest cursor-not-allowed';
+          if (btnText) btnText.textContent = isEn ? 'Sold Out' : 'Stok Habis';
+        }
       } else if (variant.stock < 5) {
         notice.className = 'text-[11px] font-mono text-[#C2410C] font-bold';
-        notice.textContent = t('modal_stock_low_warning') + ' ' + variant.stock + ' unit.';
-        addBtn.disabled = false;
-        addBtn.className = 'flex-1 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest transition-colors';
+        notice.textContent = (isEn ? 'Low stock: only ' : 'Stok menipis! Tersisa ') + variant.stock + ' unit.';
+        if (addBtn) {
+          addBtn.disabled = false;
+          addBtn.className = 'flex-1 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest transition-colors';
+          if (btnText) btnText.textContent = t('modal_add_to_cart');
+        }
       } else {
         notice.className = 'text-[11px] font-mono text-emerald-700 font-semibold';
-        notice.textContent = t('modal_stock_available') + ' (' + variant.stock + ' unit).';
-        addBtn.disabled = false;
-        addBtn.className = 'flex-1 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest transition-colors';
+        notice.textContent = (isEn ? 'In Stock (' : 'Stok tersedia (') + variant.stock + ' unit).';
+        if (addBtn) {
+          addBtn.disabled = false;
+          addBtn.className = 'flex-1 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] py-3.5 min-h-[44px] text-xs font-semibold uppercase tracking-widest transition-colors';
+          if (btnText) btnText.textContent = t('modal_add_to_cart');
+        }
       }
 
       // Re-render Barcode for the active variant SKU
@@ -6763,7 +6934,18 @@ const AppState = {
     }
 
     function stepperQty(delta) {
-      AppState.detailQty = Math.max(1, AppState.detailQty + delta);
+      const maxStock = AppState.selectedDetailVariant ? AppState.selectedDetailVariant.stock : 99;
+      if (maxStock <= 0) {
+        AppState.detailQty = 1;
+        document.getElementById('detail-qty-display').textContent = '1';
+        return;
+      }
+      let nextQty = AppState.detailQty + delta;
+      if (nextQty > maxStock) {
+        showToast((AppState.language === 'en' ? 'Maximum available stock is ' : 'Maksimal stok tersedia adalah ') + maxStock + ' unit.', 'info');
+        nextQty = maxStock;
+      }
+      AppState.detailQty = Math.max(1, nextQty);
       document.getElementById('detail-qty-display').textContent = AppState.detailQty;
     }
 
@@ -6773,9 +6955,23 @@ const AppState = {
       if (!prod || !variant) return;
 
       const isEn = AppState.language === 'en';
+      if (variant.stock <= 0) {
+        showToast(isEn ? 'Sorry, this variant is out of stock.' : 'Maaf, varian ini sedang habis.', 'error');
+        return;
+      }
+
+      const existingIdx = AppState.cart.findIndex(c => c.sku === variant.sku);
+      const existingQty = existingIdx !== -1 ? AppState.cart[existingIdx].qty : 0;
+      if (existingQty + AppState.detailQty > variant.stock) {
+        showToast(
+          (isEn ? 'Stock limit reached. Max available: ' : 'Jumlah melebihi stok yang tersedia. Maksimal: ') + variant.stock + ' unit.',
+          'error'
+        );
+        return;
+      }
+
       const activeColor = isEn && variant.color_en ? variant.color_en : variant.color;
       const colorImageUrl = resolveProductColorImage(prod, activeColor) || prod.image_url;
-      const existingIdx = AppState.cart.findIndex(c => c.sku === variant.sku);
       if (existingIdx !== -1) {
         AppState.cart[existingIdx].qty += AppState.detailQty;
         if (!AppState.cart[existingIdx].image_url) {
@@ -6991,8 +7187,21 @@ const AppState = {
 
     function changeCartQty(idx, delta) {
       if (!AppState.cart[idx]) return;
-      AppState.cart[idx].qty += delta;
-      if (AppState.cart[idx].qty <= 0) {
+      const item = AppState.cart[idx];
+      const prod = AppState.products.find(p => p.id === item.product_id);
+      const variant = prod && prod.variants ? prod.variants.find(v => v.sku === item.sku) : null;
+      const maxStock = variant ? variant.stock : 99;
+
+      if (delta > 0 && item.qty + delta > maxStock) {
+        showToast(
+          (AppState.language === 'en' ? 'Stock limit reached: ' : 'Batas stok tercapai: ') + maxStock + ' unit.',
+          'error'
+        );
+        return;
+      }
+
+      item.qty += delta;
+      if (item.qty <= 0) {
         AppState.cart.splice(idx, 1);
       }
       safeSetStorage('aryastore_cart', AppState.cart);
@@ -7421,6 +7630,16 @@ const AppState = {
               value: grandTotalIDR,
               currency: AppState.currency
             });
+
+            // Deduct stock in AppState.products locally
+            payload.items.forEach(it => {
+              const p = AppState.products.find(prod => prod.id === it.product_id);
+              if (p && p.variants) {
+                const v = p.variants.find(vr => vr.sku === it.sku || vr.variant_id === it.variant_id);
+                if (v) v.stock = Math.max(0, v.stock - it.quantity);
+              }
+            });
+            renderProductsGrid();
 
             // Clear Cart
             AppState.cart = [];
@@ -8088,26 +8307,58 @@ const AppState = {
         settings: document.getElementById('tab-nav-settings')
       };
 
+      const mobileSelect = document.getElementById('mobile-admin-tab-select');
+
       if (baseRole === 'Customer Service') {
         ['products', 'coupons', 'bundles', 'content', 'analytics', 'audit', 'settings'].forEach(t => tabs[t] && tabs[t].classList.add('hidden'));
         ['overview', 'orders', 'returns', 'customers'].forEach(t => tabs[t] && tabs[t].classList.remove('hidden'));
+        if (mobileSelect) {
+          Array.from(mobileSelect.options).forEach(opt => {
+            opt.hidden = ['products', 'coupons', 'bundles', 'content', 'analytics', 'audit', 'settings'].includes(opt.value);
+          });
+        }
       } else if (baseRole === 'Store Manager') {
         ['customers', 'audit', 'settings'].forEach(t => tabs[t] && tabs[t].classList.add('hidden'));
         ['overview', 'products', 'orders', 'returns', 'coupons', 'bundles', 'content', 'analytics'].forEach(t => tabs[t] && tabs[t].classList.remove('hidden'));
+        if (mobileSelect) {
+          Array.from(mobileSelect.options).forEach(opt => {
+            opt.hidden = ['customers', 'audit', 'settings'].includes(opt.value);
+          });
+        }
       } else {
         // Super Admin gets all 11 tabs
         Object.values(tabs).forEach(el => el && el.classList.remove('hidden'));
+        if (mobileSelect) {
+          Array.from(mobileSelect.options).forEach(opt => {
+            opt.hidden = false;
+          });
+        }
       }
     }
 
     function switchAdminTab(tabKey) {
       AppState.adminActiveTab = tabKey;
+      
+      // Update desktop sidebar buttons
       document.querySelectorAll('.admin-tab-btn').forEach(btn => {
-        btn.className = 'admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95';
+        btn.className = 'admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] transition-all flex items-center justify-between';
+        const ind = btn.querySelector('.tab-indicator');
+        if (ind) ind.className = 'tab-indicator text-[11px] opacity-0';
       });
       const activeBtn = document.getElementById('tab-nav-' + tabKey);
-      if (activeBtn) activeBtn.className = 'admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] whitespace-nowrap active:scale-95';
+      if (activeBtn) {
+        activeBtn.className = 'admin-tab-btn w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm bg-[#1C1917] text-white min-h-[40px] transition-all flex items-center justify-between';
+        const ind = activeBtn.querySelector('.tab-indicator');
+        if (ind) ind.className = 'tab-indicator text-[11px] opacity-100';
+      }
 
+      // Update mobile web select menu
+      const mobileSelect = document.getElementById('mobile-admin-tab-select');
+      if (mobileSelect) {
+        mobileSelect.value = tabKey;
+      }
+
+      // Hide all panels, reveal active panel
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
       const activePanel = document.getElementById('admin-panel-' + tabKey);
       if (activePanel) activePanel.classList.remove('hidden');
@@ -8181,39 +8432,190 @@ const AppState = {
       });
     }
 
+    function filterAdminProductsSearch(val) {
+      AppState.adminProductsSearch = (val || '').trim().toLowerCase();
+      renderAdminProductsTable();
+    }
+
+    function filterAdminProductsStock(filterType) {
+      AppState.adminProductsStockFilter = filterType;
+      ['all', 'ready', 'low', 'out'].forEach(f => {
+        const btn = document.getElementById('prod-stock-filter-' + f);
+        if (btn) {
+          if (f === filterType) {
+            btn.className = 'px-2.5 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold rounded-xs';
+          } else {
+            btn.className = 'px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] rounded-xs';
+          }
+        }
+      });
+      renderAdminProductsTable();
+    }
+
+    function toggleProductVariants(prodId) {
+      if (!AppState.expandedProductVariants) AppState.expandedProductVariants = new Set();
+      if (AppState.expandedProductVariants.has(prodId)) {
+        AppState.expandedProductVariants.delete(prodId);
+      } else {
+        AppState.expandedProductVariants.add(prodId);
+      }
+      renderAdminProductsTable();
+    }
+
     function renderAdminProductsTable() {
       const container = document.getElementById('admin-products-table-container');
+      if (!container) return;
+
+      let items = [...AppState.products];
+
+      // Filter: Search
+      if (AppState.adminProductsSearch) {
+        const q = AppState.adminProductsSearch;
+        items = items.filter(p => 
+          p.name.toLowerCase().includes(q) ||
+          p.id.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          (p.variants || []).some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q))
+        );
+      }
+
+      // Filter: Stock
+      if (AppState.adminProductsStockFilter === 'ready') {
+        items = items.filter(p => {
+          const tot = (p.variants || []).reduce((s, v) => s + (parseInt(v.stock, 10) || 0), 0);
+          return tot > 5;
+        });
+      } else if (AppState.adminProductsStockFilter === 'low') {
+        items = items.filter(p => {
+          const tot = (p.variants || []).reduce((s, v) => s + (parseInt(v.stock, 10) || 0), 0);
+          return tot > 0 && tot <= 5;
+        });
+      } else if (AppState.adminProductsStockFilter === 'out') {
+        items = items.filter(p => {
+          const tot = (p.variants || []).reduce((s, v) => s + (parseInt(v.stock, 10) || 0), 0);
+          return tot <= 0;
+        });
+      }
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center bg-[#FAFAF9] border border-[#E7E5E4] text-xs text-[#57534E]">
+            Tidak ada produk yang sesuai dengan kriteria pencarian atau filter stok.
+          </div>
+        `;
+        return;
+      }
+
       container.innerHTML = `
         <table class="w-full text-left text-xs border border-[#E7E5E4]">
           <thead class="bg-[#FAFAF9] border-b border-[#E7E5E4] font-mono text-[#57534E]">
             <tr>
               <th class="p-2.5">Foto</th>
-              <th class="p-2.5">ID / SKU</th>
-              <th class="p-2.5">Nama Produk</th>
+              <th class="p-2.5">ID Produk</th>
+              <th class="p-2.5">Nama Artikel</th>
               <th class="p-2.5">Kategori</th>
               <th class="p-2.5">Harga Dasar</th>
               <th class="p-2.5">Berat</th>
-              <th class="p-2.5">Varian</th>
+              <th class="p-2.5">Status Inventaris</th>
+              <th class="p-2.5">Matriks Varian</th>
               <th class="p-2.5 text-right">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[#E7E5E4]">
-            ${AppState.products.map(p => `
-              <tr class="hover:bg-[#FAFAF9]">
-                <td class="p-2.5"><img src="${p.image_url}" class="w-10 h-12 object-cover border"></td>
-                <td class="p-2.5 font-mono font-bold text-[#1C1917]">${p.id}</td>
-                <td class="p-2.5 font-semibold text-[#1C1917]">${p.name}</td>
-                <td class="p-2.5"><span class="px-2 py-0.5 bg-stone-100 border text-[10px] font-mono">${p.category}</span></td>
-                <td class="p-2.5 font-mono font-bold">${formatMoney(p.base_price, 'IDR')}</td>
-                <td class="p-2.5 font-mono text-[#57534E]">${p.weight_gram || 500} g</td>
-                <td class="p-2.5 font-mono">${(p.variants || []).length} SKU</td>
-                <td class="p-2.5 text-right space-x-1">
-                  <button onclick="editProductModal('${p.id}')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 border text-[11px]">Edit</button>
-                  <button onclick="openAddVariantModal('${p.id}')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 border text-[11px]">+ Varian</button>
-                  <button onclick="printSingleProductHangtagFromAdmin('${p.id}')" class="px-2 py-1 bg-[#1C1917] text-white text-[11px]">Barcode</button>
-                </td>
-              </tr>
-            `).join('')}
+            ${items.map(p => {
+              const variants = p.variants || [];
+              const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0);
+              const isExpanded = Boolean(AppState.expandedProductVariants && AppState.expandedProductVariants.has(p.id));
+
+              let stockBadgeHtml = '';
+              if (totalStock <= 0) {
+                stockBadgeHtml = '<span class="px-2 py-0.5 bg-red-100 text-red-800 border border-red-300 font-mono text-[10px] font-bold rounded-xs">Stok Habis (0)</span>';
+              } else if (totalStock <= 5) {
+                stockBadgeHtml = '<span class="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 font-mono text-[10px] font-bold rounded-xs">Menipis (' + totalStock + ' unit)</span>';
+              } else {
+                stockBadgeHtml = '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-[10px] font-bold rounded-xs">Ready (' + totalStock + ' unit)</span>';
+              }
+
+              const variantSubRows = isExpanded ? `
+                <tr class="bg-stone-50 border-b border-[#E7E5E4]">
+                  <td colspan="9" class="p-3">
+                    <div class="bg-white border border-[#E7E5E4] p-3 rounded-xs space-y-2">
+                      <div class="flex items-center justify-between pb-2 border-b border-stone-200">
+                        <span class="text-[11px] font-mono font-bold text-[#1C1917] uppercase tracking-wider">Matriks Varian SKU: ${p.name} (${p.id})</span>
+                        <button onclick="openAddVariantModal('${p.id}')" class="px-2 py-1 bg-[#1C1917] text-white text-[10px] font-semibold uppercase hover:bg-stone-800">+ Tambah SKU</button>
+                      </div>
+                      ${variants.length === 0 ? `
+                        <p class="text-stone-400 text-xs py-2">Belum ada varian SKU untuk produk ini.</p>
+                      ` : `
+                        <table class="w-full text-left text-xs">
+                          <thead class="bg-stone-100 font-mono text-[10px] text-[#57534E]">
+                            <tr>
+                              <th class="p-1.5">SKU</th>
+                              <th class="p-1.5">Warna</th>
+                              <th class="p-1.5">Ukuran</th>
+                              <th class="p-1.5">Stok Fisik (Input Langsung)</th>
+                              <th class="p-1.5">Status</th>
+                              <th class="p-1.5 text-right">Aksi Varian</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-stone-200 text-xs">
+                            ${variants.map(v => `
+                              <tr class="hover:bg-stone-50">
+                                <td class="p-1.5 font-mono font-bold text-[#1C1917]">${v.sku}</td>
+                                <td class="p-1.5 font-medium">${v.color}</td>
+                                <td class="p-1.5 font-mono">${v.size}</td>
+                                <td class="p-1.5">
+                                  <div class="flex items-center space-x-1.5">
+                                    <input type="number" min="0" value="${v.stock}" id="stock-input-${v.variant_id}" class="w-16 px-1.5 py-0.5 border border-stone-300 font-mono text-center text-xs rounded-xs" onchange="updateVariantStockAction('${p.id}', '${v.variant_id}', this.value)">
+                                    <span id="stock-saved-${v.variant_id}" class="hidden text-emerald-600 font-bold text-[10px]">✓</span>
+                                  </div>
+                                </td>
+                                <td class="p-1.5">
+                                  ${v.stock <= 0 
+                                    ? '<span class="text-red-700 font-bold font-mono text-[10px]">Habis (0)</span>' 
+                                    : (v.stock <= 5 
+                                      ? '<span class="text-amber-700 font-bold font-mono text-[10px]">Menipis (' + v.stock + ')</span>' 
+                                      : '<span class="text-emerald-700 font-semibold font-mono text-[10px]">Ready (' + v.stock + ')</span>')}
+                                </td>
+                                <td class="p-1.5 text-right space-x-1">
+                                  <button onclick="editVariantModal('${p.id}', '${v.variant_id}')" class="px-2 py-0.5 bg-stone-100 hover:bg-stone-200 border text-[10px]">Edit</button>
+                                  <button onclick="deleteVariantAction('${p.id}', '${v.variant_id}', '${v.sku}')" class="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[10px]">Hapus</button>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                      `}
+                    </div>
+                  </td>
+                </tr>
+              ` : '';
+
+              return `
+                <tr class="hover:bg-[#FAFAF9]">
+                  <td class="p-2.5"><img src="${p.image_url}" class="w-10 h-12 object-cover border"></td>
+                  <td class="p-2.5 font-mono font-bold text-[#1C1917]">${p.id}</td>
+                  <td class="p-2.5 font-semibold text-[#1C1917]">${p.name}</td>
+                  <td class="p-2.5"><span class="px-2 py-0.5 bg-stone-100 border text-[10px] font-mono">${p.category}</span></td>
+                  <td class="p-2.5 font-mono font-bold">${formatMoney(p.base_price, 'IDR')}</td>
+                  <td class="p-2.5 font-mono text-[#57534E]">${p.weight_gram || 500} g</td>
+                  <td class="p-2.5">${stockBadgeHtml}</td>
+                  <td class="p-2.5">
+                    <button onclick="toggleProductVariants('${p.id}')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 border text-[11px] font-mono font-semibold flex items-center space-x-1">
+                      <span>${variants.length} SKU</span>
+                      <span>${isExpanded ? '▴' : '▾'}</span>
+                    </button>
+                  </td>
+                  <td class="p-2.5 text-right space-x-1 whitespace-nowrap">
+                    <button onclick="editProductModal('${p.id}')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 border text-[11px]">Edit</button>
+                    <button onclick="openAddVariantModal('${p.id}')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 border text-[11px]">+ Varian</button>
+                    <button onclick="printSingleProductHangtagFromAdmin('${p.id}')" class="px-2 py-1 bg-[#1C1917] text-white text-[11px]">Barcode</button>
+                    <button onclick="deleteProductAction('${p.id}', '${p.name}')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[11px]">Hapus</button>
+                  </td>
+                </tr>
+                ${variantSubRows}
+              `;
+            }).join('')}
           </tbody>
         </table>
       `;
@@ -8594,6 +8996,7 @@ const AppState = {
     }
 
     function openAddVariantModal(prodId) {
+      document.getElementById('admin-var-modal-title').textContent = 'Tambah Varian SKU Baru';
       document.getElementById('var-form-prod-id').value = prodId;
       document.getElementById('var-form-id').value = '';
       document.getElementById('admin-var-form').reset();
@@ -8603,39 +9006,142 @@ const AppState = {
       document.getElementById('admin-variant-modal').classList.remove('hidden');
     }
 
+    function editVariantModal(productId, variantId) {
+      const prod = AppState.products.find(p => p.id === productId);
+      if (!prod) return;
+      const variant = (prod.variants || []).find(v => v.variant_id === variantId);
+      if (!variant) return;
+
+      document.getElementById('admin-var-modal-title').textContent = 'Edit Varian SKU (' + variant.sku + ')';
+      document.getElementById('var-form-id').value = variant.variant_id;
+      document.getElementById('var-form-prod-id').value = productId;
+      document.getElementById('var-form-sku').value = variant.sku;
+      document.getElementById('var-form-color').value = variant.color;
+      document.getElementById('var-form-size').value = variant.size;
+      document.getElementById('var-form-stock').value = variant.stock;
+      document.getElementById('var-form-image').value = variant.image_url || '';
+      updateVariantImagePreview(variant.image_url || '');
+
+      document.getElementById('admin-variant-modal').classList.remove('hidden');
+    }
+
     function closeAdminVariantModal() {
       document.getElementById('admin-variant-modal').classList.add('hidden');
     }
 
     function saveVariantAction(evt, form) {
       evt.preventDefault();
+      const varId = document.getElementById('var-form-id').value;
+      const prodId = document.getElementById('var-form-prod-id').value;
+      const sku = document.getElementById('var-form-sku').value.trim().toUpperCase();
+      const color = document.getElementById('var-form-color').value.trim();
+      const size = document.getElementById('var-form-size').value;
+      const stock = parseInt(document.getElementById('var-form-stock').value, 10);
+      const imageUrl = (document.getElementById('var-form-image') ? document.getElementById('var-form-image').value.trim() : '');
+
+      if (isNaN(stock) || stock < 0) {
+        showToast('Nilai stok harus berupa angka non-negatif.', 'error');
+        return;
+      }
+
       const payload = {
-        product_id: document.getElementById('var-form-prod-id').value,
-        sku: document.getElementById('var-form-sku').value.trim().toUpperCase(),
-        color: document.getElementById('var-form-color').value.trim(),
-        size: document.getElementById('var-form-size').value,
-        stock: parseInt(document.getElementById('var-form-stock').value, 10),
-        image_url: (document.getElementById('var-form-image') ? document.getElementById('var-form-image').value.trim() : '')
+        product_id: prodId,
+        sku: sku,
+        color: color,
+        size: size,
+        stock: stock,
+        image_url: imageUrl
       };
+      if (varId) payload.variant_id = varId;
 
       const btn = form.querySelector('button[type="submit"]');
       const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
+      const method = varId ? 'updateVariant' : 'addVariant';
+
       withButtonLoading(btn, () => {
-        return callApi('addVariant', payload, role).then(res => {
+        return callApi(method, payload, role).then(res => {
           if (res && res.success) {
-            showToast('Varian SKU baru berhasil ditambahkan.', 'success');
-            const targetProd = AppState.products.find(p => p.id === payload.product_id);
-            if (targetProd && res.variant) {
+            showToast(varId ? 'Varian SKU berhasil diperbarui.' : 'Varian SKU baru berhasil ditambahkan.', 'success');
+            const targetProd = AppState.products.find(p => p.id === prodId);
+            if (targetProd) {
               if (!targetProd.variants) targetProd.variants = [];
-              targetProd.variants.push(res.variant);
-              renderProductsGrid();
+              if (varId) {
+                const vIdx = targetProd.variants.findIndex(v => v.variant_id === varId);
+                if (vIdx !== -1) {
+                  targetProd.variants[vIdx] = Object.assign(targetProd.variants[vIdx], payload);
+                }
+              } else if (res.variant) {
+                targetProd.variants.push(res.variant);
+              }
             }
+            renderProductsGrid();
+            renderAdminProductsTable();
             closeAdminVariantModal();
-            loadAdminProducts();
           } else {
             showToast(res.message || 'Gagal menyimpan varian', 'error');
           }
         });
+      });
+    }
+
+    function deleteVariantAction(productId, variantId, sku) {
+      if (!confirm('Hapus varian SKU ' + sku + '? Tindakan ini tidak dapat dibatalkan.')) return;
+      const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
+      callApi('deleteVariant', variantId, role).then(res => {
+        if (res && res.success) {
+          showToast('Varian SKU ' + sku + ' berhasil dihapus.', 'success');
+          const p = AppState.products.find(prod => prod.id === productId);
+          if (p && p.variants) {
+            p.variants = p.variants.filter(v => v.variant_id !== variantId && v.sku !== sku);
+          }
+          renderProductsGrid();
+          renderAdminProductsTable();
+        } else {
+          showToast(res.message || 'Gagal menghapus varian', 'error');
+        }
+      });
+    }
+
+    function deleteProductAction(productId, productName) {
+      if (!confirm('Hapus produk "' + productName + '" (' + productId + ') beserta seluruh variannya? Tindakan ini tidak dapat dibatalkan.')) return;
+      const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
+      callApi('deleteProduct', productId, role).then(res => {
+        if (res && res.success) {
+          showToast('Produk ' + productId + ' berhasil dihapus dari sistem.', 'success');
+          AppState.products = AppState.products.filter(p => p.id !== productId);
+          renderProductsGrid();
+          renderAdminProductsTable();
+        } else {
+          showToast(res.message || 'Gagal menghapus produk', 'error');
+        }
+      });
+    }
+
+    function updateVariantStockAction(productId, variantId, newStockVal) {
+      const stockNum = parseInt(newStockVal, 10);
+      if (isNaN(stockNum) || stockNum < 0) {
+        showToast('Jumlah stok harus berupa angka non-negatif (>= 0).', 'error');
+        return;
+      }
+      const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
+      callApi('updateVariantStock', variantId, stockNum, role).then(res => {
+        if (res && res.success) {
+          const p = AppState.products.find(prod => prod.id === productId);
+          if (p && p.variants) {
+            const v = p.variants.find(vr => vr.variant_id === variantId);
+            if (v) v.stock = stockNum;
+          }
+          const savedInd = document.getElementById('stock-saved-' + variantId);
+          if (savedInd) {
+            savedInd.classList.remove('hidden');
+            setTimeout(() => savedInd.classList.add('hidden'), 2000);
+          }
+          renderProductsGrid();
+          renderAdminProductsTable();
+          showToast('Stok berhasil diperbarui: ' + stockNum + ' unit.', 'success');
+        } else {
+          showToast(res.message || 'Gagal memperbarui stok', 'error');
+        }
       });
     }
 

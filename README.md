@@ -9,6 +9,36 @@
 
 ---
 
+## 🚀 Pembaruan Rilis v2.2.0 (Strict Inventory Governance, Web-Style Admin Navigation & SKU Variant Lifecycle)
+
+1. **Navigasi Konsol Web Tanpa Tab Geser (Web-Style Admin Navigation)**:
+   - **Eliminasi Total Tab Geser Mobile**: Menghilangkan tab strip geser horizontal pada perangkat layar sentuh, digantikan dengan selektor modul dropdown berbasis web yang bersih (`#mobile-admin-tab-select`) dan selalu terlihat tanpa harus menggulir atau menggeser layar ke samping.
+   - **Bilah Samping Vertikal Desktop**: Pada resolusi tablet/desktop (`md:`), navigasi ditampilkan sebagai bilah menu samping vertikal berpenanda panah status aktif dan penomoran modul yang rapi.
+   - **Sinkronisasi Otomatis**: Penggantian modul lewat tombol sidebar maupun dropdown mobile selalu sinkron secara reaktif ke panel konten dan pemfilteran hak akses peran (Super Admin, Store Manager, Customer Service).
+
+2. **Tata Kelola Inventaris Ketat (Ready, Menipis, Habis & Anti-Overselling)**:
+   - **Kalkulasi Total Stok Varian**: Total ketersediaan produk dihitung otomatis dari akumulasi seluruh SKU varian aktif (`p.variants`).
+   - **Lencana Status Inventaris**:
+     - *Ready Stock (> 5 unit)*: Lencana hijau zamrud pada tabel konsol dan etalase toko.
+     - *Stok Menipis (1 - 5 unit)*: Lencana amber peringatan pada kartu katalog dan modal detail produk.
+     - *Stok Habis (0 unit)*: Lencana merah tebal *STOK HABIS* (*SOLD OUT*), foto produk otomatis diberi efek visual desaturasi (grayscale), tombol tambah ke tas dinonaktifkan (*disabled cursor-not-allowed*), dan kuantitas stepper dikunci.
+   - **Proteksi Penjualan Berlebih (Anti-Overselling)**:
+     - Keranjang belanja membatasi penambahan barang sesuai batas stok fisik maksimal per SKU.
+     - Validasi transaksi ketat pada backend (`createOrder`) dengan mutex lock: pesanan ditolak otomatis jika stok fisik tidak mencukupi.
+     - Pengurangan stok seketika (*instant decrement*): begitu invoice dibuat, stok varian di database dan memori browser langsung berkurang dan etalase toko segera menampilkan status terkini tanpa perlu muat ulang halaman.
+
+3. **Manajemen Siklus Hidup Katalog & Matriks Varian SKU Lengkap**:
+   - **Filter & Pencarian Inventaris Admin**: Bilah pencarian instan berdasarkan nama artikel, SKU, atau kategori, serta tombol filter cepat: *Semua*, *Ready Stock*, *Stok Menipis (<= 5)*, dan *Stok Habis (0)*.
+   - **Matriks Varian SKU Terbuka (Expandable Variant Accordion)**: Tombol *[▾ X SKU]* membuka sub-tabel varian per produk yang menampilkan kode SKU, warna, ukuran, foto varian, dan status ketersediaan.
+   - **Pembaruan Stok Langsung (Inline Stock Editor)**: Operator dapat langsung mengetikkan angka stok baru di kolom input tabel dan sistem menyimpannya via `updateVariantStock` dengan tanda centang sukses instan.
+   - **CRUD Varian & Produk Lengkap**:
+     - *Tambah SKU Baru*: Modal `#admin-variant-modal` dengan validasi keunikan SKU.
+     - *Edit Varian*: Mengubah warna, ukuran, foto varian, dan stok fisik secara terpadu.
+     - *Hapus Varian*: Menghapus SKU varian tertentu (`deleteVariant`) dengan konfirmasi keamanan.
+     - *Hapus Produk*: Menghapus artikel busana (`deleteProduct`) sekaligus membersihkan seluruh baris varian SKU terkait secara bersih.
+
+---
+
 ## 🚀 Pembaruan Rilis v2.1.0 (Strict RBAC, Dynamic Storefront CMS & Mobile Ergonomics)
 
 1. **Tata Kelola Otorisasi Ketat (RBAC v2.1)**:

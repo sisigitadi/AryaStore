@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD): AryaStore E-Commerce Engine
 
 > **Spesifikasi Resmi Platform Global Fashion & Apparel E-Commerce Terpadu (Storefront & RBAC Admin Dashboard)**  
-> Versi Dokumen: **v2.0.0 (Global E-Commerce Expansion, Technical SEO & Internationalization)**  
+> Versi Dokumen: **v2.2.0 (Strict Inventory Governance, Web-Style Admin Navigation & SKU Variant Lifecycle)**  
 > Arsitektur Target: **Serverless Google Apps Script + Google Sheets Database**  
 > Standar Kepatuhan: **RetroBOT Core v3.0 & antislop Filter**
 

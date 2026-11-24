@@ -300,6 +300,31 @@ Sistem membedakan secara ketat hak akses 3 peran tim operasional dengan akuntabi
 - **Dukungan Bilingual Real-Time**: Setiap entri konten menyimpan versi Bahasa Indonesia (`_ID`) dan Bahasa Inggris (`_EN`), yang otomatis di-render ulang saat bahasa antarmuka berganti.
 - **Penyimpanan Foto Hero di Google Drive**: Endpoint `uploadHeroImage` mengompresi foto editorial dan menyimpannya ke folder `DRIVE_PRODUCTS_FOLDER_NAME` Google Drive publik.
 
+### 2.10 Manajemen Siklus Hidup Katalog, Varian SKU, & Penghapusan Bersih (Katalog & SKU CRUD Lifecycle)
+1. **Endpoint Backend Penghapusan Produk (`deleteProduct`)**:
+   - Memvalidasi otorisasi peran (`Super Admin` atau `Store Manager`).
+   - Menghapus baris produk dari sheet `Products` sekaligus menghapus seluruh baris varian bersangkutan di sheet `ProductVariants` dari baris terbawah ke atas (*bottom-up deletion*) untuk menjaga integritas indeks.
+   - Mencatat aksi ke `AuditLogs` dengan detail nama dan ID produk yang dihapus.
+2. **Endpoint Backend Penghapusan Varian (`deleteVariant`)**:
+   - Memvalidasi otorisasi peran (`Super Admin` atau `Store Manager`).
+   - Menghapus baris SKU varian yang ditargetkan dari sheet `ProductVariants`.
+   - Mencatat aksi penghapusan ke `AuditLogs`.
+3. **Endpoint Pembaruan Cepat Stok Fisik (`updateVariantStock`)**:
+   - Menerima parameter `variantId`, `newStock`, dan `role`.
+   - Memastikan nilai stok berupa angka integer non-negatif (>= 0).
+   - Memperbarui kolom `stock` (`COL_VARIANTS.STOCK`) secara langsung dan memanggil `SpreadsheetApp.flush()`.
+   - Mengembalikan respons sukses dengan objek konfirmasi stok baru untuk sinkronisasi antarmuka.
+
+### 2.11 Standar Navigasi Konsol Web & Integritas Inventaris Transaksional (Web-Style Admin Navigation & Inventory Protection)
+1. **Peniadaan Navigasi Geser Horizontal (No Sliding Tabs on Mobile)**:
+   - Dilarang membungkus navigasi admin dalam kontainer scroll horizontal (`overflow-x-auto`) pada tampilan layar kecil.
+   - Sediakan komponen selektor modul web terstruktur (`#mobile-admin-tab-select`) yang menampilkan modul aktif, mudah diakses dengan satu ketukan, dan otomatis sinkron dengan state `AppState.adminActiveTab`.
+   - Pada layar desktop (`md:`), sediakan bilah navigasi vertikal standar aplikasi web modern lengkap dengan indikator panah aktif.
+2. **Integritas Transaksional & Pencegahan Penjualan Berlebih (Anti-Overselling Guard)**:
+   - Setiap transaksi pemesanan (`createOrder`) wajib memverifikasi kuantitas permintaan terhadap ketersediaan fisik stok SKU sebelum invoice diterbitkan.
+   - Jika kuantitas permintaan melebihi stok yang tersedia, sistem wajib menolak pembuatan invoice dengan pesan galat yang jelas.
+   - Setelah pesanan berhasil dicatat, sistem seketika memotong stok fisik SKU di database dan memperbarui state memori klien secara reaktif sehingga etalase langsung menampilkan lencana *Stok Habis* tanpa reload.
+
 ---
 
 ## 3. KONTRAK REKAYASA ANTARMUKA PENGGUNA (`index.html`)

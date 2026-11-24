@@ -2665,6 +2665,186 @@ function updateVariant(variantData, role) {
 }
 
 /**
+ * Deletes a product and its associated variants from the database.
+ */
+function deleteProduct(productId, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Peran tidak berwenang menghapus produk.' };
+    }
+
+    if (!productId) {
+      return { success: false, message: 'ID produk wajib disertakan' };
+    }
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var prodSheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+    var varSheet = ss.getSheetByName(SHEET_NAMES.VARIANTS);
+    if (!prodSheet || !varSheet) return { success: false, message: 'Sheet Products atau ProductVariants tidak ditemukan' };
+
+    // 1. Delete associated variants from bottom up
+    var varLastRow = varSheet.getLastRow();
+    if (varLastRow > 1) {
+      var varRows = varSheet.getRange(2, 1, varLastRow - 1, varSheet.getLastColumn()).getDisplayValues();
+      for (var v = varRows.length - 1; v >= 0; v--) {
+        if (varRows[v][COL_VARIANTS.PRODUCT_ID] === productId) {
+          varSheet.deleteRow(v + 2);
+        }
+      }
+    }
+
+    // 2. Delete product row
+    var prodLastRow = prodSheet.getLastRow();
+    if (prodLastRow <= 1) return { success: false, message: 'Katalog kosong' };
+
+    var prodRows = prodSheet.getRange(2, 1, prodLastRow - 1, prodSheet.getLastColumn()).getDisplayValues();
+    var targetRowIdx = -1;
+    var targetName = '';
+
+    for (var p = 0; p < prodRows.length; p++) {
+      if (prodRows[p][COL_PRODUCTS.ID] === productId) {
+        targetRowIdx = p + 2;
+        targetName = prodRows[p][COL_PRODUCTS.NAME];
+        break;
+      }
+    }
+
+    if (targetRowIdx === -1) {
+      return { success: false, message: 'Produk ' + productId + ' tidak ditemukan' };
+    }
+
+    prodSheet.deleteRow(targetRowIdx);
+    SpreadsheetApp.flush();
+    logAudit(role, 'Products', 'Produk dihapus: ' + productId + ' (' + targetName + ') beserta variannya');
+
+    return {
+      success: true,
+      message: 'Produk ' + productId + ' (' + targetName + ') berhasil dihapus dari sistem'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal menghapus produk: ' + err.toString()
+    };
+  }
+}
+
+/**
+ * Deletes a single SKU variant record from the database.
+ */
+function deleteVariant(variantId, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Peran tidak berwenang menghapus varian.' };
+    }
+
+    if (!variantId) {
+      return { success: false, message: 'ID Varian wajib disertakan' };
+    }
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var sheet = ss.getSheetByName(SHEET_NAMES.VARIANTS);
+    if (!sheet) return { success: false, message: 'Sheet ProductVariants tidak ditemukan' };
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: false, message: 'Daftar varian kosong' };
+
+    var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
+    var targetRowIdx = -1;
+    var targetSku = '';
+
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][COL_VARIANTS.VARIANT_ID] === variantId || rows[i][COL_VARIANTS.SKU] === variantId) {
+        targetRowIdx = i + 2;
+        targetSku = rows[i][COL_VARIANTS.SKU];
+        break;
+      }
+    }
+
+    if (targetRowIdx === -1) {
+      return { success: false, message: 'Varian SKU ' + variantId + ' tidak ditemukan' };
+    }
+
+    sheet.deleteRow(targetRowIdx);
+    SpreadsheetApp.flush();
+    logAudit(role, 'ProductVariants', 'Varian SKU ' + (targetSku || variantId) + ' dihapus');
+
+    return {
+      success: true,
+      message: 'Varian SKU ' + (targetSku || variantId) + ' berhasil dihapus'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal menghapus varian: ' + err.toString()
+    };
+  }
+}
+
+/**
+ * Quick inline stock updater for SKU variant.
+ */
+function updateVariantStock(variantId, newStock, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Peran tidak berwenang memperbarui stok.' };
+    }
+
+    if (!variantId) {
+      return { success: false, message: 'ID Varian wajib disertakan' };
+    }
+
+    var stockNum = parseInt(newStock, 10);
+    if (isNaN(stockNum) || stockNum < 0) {
+      return { success: false, message: 'Jumlah stok harus berupa angka non-negatif (>= 0)' };
+    }
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var sheet = ss.getSheetByName(SHEET_NAMES.VARIANTS);
+    if (!sheet) return { success: false, message: 'Sheet ProductVariants tidak ditemukan' };
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: false, message: 'Daftar varian kosong' };
+
+    var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
+    var targetRowIdx = -1;
+    var targetSku = '';
+
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][COL_VARIANTS.VARIANT_ID] === variantId || rows[i][COL_VARIANTS.SKU] === variantId) {
+        targetRowIdx = i + 2;
+        targetSku = rows[i][COL_VARIANTS.SKU];
+        break;
+      }
+    }
+
+    if (targetRowIdx === -1) {
+      return { success: false, message: 'Varian SKU tidak ditemukan' };
+    }
+
+    sheet.getRange(targetRowIdx, COL_VARIANTS.STOCK + 1).setValue(stockNum);
+    SpreadsheetApp.flush();
+    logAudit(role, 'ProductVariants', 'Stok varian ' + (targetSku || variantId) + ' diubah menjadi: ' + stockNum);
+
+    return {
+      success: true,
+      variant_id: variantId,
+      sku: targetSku,
+      new_stock: stockNum,
+      message: 'Stok SKU ' + (targetSku || variantId) + ' berhasil diubah menjadi ' + stockNum
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal memperbarui stok varian: ' + err.toString()
+    };
+  }
+}
+
+/**
  * Returns all promo coupons.
  */
 function getCoupons() {
