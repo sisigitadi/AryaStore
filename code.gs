@@ -3187,6 +3187,92 @@ function deleteCampaign(campaignId, role) {
 /**
  * Returns all submitted size exchange and return requests.
  */
+
+/**
+ * Uploads bundle cover image to Google Drive and returns direct link
+ * @param {string} base64Data
+ * @param {string} mimeType
+ * @param {string} fileName
+ * @param {string} campaignId
+ * @param {string} role
+ * @return {Object}
+ */
+function uploadBundleImage(base64Data, mimeType, fileName, campaignId, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Pengunggahan foto bundle hanya untuk Admin/Manager.' };
+    }
+
+    if (!base64Data) {
+      return { success: false, message: 'Data foto base64 wajib disertakan' };
+    }
+
+    var cleanBase64 = base64Data;
+    if (cleanBase64.indexOf(',') > -1) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
+
+    mimeType = mimeType || 'image/jpeg';
+    var ext = mimeType.indexOf('png') > -1 ? '.png' : (mimeType.indexOf('webp') > -1 ? '.webp' : '.jpg');
+    var autoName = 'BUNDLE_' + (campaignId || 'PROMO') + '_' + new Date().getTime() + ext;
+    fileName = fileName || autoName;
+
+    var decodedBytes;
+    try {
+      decodedBytes = Utilities.base64Decode(cleanBase64);
+    } catch (e) {
+      return { success: false, message: 'Format base64 gambar tidak valid' };
+    }
+
+    var blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
+
+    var settings = loadSettingsDictionary();
+    var folderName = settings['DRIVE_PRODUCTS_FOLDER_NAME'] || 'ARYASTORE_PRODUCTS';
+
+    var directImageUrl = '';
+    var directThumbUrl = '';
+    var fileId = '';
+
+    if (typeof DriveApp !== 'undefined') {
+      var folderIterator = DriveApp.getFoldersByName(folderName);
+      var targetFolder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(folderName);
+
+      var driveFile = targetFolder.createFile(blob);
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileId = driveFile.getId();
+
+      directImageUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+      directThumbUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+
+      logAudit(role, 'Bundles', 'Foto sampul bundle diunggah ke Google Drive: ' + fileName + ' (ID: ' + fileId + ', Kampanye: ' + (campaignId || 'Baru') + ')');
+
+      return {
+        success: true,
+        fileId: fileId,
+        imageUrl: directImageUrl,
+        thumbnailUrl: directThumbUrl,
+        driveViewUrl: driveFile.getUrl(),
+        message: 'Foto sampul paket bundle berhasil diunggah ke Google Drive.'
+      };
+    } else {
+      fileId = 'sim_bundle_' + new Date().getTime();
+      directImageUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+      directThumbUrl = directImageUrl;
+
+      return {
+        success: true,
+        fileId: fileId,
+        imageUrl: directImageUrl,
+        thumbnailUrl: directThumbUrl,
+        driveViewUrl: directImageUrl,
+        message: 'Simulasi unggah foto sampul bundle berhasil.'
+      };
+    }
+  } catch (err) {
+    return { success: false, message: 'Gagal mengunggah foto bundle: ' + err.toString() };
+  }
+}
+
 function getReturns() {
   try {
     var rows = getSheetDisplayRows(SHEET_NAMES.RETURNS);

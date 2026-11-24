@@ -2575,9 +2575,27 @@
             </div>
           </div>
 
-          <div>
-            <label class="block font-semibold text-[#57534E] mb-1">URL Foto Sampul Bundle</label>
-            <input type="url" id="bundle-form-image-url" placeholder="https://images.unsplash.com/photo-..." class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4]">
+          <!-- Foto Sampul Bundle: Upload Google Drive & Pratinjau -->
+          <div class="space-y-2 p-3 bg-[#FAFAF9] border border-[#E7E5E4]">
+            <label class="block font-semibold text-[#1C1917]">Foto Sampul Bundle (Google Drive)</label>
+            <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div class="w-20 h-20 shrink-0 bg-stone-200 border border-[#E7E5E4] overflow-hidden flex items-center justify-center">
+                <img id="bundle-form-preview-img" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80" alt="Preview Foto Sampul" class="w-full h-full object-cover">
+              </div>
+              <div class="flex-1 space-y-2 w-full">
+                <input type="file" id="bundle-form-file-input" accept="image/*" class="w-full text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-[#1C1917] file:text-white hover:file:bg-[#292524] cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <button type="button" id="bundle-upload-drive-btn" onclick="uploadBundleCoverAction()" class="px-3 py-1.5 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors min-h-[36px] flex items-center justify-center shrink-0">
+                    Unggah ke Google Drive
+                  </button>
+                  <span id="bundle-upload-status" class="text-[11px] text-stone-500 font-mono"></span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] text-[#57534E] mb-0.5">Tautan URL Gambar (Otomatis terisi dari Drive / Kustom):</label>
+              <input type="url" id="bundle-form-image-url" oninput="const p=document.getElementById('bundle-form-preview-img'); if(p) p.src=this.value||'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80'" placeholder="https://lh3.googleusercontent.com/..." class="w-full p-1.5 bg-white border border-[#E7E5E4] text-xs font-mono">
+            </div>
           </div>
 
           <div>
@@ -5381,6 +5399,21 @@ const AppState = {
             return { success: true, order: ord };
           }
           return { success: false, message: 'Pesanan tidak ditemukan' };
+
+        case 'uploadBundleImage': {
+          const base64Data = args[0] || '';
+          const mimeType = args[1] || 'image/jpeg';
+          const fileName = args[2] || 'bundle_photo.jpg';
+          const dataUrl = base64Data.startsWith('data:') ? base64Data : ('data:' + mimeType + ';base64,' + base64Data);
+          return {
+            success: true,
+            imageUrl: dataUrl,
+            thumbnailUrl: dataUrl,
+            fileId: 'mock-drive-bundle-' + Date.now(),
+            fileName: fileName,
+            message: 'Mode Pratinjau Lokal: Foto bundle aktif di sesi ini; otomatis tersimpan ke Google Drive saat live di Apps Script.'
+          };
+        }
 
         case 'uploadProductImage': {
           const base64Data = args[0] || '';
@@ -9629,12 +9662,99 @@ const AppState = {
       document.getElementById('admin-bundle-form').reset();
       document.getElementById('bundle-form-ends-at').value = '2026-12-31 23:59:59';
       document.getElementById('bundle-form-is-active').value = 'true';
+      const previewImg = document.getElementById('bundle-form-preview-img');
+      if (previewImg) previewImg.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80';
+      const fileInput = document.getElementById('bundle-form-file-input');
+      if (fileInput) fileInput.value = '';
+      const statusEl = document.getElementById('bundle-upload-status');
+      if (statusEl) statusEl.textContent = '';
       document.getElementById('admin-bundle-modal').classList.remove('hidden');
     }
 
     function closeAdminBundleModal() {
       document.getElementById('admin-bundle-modal').classList.add('hidden');
     }
+
+    function uploadBundleCoverAction() {
+      const fileInput = document.getElementById('bundle-form-file-input');
+      const statusEl = document.getElementById('bundle-upload-status');
+      const btn = document.getElementById('bundle-upload-drive-btn');
+      const campaignId = document.getElementById('bundle-form-id').value;
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showToast('Pilih berkas foto sampul terlebih dahulu.', 'warning');
+        return Promise.resolve();
+      }
+
+      const file = fileInput.files[0];
+      statusEl.textContent = 'Membaca berkas...';
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const rawBase64 = e.target.result;
+          statusEl.textContent = 'Mengompresi gambar...';
+
+          const img = new Image();
+          img.onload = function() {
+            const maxDim = 1200;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+            statusEl.textContent = 'Mengunggah ke Drive...';
+            withButtonLoading(btn, () => {
+              const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Store Manager');
+              return callApi('uploadBundleImage', compressedBase64, 'image/jpeg', 'bundle_' + (campaignId || 'promo') + '_' + Date.now() + '.jpg', campaignId, role).then(res => {
+                if (res && res.success && res.imageUrl) {
+                  document.getElementById('bundle-form-image-url').value = res.imageUrl;
+                  const preview = document.getElementById('bundle-form-preview-img');
+                  if (preview) preview.src = res.imageUrl;
+                  statusEl.textContent = '✓ Foto berhasil diunggah ke Google Drive!';
+                  showToast('Foto sampul paket bundle berhasil diunggah ke Google Drive.', 'success');
+                  resolve(res);
+                } else {
+                  statusEl.textContent = 'Gagal unggah foto.';
+                  showToast((res && res.message) || 'Gagal mengunggah foto ke Google Drive', 'error');
+                  resolve(res);
+                }
+                return res;
+              }).catch(err => {
+                statusEl.textContent = 'Gagal unggah foto.';
+                reject(err);
+              });
+            });
+          };
+          img.onerror = function() {
+            statusEl.textContent = 'Format berkas tidak didukung.';
+            showToast('Gagal memproses gambar. Gunakan format JPG, PNG, atau WebP.', 'error');
+            resolve({ success: false });
+          };
+          img.src = rawBase64;
+        };
+        reader.onerror = function(err) {
+          statusEl.textContent = 'Gagal membaca berkas.';
+          reject(err);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
 
     function editBundleModal(campaignId) {
       return callApi('getCampaigns').then(res => {
@@ -9651,6 +9771,12 @@ const AppState = {
         document.getElementById('bundle-form-ends-at').value = b.ends_at || '2026-12-31 23:59:59';
         document.getElementById('bundle-form-is-active').value = (b.is_active === true || String(b.is_active).toUpperCase() === 'TRUE') ? 'true' : 'false';
         document.getElementById('bundle-form-image-url').value = b.image_url || '';
+        const previewImg = document.getElementById('bundle-form-preview-img');
+        if (previewImg) previewImg.src = b.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80';
+        const fileInput = document.getElementById('bundle-form-file-input');
+        if (fileInput) fileInput.value = '';
+        const statusEl = document.getElementById('bundle-upload-status');
+        if (statusEl) statusEl.textContent = '';
         document.getElementById('bundle-form-items').value = Array.isArray(b.bundle_items) ? b.bundle_items.join(', ') : (b.bundle_items || '');
 
         document.getElementById('admin-bundle-modal').classList.remove('hidden');

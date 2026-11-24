@@ -9,6 +9,19 @@
 
 ---
 
+## 🚀 Pembaruan Rilis v2.3.1 (Google Drive Upload for Flash Sale & Bundle Cover Photos)
+
+1. **Pengunggahan Foto Sampul Bundle ke Google Drive (#admin-bundle-modal)**:
+   - **Formulir Unggah Terintegrasi**: Menggantikan ketergantungan input teks URL manual dengan pemilih berkas foto lokal (`#bundle-form-file-input`) berformat JPG, PNG, atau WebP.
+   - **Kompresi Klien & Pratinjau Langsung**: Foto dikompresi otomatis via HTML5 Canvas (maksimal dimensi 1200px) sebelum transmisi untuk efisiensi penyimpanan Google Drive dan kuota bandwidth GAS. Kotak pratinjau (`#bundle-form-preview-img`) seketika menampilkan foto yang dipilih.
+   - **Tombol Aksi & Indikator Status**: Tombol `Unggah ke Google Drive` mengeksekusi transmisi ke backend dan menampilkan indikator status `✓ Foto berhasil diunggah ke Google Drive!`.
+   - **Penyelarasan Tautan Otomatis**: Kolom URL foto secara otomatis terisi tautan Google CDN permanen (`https://lh3.googleusercontent.com/d/<FILE_ID>=w1000`) hasil pengunggahan, namun tetap mempertahankan fleksibilitas jika operator ingin memasukkan URL eksternal kustom.
+
+2. **Backend Engine code.gs (uploadBundleImage)**:
+   - **Endpoint `uploadBundleImage(base64Data, mimeType, fileName, campaignId, role)`**: Memvalidasi otorisasi peran (`Super Admin` atau `Store Manager`), mendekode Base64 menjadi file Blob biner, menyimpannya ke folder Google Drive (`ARYASTORE_PRODUCTS`), mengatur izin akses publik (*Anyone with link can view*), dan mencatat aksi ke sheet `AuditLogs`.
+
+---
+
 ## 🚀 Pembaruan Rilis v2.3.0 (Full Interactive Flash Sale & Bundling CRUD Engine)
 
 1. **Manajemen Interaktif Flash Sale & Paket Bundling (Konsol Admin Tab 7)**:

@@ -341,6 +341,13 @@ Sistem membedakan secara ketat hak akses 3 peran tim operasional dengan akuntabi
    - Menyediakan modal terdedikasi (`#admin-bundle-modal`) dengan input ID, judul, deskripsi, harga normal, harga bundle, batas waktu (`ends_at`), status (`is_active`), URL gambar, dan daftar SKU produk.
    - Menyediakan tombol aksi pada setiap kartu kampanye: `Aktifkan/Nonaktifkan`, `Edit`, dan `Hapus` yang terhubung langsung dengan backend API dan MockDB.
 
+4. **Pengunggahan Foto Sampul Bundle ke Google Drive (`uploadBundleImage`)**:
+   - Endpoint backend menerima `base64Data`, `mimeType`, `fileName`, `campaignId`, dan `role`.
+   - Memvalidasi otorisasi peran (*Super Admin* atau *Store Manager*).
+   - Menyimpan file ke folder `DRIVE_PRODUCTS_FOLDER_NAME` di Google Drive dan mengatur izin baca publik (*Anyone with link can view*).
+   - Mengembalikan URL gambar langsung Google CDN (`https://lh3.googleusercontent.com/d/<ID>=w1000`) dan mencatat aktivitas ke `AuditLogs`.
+   - Antarmuka formulir modal (`#admin-bundle-modal`) menyediakan tombol unggah file lokal, kompresi kanvas 1200px, kotak pratinjau gambar, dan pengisian otomatis ke kolom URL.
+
 ---
 
 ## 3. KONTRAK REKAYASA ANTARMUKA PENGGUNA (`index.html`)
