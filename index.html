@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-[#FAFAF9]">
+<html lang="id" class="bg-[#FAFAF9]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -146,8 +146,15 @@
       color: #1C1917;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-      max-width: 100vw;
+      overflow-x: clip;
+      max-width: 100%;
+    }
+
+    #main-header {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      z-index: 40;
     }
 
     /* Kepatuhan antislop: Hero description high-contrast */
@@ -247,22 +254,26 @@
   <div id="storefront-view" class="flex-1 flex flex-col">
     
     <!-- Global Sticky Storefront Header (Announcement Bar + Main Navbar) -->
-    <header id="main-header" class="sticky top-0 z-40 w-full bg-[#FAFAF9] transition-shadow duration-200">
+    <header id="main-header" class="sticky top-0 z-40 w-full bg-[#FAFAF9] transition-shadow duration-200 shadow-sm">
       
-      <!-- Top Announcement Bar: Flash Sale Countdown, Currency & Language (Compact & Clean) -->
-      <div id="top-announcement-bar" class="bg-[#1C1917] text-[#FAFAF9] text-[11px] py-1.5 px-4 border-b border-[#292524]">
+      <!-- Top Announcement Bar: Flash Sale Countdown, Currency & Language (Compact, Clean & Responsive) -->
+      <div id="top-announcement-bar" class="bg-[#1C1917] text-[#FAFAF9] text-[11px] py-1.5 px-3 sm:px-4 border-b border-[#292524]">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div class="flex items-center space-x-2 truncate">
+          
+          <!-- Promo Headline -->
+          <div class="flex items-center space-x-2 min-w-0">
             <!-- Static indicator dot without pulse animation (Kepatuhan antislop R-19) -->
             <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#C2410C] flex-shrink-0"></span>
-            <span data-i18n="announcement_tag" class="hidden sm:inline font-medium tracking-wider uppercase text-[10px] text-stone-300">Koleksi Musim Terbatas</span>
-            <span class="hidden sm:inline text-stone-500">|</span>
-            <span id="announcement-banner-title" data-i18n="announcement_title" class="text-stone-300 truncate">Potongan Spesial Flash Sale Berlangsung</span>
+            <span data-i18n="announcement_tag" class="hidden sm:inline font-medium tracking-wider uppercase text-[10px] text-stone-300 flex-shrink-0">Koleksi Musim Terbatas</span>
+            <span class="hidden sm:inline text-stone-500 flex-shrink-0">|</span>
+            <span id="announcement-banner-title" data-i18n="announcement_title" class="text-stone-300 truncate text-[10px] sm:text-[11px]">Potongan Spesial Flash Sale Berlangsung</span>
           </div>
           
-          <div class="flex items-center space-x-3 text-[11px] flex-shrink-0">
-            <!-- Countdown Timer -->
-            <div class="flex items-center space-x-1 font-mono">
+          <!-- Sticky Controls: Currency (Valas), Language, Countdown -->
+          <div class="flex items-center space-x-2 sm:space-x-3 text-[11px] flex-shrink-0">
+            
+            <!-- Countdown Timer (Desktop / Tablet) -->
+            <div class="hidden sm:flex items-center space-x-1 font-mono">
               <span data-i18n="ends_in" class="hidden md:inline text-stone-400 font-sans text-[10px]">Berakhir Dalam:</span>
               <div id="flash-sale-countdown" class="flex items-center space-x-0.5 font-semibold text-[#FAFAF9]">
                 <span id="countdown-hours" class="bg-[#292524] px-1 py-0.5 rounded-sm text-[10px]">00</span>:
@@ -271,10 +282,10 @@
               </div>
             </div>
 
-            <!-- Currency Selector (Desktop Compact) -->
-            <div class="hidden sm:flex items-center space-x-1 text-stone-300">
-              <span class="text-stone-500 font-mono text-[9px]">VALAS:</span>
-              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] text-[#FAFAF9] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer">
+            <!-- Currency Selector (Valas - Selalu Aktif & Terlihat di Seluruh Device) -->
+            <div class="flex items-center space-x-1 text-stone-300">
+              <span class="hidden sm:inline text-stone-500 font-mono text-[9px]">VALAS:</span>
+              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] hover:bg-[#3E3835] text-[#FAFAF9] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer font-medium transition-colors" title="Ubah Mata Uang / Currency">
                 <option value="IDR">IDR (Rp)</option>
                 <option value="USD">USD ($)</option>
                 <option value="SGD">SGD (S$)</option>
@@ -286,11 +297,11 @@
               </select>
             </div>
 
-            <!-- Language Switcher (Desktop Compact) -->
-            <div class="hidden sm:flex items-center space-x-1 text-[10px]">
-              <button onclick="setLanguage('id')" id="lang-btn-id" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9]">ID</button>
-              <span class="text-stone-500">/</span>
-              <button onclick="setLanguage('en')" id="lang-btn-en" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white">EN</button>
+            <!-- Language Switcher (Selalu Aktif & Terlihat di Seluruh Device) -->
+            <div class="flex items-center space-x-0.5 text-[10px]">
+              <button onclick="setLanguage('id')" id="lang-btn-id" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9]" title="Bahasa Indonesia">ID</button>
+              <span class="text-stone-500 text-[10px]">/</span>
+              <button onclick="setLanguage('en')" id="lang-btn-en" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white" title="English">EN</button>
             </div>
           </div>
         </div>
