@@ -340,6 +340,57 @@
         break-inside: avoid;
       }
     }
+    /* Bulletproof Mobile & Cross-Browser Select Control Visibility (antislop R-03, R-25) */
+    #announcement-currency-select {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      color: #FAFAF9 !important;
+      -webkit-text-fill-color: #FAFAF9 !important;
+      background-color: #292524 !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FAFAF9'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 6px center !important;
+      background-size: 11px 11px !important;
+      padding-left: 8px !important;
+      padding-right: 22px !important;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    #announcement-currency-select option {
+      background-color: #1C1917 !important;
+      color: #FAFAF9 !important;
+      -webkit-text-fill-color: #FAFAF9 !important;
+    }
+    #mobile-currency-select,
+    #filter-sort,
+    #cart-shipping-zone-select,
+    #ret-reason {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      color: #1C1917 !important;
+      -webkit-text-fill-color: #1C1917 !important;
+      background-color: #FAFAF9 !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2357534E'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 12px center !important;
+      background-size: 14px 14px !important;
+      padding-right: 36px !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    #mobile-currency-select option,
+    #filter-sort option,
+    #cart-shipping-zone-select option,
+    #ret-reason option {
+      background-color: #FFFFFF !important;
+      color: #1C1917 !important;
+      -webkit-text-fill-color: #1C1917 !important;
+    }
+
     /* Mobile Touch & Input Ergonomics (antislop R-03, R-18) */
     @media (max-width: 639px) {
       input[type="text"],
@@ -348,10 +399,17 @@
       input[type="number"],
       input[type="password"],
       input[type="search"],
-      select,
+      select:not(#announcement-currency-select),
       textarea {
         font-size: 16px !important; /* Mencegah auto-zoom pada peramban mobile */
         touch-action: manipulation;
+      }
+      #announcement-currency-select {
+        font-size: 11px !important; /* Proporsional pas dan teks tidak terpotong di header mobile */
+        line-height: 1.2 !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        font-weight: 600 !important;
       }
       .touch-target-mobile {
         min-height: 44px;
@@ -402,15 +460,15 @@
             <!-- Currency Selector (Valas - Selalu Aktif & Terlihat di Seluruh Device) -->
             <div class="flex items-center space-x-1 text-stone-300">
               <span class="hidden sm:inline text-stone-500 font-mono text-[9px]">VALAS:</span>
-              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] hover:bg-[#3E3835] text-[#FAFAF9] text-[10px] px-2 py-1 min-h-[32px] sm:min-h-[26px] rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer font-medium transition-colors" title="Ubah Mata Uang / Currency">
-                <option value="IDR">IDR (Rp)</option>
-                <option value="USD">USD ($)</option>
-                <option value="SGD">SGD (S$)</option>
-                <option value="MYR">MYR (RM)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="AUD">AUD (A$)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="JPY">JPY (¥)</option>
+              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] hover:bg-[#3E3835] text-[#FAFAF9] text-[11px] font-semibold px-2 py-1 min-h-[32px] sm:min-h-[26px] rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer transition-colors" title="Ubah Mata Uang / Currency">
+                <option value="IDR" class="bg-[#1C1917] text-[#FAFAF9]">IDR (Rp)</option>
+                <option value="USD" class="bg-[#1C1917] text-[#FAFAF9]">USD ($)</option>
+                <option value="SGD" class="bg-[#1C1917] text-[#FAFAF9]">SGD (S$)</option>
+                <option value="MYR" class="bg-[#1C1917] text-[#FAFAF9]">MYR (RM)</option>
+                <option value="EUR" class="bg-[#1C1917] text-[#FAFAF9]">EUR (€)</option>
+                <option value="AUD" class="bg-[#1C1917] text-[#FAFAF9]">AUD (A$)</option>
+                <option value="GBP" class="bg-[#1C1917] text-[#FAFAF9]">GBP (£)</option>
+                <option value="JPY" class="bg-[#1C1917] text-[#FAFAF9]">JPY (¥)</option>
               </select>
             </div>
 
@@ -514,15 +572,15 @@
               
               <div>
                 <label class="block font-bold text-[#1C1917] uppercase tracking-wider text-[11px] mb-1.5">Mata Uang / Currency</label>
-                <select id="mobile-currency-select" onchange="setCurrency(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-[#1C1917] p-2.5 rounded-sm text-base sm:text-xs min-h-[44px]">
-                  <option value="IDR">IDR : Rupiah (Rp)</option>
-                  <option value="USD">USD : Dollar ($)</option>
-                  <option value="SGD">SGD : Dollar (S$)</option>
-                  <option value="MYR">MYR : Ringgit (RM)</option>
-                  <option value="EUR">EUR : Euro (€)</option>
-                  <option value="AUD">AUD : Dollar (A$)</option>
-                  <option value="GBP">GBP : Pound (£)</option>
-                  <option value="JPY">JPY : Yen (¥)</option>
+                <select id="mobile-currency-select" onchange="setCurrency(this.value)" class="w-full bg-[#FAFAF9] border border-[#E7E5E4] text-[#1C1917] font-semibold p-2.5 rounded-sm text-base sm:text-xs min-h-[44px]">
+                  <option value="IDR" class="bg-white text-[#1C1917]">IDR : Rupiah (Rp)</option>
+                  <option value="USD" class="bg-white text-[#1C1917]">USD : Dollar ($)</option>
+                  <option value="SGD" class="bg-white text-[#1C1917]">SGD : Dollar (S$)</option>
+                  <option value="MYR" class="bg-white text-[#1C1917]">MYR : Ringgit (RM)</option>
+                  <option value="EUR" class="bg-white text-[#1C1917]">EUR : Euro (€)</option>
+                  <option value="AUD" class="bg-white text-[#1C1917]">AUD : Dollar (A$)</option>
+                  <option value="GBP" class="bg-white text-[#1C1917]">GBP : Pound (£)</option>
+                  <option value="JPY" class="bg-white text-[#1C1917]">JPY : Yen (¥)</option>
                 </select>
               </div>
             </div>
