@@ -105,6 +105,17 @@ Platform mengintegrasikan arsitektur pengiriman hibrida multi-penyedia yang flek
   - Pada modal detail produk: Memilih warna swatch secara dinamis menukar foto utama dengan foto varian warna yang dipilih dengan transisi fade halus 150ms (`MOTION 1`), dilengkapi deretan thumbnail foto warna (*color thumbnail strip*) di bawah foto utama.
   - Pada keranjang belanja: Item keranjang otomatis menampilkan foto warna yang dipilih pembeli.
 
+#### 2.10 Fitur Tambahan: Header Sticky Terpadu & Sistem Animasi Mikro Proporsional (MOTION 2)
+
+- **Header Sticky Viewport-Locked**: Seluruh baris atas (Announcement Bar, Valas Selector, Language Switcher) dan bilah navigasi utama terkunci rapi di posisi `top: 0` (`sticky top-0 z-40`) tanpa terputus saat digulir ke bawah, diperkuat dengan `overflow-x: clip` pada dokumen.
+- **Aksesibilitas Kontrol Tanpa Hambat (*Zero Scroll Back*)**: Pelanggan dapat mengubah mata uang 8 valuta dan memeriksa keranjang belanja kapan saja secara instan dari posisi scroll mana pun di seluruh perangkat.
+- **Sistem Animasi Mikro Proporsional**:
+  - Efek elevasi kartu produk (*hover translateY -3px*, *box-shadow*, dan *image scale 105%*).
+  - Kemunculan gulir halus (*smooth scroll reveal*) via `IntersectionObserver` pada katalog produk dan kartu bundling.
+  - Umpan balik taktil pop (*badge bounce pop*) pada ikon tas belanja dan wishlist saat mutasi kuantitas.
+  - Transisi masuk dialog modal (*scale & translateY enter*) serta transisi laci keranjang (*smooth drawer slide*).
+  - Tautan hak cipta terverifikasi di footer menuju `https://sigitadi.id` (&copy; 2026 sigitadi.id).
+
 ---
 
 ### 3. Arsitektur Data & Struktur Lembar Kerja (Google Sheets v2.0)

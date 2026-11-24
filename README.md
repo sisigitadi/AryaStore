@@ -36,6 +36,14 @@
 12. **Hosting Foto Produk & Galeri Varian Warna Google Drive (Live Color Swapping)**:
     - Pengelola toko dapat mengunggah foto produk utama dan foto varian warna berbeda langsung ke Google Drive via fungsi `uploadProductImage` dengan kompresi otomatis di sisi klien.
     - Pada kartu katalog dan modal detail produk, memilih warna swatch langsung menukar foto produk utama ke foto warna yang sesuai secara halus (fade 150ms), dilengkapi deretan thumbnail foto warna.
+13. **Header Sticky Terpadu & Aksesibilitas Kontrol Permanen**:
+    - Kontainer sticky terpadu (`sticky top-0 z-40`) yang menempel kokoh pada viewport saat digulir ke posisi mana pun di halaman, dilengkapi elevasi bayangan dinamis (`shadow-md`).
+    - Pemilih Valas (8 mata uang dunia) dan tombol Tas Belanja tetap dapat diakses secara instan oleh pelanggan di seluruh perangkat (desktop dan ponsel) tanpa perlu repot menggulir kembali ke atas (*zero scroll back*).
+14. **Sistem Animasi Mikro & Interaksi Taktil Proporsional (MOTION 2)**:
+    - Efek elevasi kartu produk (*card lift -3px*), zoom foto produk halus (*scale 105%*), dan bilah aksi cepat (*quick view*) saat kursor berada di atas kartu.
+    - Animasi kemunculan bertahap (*smooth scroll reveal*) dengan `IntersectionObserver` saat kartu busana memasuki layar.
+    - Umpan balik taktil pop (*badge bounce pop*) pada ikon tas belanja dan wishlist saat item ditambahkan, serta animasi slide-in pada notifikasi toast.
+    - Animasi transisi dialog modal lembut (*scale & fade enter*) dan laci keranjang belanja (*smooth drawer slide*).
 
 ### 🛡️ Dashboard Admin (RBAC Berbasis PIN)
 1. **Role-Based Access Control (RBAC)**:

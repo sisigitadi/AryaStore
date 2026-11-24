@@ -171,9 +171,9 @@ Sebelum menyerahkan berkas antarmuka ke tahap akhir, lakukan audit terhadap 4 bl
   - Setiap warna aksen (#C2410C) memiliki alasan konversi yang jelas.
   - Setiap garis pembatas memperjelas pemisahan hierarki informasi.
 - [x] **Blok 3 (Kesesuaian Dial)**:
-  - ENERGY 2: Ketenangan visual terjaga, estetika editorial majalah busana.
+  - ENERGY 2: Ketenangan visual terjaga, estetika editorial majalah busana berkelas.
   - RHYTHM 2: Harmoni jarak 8px konsisten di seluruh seksi antarmuka.
-  - MOTION 1: Animasi geser dan fade yang cepat (150-250ms), tanpa efek membal.
+  - MOTION 2: Animasi interaktif aktif namun terukur proporsional: hover card lift (-3px), smooth image zoom (105%), quick view overlay, badge pop bounce, smooth scroll reveal via IntersectionObserver (14px slide-up), modal scale enter, drawer slide-in, dan feedback taktil tombol active scale-95. Bebas dari loop tanpa henti atau animasi template bertumpuk.
 - [x] **Blok 4 (Standar Keahlian Kriya / Craftsmanship Locks)**:
   - Seluruh tombol memiliki keadaan loading spinner dan pencegah klik ganda.
   - Target sentuh seluler berukuran minimal 44x44px.
