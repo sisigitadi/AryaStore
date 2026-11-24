@@ -17,3 +17,7 @@ pnpm-debug.log*
 # Environment
 .env
 .env.local
+
+# Scratch and Temporary Tests
+scratch/
+
