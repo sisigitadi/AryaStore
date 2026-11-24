@@ -246,111 +246,112 @@
   <!-- ========================================== -->
   <div id="storefront-view" class="flex-1 flex flex-col">
     
-    <!-- Top Announcement Bar: Flash Sale Countdown, Currency & Language -->
-    <header class="bg-[#1C1917] text-[#FAFAF9] text-xs py-2 px-4 border-b border-[#292524]">
-      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center space-x-2">
-          <!-- Static indicator dot without pulse animation (Kepatuhan antislop R-19) -->
-          <span class="inline-block w-2 h-2 rounded-full bg-[#C2410C]"></span>
-          <span data-i18n="announcement_tag" class="font-medium tracking-wide uppercase text-[11px]">Koleksi Musim Terbatas</span>
-          <span class="text-stone-400">|</span>
-          <span id="announcement-banner-title" data-i18n="announcement_title" class="text-stone-300">Potongan Spesial Flash Sale Berlangsung</span>
+    <!-- Global Sticky Storefront Header (Announcement Bar + Main Navbar) -->
+    <header id="main-header" class="sticky top-0 z-40 w-full bg-[#FAFAF9] transition-shadow duration-200">
+      
+      <!-- Top Announcement Bar: Flash Sale Countdown, Currency & Language (Compact & Clean) -->
+      <div id="top-announcement-bar" class="bg-[#1C1917] text-[#FAFAF9] text-[11px] py-1.5 px-4 border-b border-[#292524]">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div class="flex items-center space-x-2 truncate">
+            <!-- Static indicator dot without pulse animation (Kepatuhan antislop R-19) -->
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#C2410C] flex-shrink-0"></span>
+            <span data-i18n="announcement_tag" class="hidden sm:inline font-medium tracking-wider uppercase text-[10px] text-stone-300">Koleksi Musim Terbatas</span>
+            <span class="hidden sm:inline text-stone-500">|</span>
+            <span id="announcement-banner-title" data-i18n="announcement_title" class="text-stone-300 truncate">Potongan Spesial Flash Sale Berlangsung</span>
+          </div>
+          
+          <div class="flex items-center space-x-3 text-[11px] flex-shrink-0">
+            <!-- Countdown Timer -->
+            <div class="flex items-center space-x-1 font-mono">
+              <span data-i18n="ends_in" class="hidden md:inline text-stone-400 font-sans text-[10px]">Berakhir Dalam:</span>
+              <div id="flash-sale-countdown" class="flex items-center space-x-0.5 font-semibold text-[#FAFAF9]">
+                <span id="countdown-hours" class="bg-[#292524] px-1 py-0.5 rounded-sm text-[10px]">00</span>:
+                <span id="countdown-minutes" class="bg-[#292524] px-1 py-0.5 rounded-sm text-[10px]">00</span>:
+                <span id="countdown-seconds" class="bg-[#292524] px-1 py-0.5 rounded-sm text-[10px]">00</span>
+              </div>
+            </div>
+
+            <!-- Currency Selector (Desktop Compact) -->
+            <div class="hidden sm:flex items-center space-x-1 text-stone-300">
+              <span class="text-stone-500 font-mono text-[9px]">VALAS:</span>
+              <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] text-[#FAFAF9] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer">
+                <option value="IDR">IDR (Rp)</option>
+                <option value="USD">USD ($)</option>
+                <option value="SGD">SGD (S$)</option>
+                <option value="MYR">MYR (RM)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="AUD">AUD (A$)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="JPY">JPY (¥)</option>
+              </select>
+            </div>
+
+            <!-- Language Switcher (Desktop Compact) -->
+            <div class="hidden sm:flex items-center space-x-1 text-[10px]">
+              <button onclick="setLanguage('id')" id="lang-btn-id" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9]">ID</button>
+              <span class="text-stone-500">/</span>
+              <button onclick="setLanguage('en')" id="lang-btn-en" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white">EN</button>
+            </div>
+          </div>
         </div>
-        
-        <div class="flex items-center space-x-4 text-[11px]">
-          <!-- Countdown Timer -->
-          <div class="flex items-center space-x-1.5 font-mono">
-            <span data-i18n="ends_in" class="text-stone-400 font-sans">Berakhir Dalam:</span>
-            <div id="flash-sale-countdown" class="flex items-center space-x-1 font-semibold text-[#FAFAF9]">
-              <span id="countdown-hours" class="bg-[#292524] px-1.5 py-0.5 rounded-sm">00</span>:
-              <span id="countdown-minutes" class="bg-[#292524] px-1.5 py-0.5 rounded-sm">00</span>:
-              <span id="countdown-seconds" class="bg-[#292524] px-1.5 py-0.5 rounded-sm">00</span>
+      </div>
+
+      <!-- Global Storefront Navbar (Airy, Minimalist & Uncluttered) -->
+      <nav class="bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#E7E5E4] px-4 sm:px-8 py-2.5 sm:py-3 transition-all duration-200">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+          
+          <!-- Logo Brand & Atelier Tagline -->
+          <div class="flex items-center space-x-6 lg:space-x-8">
+            <a href="#" onclick="renderStorefront(); return false;" class="group flex flex-col">
+              <span class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#1C1917] group-hover:text-[#C2410C] transition-colors leading-tight">AryaStore</span>
+              <span class="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-[#57534E] font-semibold">Studio Atelier</span>
+            </a>
+            
+            <!-- Navigasi Desktop -->
+            <div class="hidden md:flex items-center space-x-5 lg:space-x-6 text-[11px] lg:text-xs uppercase tracking-wider font-semibold text-[#57534E]">
+              <a href="#katalog-section" data-i18n="nav_catalog" class="hover:text-[#1C1917] transition-colors">Katalog Busana</a>
+              <a href="#bundling-section" data-i18n="nav_bundles" class="hover:text-[#1C1917] transition-colors">Paket Bundle</a>
+              <button onclick="openSizeGuideModal()" data-i18n="nav_size_guide" class="hover:text-[#1C1917] transition-colors uppercase">Panduan Ukuran</button>
+              <button onclick="openOrderTrackerModal()" data-i18n="nav_track_order" class="hover:text-[#1C1917] transition-colors uppercase">Lacak Pesanan</button>
             </div>
           </div>
 
-          <!-- Currency Selector (Desktop Compact) -->
-          <div class="hidden sm:flex items-center space-x-1 text-stone-300">
-            <span class="text-stone-500 font-mono text-[10px]">VALAS:</span>
-            <select id="announcement-currency-select" onchange="setCurrency(this.value)" class="bg-[#292524] text-[#FAFAF9] text-[11px] px-1.5 py-0.5 rounded-sm border border-[#3E3835] focus:outline-none cursor-pointer">
-              <option value="IDR">IDR (Rp)</option>
-              <option value="USD">USD ($)</option>
-              <option value="SGD">SGD (S$)</option>
-              <option value="MYR">MYR (RM)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="AUD">AUD (A$)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="JPY">JPY (¥)</option>
-            </select>
-          </div>
+          <!-- Tombol Aksi Kanan -->
+          <div class="flex items-center space-x-1.5 sm:space-x-2.5">
+            
+            <!-- Tombol Wishlist (Desktop / Tablet) -->
+            <button onclick="openWishlistModal()" class="hidden sm:flex relative p-2 min-h-[40px] min-w-[40px] items-center justify-center text-[#1C1917] hover:text-[#C2410C] transition-colors" title="Daftar Keinginan (Wishlist)">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+              <span id="wishlist-badge-count" class="hidden absolute top-0.5 right-0.5 bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </button>
 
-          <!-- Language Switcher (Desktop Compact) -->
-          <div class="hidden sm:flex items-center space-x-1">
-            <button onclick="setLanguage('id')" id="lang-btn-id" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors bg-[#C2410C] text-[#FAFAF9]">ID</button>
-            <span class="text-stone-500">/</span>
-            <button onclick="setLanguage('en')" id="lang-btn-en" class="px-1.5 py-0.5 rounded-sm font-semibold transition-colors text-stone-400 hover:text-white">EN</button>
+            <!-- Tombol Keranjang Belanja (Compact & Clean) -->
+            <button onclick="openCartDrawer()" class="flex items-center space-x-1.5 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] px-2.5 sm:px-3 py-2 min-h-[40px] text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119.993z" />
+              </svg>
+              <span data-i18n="nav_cart" class="hidden sm:inline">Tas Belanja</span>
+              <span id="cart-badge-count" class="bg-[#C2410C] text-[#FAFAF9] text-[10px] px-1.5 py-0.2 rounded-sm font-mono ml-0.5">0</span>
+            </button>
+
+            <!-- Tombol Akses Admin PIN (Desktop / Tablet) -->
+            <button onclick="openAdminLoginModal()" class="hidden sm:flex text-xs text-[#57534E] hover:text-[#1C1917] px-2.5 py-2 min-h-[40px] border border-[#E7E5E4] hover:border-[#1C1917] transition-colors items-center justify-center space-x-1" title="Akses Tim Operasional">
+              <span data-i18n="nav_admin" class="font-medium">Admin</span>
+            </button>
+
+            <!-- Tombol Menu Mobile (Dengan Label Teks R-03, min 44x44px tap target, High Contrast Solid Button) -->
+            <button onclick="openMobileNav()" class="md:hidden flex items-center space-x-1.5 px-3 py-2 bg-[#1C1917] text-white hover:bg-[#292524] transition-colors rounded-sm shadow-sm min-h-[40px] min-w-[40px]" aria-label="Buka Menu Navigasi">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+              </svg>
+              <span data-i18n="nav_menu" class="text-xs font-semibold uppercase tracking-wider">Menu</span>
+            </button>
           </div>
         </div>
-      </div>
+      </nav>
     </header>
-
-    <!-- Global Storefront Navbar (Backdrop blur only on sticky header R-10) -->
-    <nav class="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#E7E5E4] px-4 sm:px-8 py-3.5">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
-        
-        <!-- Logo Brand & Atelier Tagline -->
-        <div class="flex items-center space-x-8">
-          <a href="#" onclick="renderStorefront(); return false;" class="group flex flex-col">
-            <span class="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1C1917] group-hover:text-[#C2410C] transition-colors">AryaStore</span>
-            <span class="text-[9px] uppercase tracking-[0.25em] text-[#57534E] font-semibold">Studio Atelier</span>
-          </a>
-          
-          <!-- Navigasi Desktop -->
-          <div class="hidden md:flex items-center space-x-6 text-xs uppercase tracking-wider font-semibold text-[#57534E]">
-            <a href="#katalog-section" data-i18n="nav_catalog" class="hover:text-[#1C1917] transition-colors">Katalog Busana</a>
-            <a href="#bundling-section" data-i18n="nav_bundles" class="hover:text-[#1C1917] transition-colors">Paket Bundle</a>
-            <button onclick="openSizeGuideModal()" data-i18n="nav_size_guide" class="hover:text-[#1C1917] transition-colors uppercase">Panduan Ukuran</button>
-            <button onclick="openOrderTrackerModal()" data-i18n="nav_track_order" class="hover:text-[#1C1917] transition-colors uppercase">Lacak Pesanan</button>
-          </div>
-        </div>
-
-        <!-- Tombol Aksi Kanan -->
-        <div class="flex items-center space-x-1.5 sm:space-x-3">
-          
-          <!-- Tombol Wishlist (Desktop / Tablet) -->
-          <button onclick="openWishlistModal()" class="hidden sm:flex relative p-2.5 min-h-[44px] min-w-[44px] items-center justify-center text-[#1C1917] hover:text-[#C2410C] transition-colors" title="Daftar Keinginan (Wishlist)">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-            <span id="wishlist-badge-count" class="hidden absolute top-1 right-1 bg-[#C2410C] text-[#FAFAF9] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
-          </button>
-
-          <!-- Tombol Keranjang Belanja (Compact on mobile) -->
-          <button onclick="openCartDrawer()" class="flex items-center space-x-1.5 bg-[#1C1917] hover:bg-[#292524] text-[#FAFAF9] px-2.5 sm:px-3.5 py-2.5 min-h-[44px] text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119.993z" />
-            </svg>
-            <span data-i18n="nav_cart" class="hidden sm:inline">Tas Belanja</span>
-            <span id="cart-badge-count" class="bg-[#C2410C] text-[#FAFAF9] text-[10px] px-1.5 py-0.2 rounded-sm font-mono ml-0.5 sm:ml-1">0</span>
-          </button>
-
-          <!-- Tombol Akses Admin PIN (Desktop / Tablet) -->
-          <button onclick="openAdminLoginModal()" class="hidden sm:flex text-xs text-[#57534E] hover:text-[#1C1917] p-2.5 min-h-[44px] min-w-[44px] border border-[#E7E5E4] hover:border-[#1C1917] transition-colors items-center justify-center" title="Akses Tim Operasional">
-            <span data-i18n="nav_admin" class="hidden sm:inline font-medium">Akses Admin</span>
-            <svg class="w-4 h-4 sm:hidden inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-          </button>
-
-          <!-- Tombol Menu Mobile (Dengan Label Teks R-03, min 44x44px, High Contrast Solid Button) -->
-          <button onclick="openMobileNav()" class="md:hidden flex items-center space-x-1.5 px-3 py-2 bg-[#1C1917] text-white hover:bg-[#292524] transition-colors rounded-sm shadow-sm min-h-[44px] min-w-[44px]" aria-label="Buka Menu Navigasi">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-            <span data-i18n="nav_menu" class="text-xs font-semibold uppercase tracking-wider">Menu</span>
-          </button>
-        </div>
-      </div>
-    </nav>
 
     <!-- Mobile Navigation Drawer (#mobile-nav-drawer R-03) -->
     <div id="mobile-nav-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
@@ -657,10 +658,12 @@
           <button onclick="openCookieSettings()" data-i18n="footer_cookie_settings" class="text-stone-300 hover:text-white underline underline-offset-2">Pengaturan Cookie</button>
         </div>
 
-        <!-- Runtime Status Pill (Discreet placement at bottom) -->
-        <div class="flex items-center space-x-2">
-          <span id="runtime-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span id="runtime-status-text" class="font-mono text-[10px] text-stone-400">Google Apps Script API Aktif</span>
+        <!-- Creator Copyright Link -->
+        <div class="flex items-center space-x-2 text-[11px] text-stone-400">
+          <a href="https://sigitadi.id" target="_blank" rel="noopener noreferrer" class="hover:text-stone-200 transition-colors font-mono text-[11px] flex items-center space-x-1.5" title="Sigit Adi Portfolio">
+            <span id="runtime-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            <span id="runtime-status-text">&copy; 2026 sigitadi.id</span>
+          </a>
         </div>
       </div>
     </footer>
@@ -5513,7 +5516,18 @@ const AppState = {
       updateCartBadgeCount();
       updateWishlistBadgeCount();
 
-      // 8. Handle Deep-Link to exact product immediately
+      // 8. Sticky Header Elevation Shadow on Scroll
+      window.addEventListener('scroll', () => {
+        const header = document.getElementById('main-header');
+        if (!header) return;
+        if (window.scrollY > 15) {
+          header.classList.add('shadow-md');
+        } else {
+          header.classList.remove('shadow-md');
+        }
+      }, { passive: true });
+
+      // 9. Handle Deep-Link to exact product immediately
       if (urlParams.has('product')) {
         const targetProdId = urlParams.get('product');
         openProductDetailModal(targetProdId);
