@@ -1800,10 +1800,16 @@
 
         <!-- TAB 7: FLASH SALE & BUNDLE -->
         <div id="admin-panel-bundles" class="admin-panel hidden space-y-6">
-          <div class="border-b border-[#E7E5E4] pb-4">
-            <h2 class="font-serif text-xl font-bold text-[#1C1917]">Manajemen Flash Sale & Paket Bundling</h2>
-            <p class="text-xs text-[#57534E]">Pengaturan banner promo musiman dan paket busana berpasangan.</p>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E7E5E4] pb-4">
+            <div>
+              <h2 class="font-serif text-xl font-bold text-[#1C1917]">Manajemen Flash Sale & Paket Bundling</h2>
+              <p class="text-xs text-[#57534E]">Pengaturan banner promo musiman, hitung mundur flash sale, dan paket busana berpasangan.</p>
+            </div>
+            <button onclick="openAddBundleModal()" class="px-3.5 py-2 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors rounded-xs flex items-center space-x-1.5 self-start sm:self-auto min-h-[40px]">
+              <span>+ Tambah Paket Promo</span>
+            </button>
           </div>
+          
           <div id="admin-bundles-container" class="space-y-4">
             <!-- Populated dynamically -->
           </div>
@@ -2513,6 +2519,79 @@
           <div class="pt-2 flex justify-end space-x-2">
             <button type="button" onclick="closeAdminVariantModal()" class="px-4 py-2 border border-[#E7E5E4] text-xs uppercase">Batal</button>
             <button type="submit" class="px-5 py-2 bg-[#1C1917] text-white text-xs font-semibold uppercase hover:bg-[#292524]">Simpan Varian</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ADD/EDIT BUNDLE & CAMPAIGN MODAL -->
+  <div id="admin-bundle-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 modal-backdrop transition-opacity" onclick="closeAdminBundleModal()"></div>
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+      <div class="relative transform overflow-hidden bg-[#FFFFFF] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-[#E7E5E4] p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#E7E5E4] pb-3">
+          <h3 id="admin-bundle-modal-title" class="font-serif text-lg font-bold text-[#1C1917]">Kelola Paket Promo & Bundling</h3>
+          <button onclick="closeAdminBundleModal()" class="text-[#57534E] hover:text-[#1C1917] p-2 min-h-[44px] min-w-[44px] flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        
+        <form id="admin-bundle-form" onsubmit="saveBundleAction(event, this)" class="space-y-3 text-xs">
+          <input type="hidden" id="bundle-form-id">
+          
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">Judul Kampanye / Nama Paket Bundling</label>
+            <input type="text" id="bundle-form-title" required placeholder="Contoh: Casual Minimalist Set atau Flash Sale Musim Dingin" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4]">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">Deskripsi Promo / Pakaian yang Termasuk</label>
+            <textarea id="bundle-form-desc" rows="2" required placeholder="Contoh: Kombinasi Mantel Wol & Kemeja Oxford dengan potongan harga spesial" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4]"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Harga Normal (Total)</label>
+              <input type="number" id="bundle-form-normal-price" required min="0" placeholder="1148000" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono">
+            </div>
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Harga Paket Promo (Diskon)</label>
+              <input type="number" id="bundle-form-bundle-price" required min="0" placeholder="949000" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono font-bold text-[#C2410C]">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Batas Waktu Promo (YYYY-MM-DD HH:mm:ss)</label>
+              <input type="text" id="bundle-form-ends-at" required placeholder="2026-12-31 23:59:59" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono">
+            </div>
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Status Publikasi</label>
+              <select id="bundle-form-is-active" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-semibold">
+                <option value="true">Aktif (Tampil di Toko)</option>
+                <option value="false">Nonaktif (Draft / Berakhir)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">URL Foto Sampul Bundle</label>
+            <input type="url" id="bundle-form-image-url" placeholder="https://images.unsplash.com/photo-..." class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4]">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">Daftar Kode Produk / SKU (Pisahkan Koma)</label>
+            <input type="text" id="bundle-form-items" placeholder="PRD-001, PRD-004" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono">
+          </div>
+
+          <div class="pt-3 border-t border-[#E7E5E4] flex justify-end space-x-2">
+            <button type="button" onclick="closeAdminBundleModal()" class="px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:bg-stone-100 font-semibold min-h-[40px]">
+              Batal
+            </button>
+            <button type="submit" class="px-4 py-2 bg-[#1C1917] hover:bg-[#292524] text-white font-semibold min-h-[40px]">
+              Simpan Paket Promo
+            </button>
           </div>
         </form>
       </div>
@@ -5398,6 +5477,39 @@ const AppState = {
             }
           }
           return { success: false, message: 'Varian SKU tidak ditemukan' };
+        }
+
+        case 'getCampaigns':
+          return { success: true, campaigns: MockDB.campaigns.bundles || [] };
+
+        case 'addCampaign': {
+          const newCmp = args[0] || {};
+          newCmp.campaign_id = 'CMP-' + ('000' + ((MockDB.campaigns.bundles || []).length + 1)).slice(-3);
+          if (!MockDB.campaigns.bundles) MockDB.campaigns.bundles = [];
+          MockDB.campaigns.bundles.push(newCmp);
+          return { success: true, campaign_id: newCmp.campaign_id, message: 'Kampanye berhasil dibuat' };
+        }
+
+        case 'updateCampaign': {
+          const editCmp = args[0] || {};
+          const bundles = MockDB.campaigns.bundles || [];
+          const cIdx = bundles.findIndex(b => b.campaign_id === editCmp.campaign_id);
+          if (cIdx !== -1) {
+            Object.assign(bundles[cIdx], editCmp);
+            return { success: true, message: 'Kampanye berhasil diperbarui' };
+          }
+          return { success: false, message: 'Kampanye tidak ditemukan' };
+        }
+
+        case 'deleteCampaign': {
+          const delCmpId = args[0];
+          const bundles = MockDB.campaigns.bundles || [];
+          const cIdx = bundles.findIndex(b => b.campaign_id === delCmpId);
+          if (cIdx !== -1) {
+            const removed = bundles.splice(cIdx, 1)[0];
+            return { success: true, message: 'Kampanye ' + delCmpId + ' (' + removed.banner_title + ') berhasil dihapus' };
+          }
+          return { success: false, message: 'Kampanye tidak ditemukan' };
         }
 
         case 'getCoupons':
@@ -9458,18 +9570,182 @@ const AppState = {
 
     function loadAdminBundles() {
       const container = document.getElementById('admin-bundles-container');
-      const bundles = AppState.campaigns.bundles || [];
-      container.innerHTML = bundles.map(b => `
-        <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] flex justify-between items-center">
-          <div>
-            <span class="font-mono text-[10px] text-[#C2410C] font-bold">${b.campaign_id}</span>
-            <h4 class="font-serif font-bold text-sm text-[#1C1917] mt-0.5">${b.banner_title}</h4>
-            <p class="text-xs text-[#57534E]">${b.banner_desc}</p>
-            <p class="font-mono text-xs font-bold mt-1 text-[#1C1917]">Harga Paket: ${formatMoney(b.bundle_price, 'IDR')} (Normal: ${formatMoney(b.normal_price, 'IDR')})</p>
-          </div>
-          <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold">AKTIF</span>
-        </div>
-      `).join('');
+      if (!container) return Promise.resolve();
+
+      return callApi('getCampaigns').then(res => {
+        const campaigns = (res && res.success && res.campaigns) ? res.campaigns : (AppState.campaigns.bundles || []);
+        if (campaigns.length === 0) {
+          container.innerHTML = `
+            <div class="p-8 text-center bg-[#FAFAF9] border border-[#E7E5E4] text-xs text-[#57534E]">
+              Belum ada paket bundling atau flash sale yang dibuat. Klik tombol "+ Tambah Paket Promo" di atas.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = campaigns.map(b => {
+          const isActive = b.is_active === true || String(b.is_active).toUpperCase() === 'TRUE';
+          const saveAmount = (b.normal_price || 0) - (b.bundle_price || 0);
+
+          return `
+            <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-[#1C1917] transition-all">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono text-[10px] text-[#C2410C] font-bold">${b.campaign_id}</span>
+                  <span class="px-2 py-0.5 ${isActive ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-stone-200 text-stone-600 border-stone-300'} border text-[10px] font-mono font-bold rounded-xs">
+                    ${isActive ? 'AKTIF' : 'NONAKTIF'}
+                  </span>
+                </div>
+                <h4 class="font-serif font-bold text-sm text-[#1C1917]">${b.banner_title}</h4>
+                <p class="text-xs text-[#57534E] max-w-xl">${b.banner_desc}</p>
+                <div class="flex flex-wrap items-center gap-3 text-xs pt-1 font-mono">
+                  <span class="font-bold text-[#1C1917]">Harga Promo: ${formatMoney(b.bundle_price, 'IDR')}</span>
+                  <span class="text-stone-400 line-through">Normal: ${formatMoney(b.normal_price, 'IDR')}</span>
+                  ${saveAmount > 0 ? `<span class="text-emerald-700 font-bold">Hemat: ${formatMoney(saveAmount, 'IDR')}</span>` : ''}
+                  <span class="text-stone-500">Berakhir: ${b.ends_at || '-'}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-1.5 shrink-0 self-end md:self-auto">
+                <button onclick="toggleBundleStatusAction('${b.campaign_id}', ${isActive})" class="px-2.5 py-1.5 border border-[#E7E5E4] hover:bg-stone-200 text-xs font-semibold">
+                  ${isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+                <button onclick="editBundleModal('${b.campaign_id}')" class="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-xs font-semibold">
+                  Edit
+                </button>
+                <button onclick="deleteBundleAction('${b.campaign_id}', '${b.banner_title}')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold">
+                  Hapus
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    function openAddBundleModal() {
+      document.getElementById('admin-bundle-modal-title').textContent = 'Tambah Paket Promo / Bundling Baru';
+      document.getElementById('bundle-form-id').value = '';
+      document.getElementById('admin-bundle-form').reset();
+      document.getElementById('bundle-form-ends-at').value = '2026-12-31 23:59:59';
+      document.getElementById('bundle-form-is-active').value = 'true';
+      document.getElementById('admin-bundle-modal').classList.remove('hidden');
+    }
+
+    function closeAdminBundleModal() {
+      document.getElementById('admin-bundle-modal').classList.add('hidden');
+    }
+
+    function editBundleModal(campaignId) {
+      return callApi('getCampaigns').then(res => {
+        const campaigns = (res && res.success && res.campaigns) ? res.campaigns : (AppState.campaigns.bundles || []);
+        const b = campaigns.find(c => c.campaign_id === campaignId);
+        if (!b) return;
+
+        document.getElementById('admin-bundle-modal-title').textContent = 'Edit Paket Promo (' + b.campaign_id + ')';
+        document.getElementById('bundle-form-id').value = b.campaign_id;
+        document.getElementById('bundle-form-title').value = b.banner_title || '';
+        document.getElementById('bundle-form-desc').value = b.banner_desc || '';
+        document.getElementById('bundle-form-normal-price').value = b.normal_price || 0;
+        document.getElementById('bundle-form-bundle-price').value = b.bundle_price || 0;
+        document.getElementById('bundle-form-ends-at').value = b.ends_at || '2026-12-31 23:59:59';
+        document.getElementById('bundle-form-is-active').value = (b.is_active === true || String(b.is_active).toUpperCase() === 'TRUE') ? 'true' : 'false';
+        document.getElementById('bundle-form-image-url').value = b.image_url || '';
+        document.getElementById('bundle-form-items').value = Array.isArray(b.bundle_items) ? b.bundle_items.join(', ') : (b.bundle_items || '');
+
+        document.getElementById('admin-bundle-modal').classList.remove('hidden');
+      });
+    }
+
+    function saveBundleAction(evt, form) {
+      if (evt && evt.preventDefault) evt.preventDefault();
+      const id = document.getElementById('bundle-form-id').value;
+      const title = document.getElementById('bundle-form-title').value.trim();
+      const desc = document.getElementById('bundle-form-desc').value.trim();
+      const normalPrice = parseInt(document.getElementById('bundle-form-normal-price').value, 10) || 0;
+      const bundlePrice = parseInt(document.getElementById('bundle-form-bundle-price').value, 10) || 0;
+      const endsAt = document.getElementById('bundle-form-ends-at').value.trim();
+      const isActive = document.getElementById('bundle-form-is-active').value === 'true';
+      const imageUrl = document.getElementById('bundle-form-image-url').value.trim();
+      const rawItems = document.getElementById('bundle-form-items').value.trim();
+      const items = rawItems ? rawItems.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      const payload = {
+        banner_title: title,
+        banner_desc: desc,
+        normal_price: normalPrice,
+        bundle_price: bundlePrice,
+        ends_at: endsAt,
+        is_active: isActive,
+        image_url: imageUrl || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        bundle_items: items
+      };
+      if (id) payload.campaign_id = id;
+
+      const btn = form ? form.querySelector('button[type="submit"]') : null;
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      const method = id ? 'updateCampaign' : 'addCampaign';
+
+      return withButtonLoading(btn, () => {
+        return callApi(method, payload, role).then(res => {
+          if (res && res.success) {
+            showToast(id ? 'Paket promo berhasil diperbarui.' : 'Paket promo baru berhasil dibuat.', 'success');
+            closeAdminBundleModal();
+            loadAdminBundles();
+            // Sync with AppState.campaigns.bundles for storefront
+            if (AppState.campaigns && AppState.campaigns.bundles) {
+              if (id) {
+                const idx = AppState.campaigns.bundles.findIndex(b => b.campaign_id === id);
+                if (idx !== -1) Object.assign(AppState.campaigns.bundles[idx], payload);
+              } else {
+                AppState.campaigns.bundles.push(payload);
+              }
+            }
+            renderBundles();
+          } else {
+            showToast((res && res.message) || 'Gagal menyimpan paket promo', 'error');
+          }
+          return res;
+        });
+      });
+    }
+
+    function toggleBundleStatusAction(campaignId, currentStatus) {
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      const boolStatus = currentStatus === true || String(currentStatus).toUpperCase() === 'TRUE';
+      const newStatus = !boolStatus;
+      return callApi('updateCampaign', { campaign_id: campaignId, is_active: newStatus }, role).then(res => {
+        if (res && res.success) {
+          showToast('Status paket promo berhasil diubah menjadi: ' + (newStatus ? 'Aktif' : 'Nonaktif'), 'success');
+          loadAdminBundles();
+          if (AppState.campaigns && AppState.campaigns.bundles) {
+            const b = AppState.campaigns.bundles.find(c => c.campaign_id === campaignId);
+            if (b) b.is_active = newStatus;
+            renderBundles();
+          }
+        } else {
+          showToast((res && res.message) || 'Gagal mengubah status', 'error');
+        }
+        return res;
+      });
+    }
+
+    function deleteBundleAction(campaignId, title) {
+      if (!confirm('Hapus paket promo "' + title + '" (' + campaignId + ')? Tindakan ini tidak dapat dibatalkan.')) return Promise.resolve();
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      return callApi('deleteCampaign', campaignId, role).then(res => {
+        if (res && res.success) {
+          showToast('Paket promo ' + campaignId + ' berhasil dihapus.', 'success');
+          loadAdminBundles();
+          if (AppState.campaigns && AppState.campaigns.bundles) {
+            AppState.campaigns.bundles = AppState.campaigns.bundles.filter(b => b.campaign_id !== campaignId);
+            renderBundles();
+          }
+        } else {
+          showToast((res && res.message) || 'Gagal menghapus paket promo', 'error');
+        }
+        return res;
+      });
     }
 
     function loadAdminAnalytics() {

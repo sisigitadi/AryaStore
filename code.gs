@@ -3132,6 +3132,59 @@ function updateCampaign(campaignData, role) {
 }
 
 /**
+ * Deletes a flash sale banner or outfit bundle campaign from the database.
+ */
+function deleteCampaign(campaignId, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Peran tidak berwenang menghapus kampanye.' };
+    }
+
+    if (!campaignId) {
+      return { success: false, message: 'ID kampanye wajib disertakan' };
+    }
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var sheet = ss.getSheetByName(SHEET_NAMES.CAMPAIGNS);
+    if (!sheet) return { success: false, message: 'Sheet CampaignsAndBundles tidak ditemukan' };
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: false, message: 'Daftar kampanye kosong' };
+
+    var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
+    var targetRowIdx = -1;
+    var targetTitle = '';
+
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][COL_CAMPAIGNS.CAMPAIGN_ID] === campaignId) {
+        targetRowIdx = i + 2;
+        targetTitle = rows[i][COL_CAMPAIGNS.BANNER_TITLE];
+        break;
+      }
+    }
+
+    if (targetRowIdx === -1) {
+      return { success: false, message: 'Kampanye ' + campaignId + ' tidak ditemukan' };
+    }
+
+    sheet.deleteRow(targetRowIdx);
+    SpreadsheetApp.flush();
+    logAudit(role, 'Campaigns', 'Kampanye ' + campaignId + ' (' + targetTitle + ') dihapus');
+
+    return {
+      success: true,
+      message: 'Kampanye ' + campaignId + ' (' + targetTitle + ') berhasil dihapus'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal menghapus kampanye: ' + err.toString()
+    };
+  }
+}
+
+/**
  * Returns all submitted size exchange and return requests.
  */
 function getReturns() {

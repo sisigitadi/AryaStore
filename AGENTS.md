@@ -327,6 +327,22 @@ Sistem membedakan secara ketat hak akses 3 peran tim operasional dengan akuntabi
 
 ---
 
+### 2.12 Manajemen Siklus Hidup Flash Sale & Bundling CRUD (Tab 7 & code.gs)
+1. **Endpoint Backend Penghapusan Kampanye (`deleteCampaign`)**:
+   - Memvalidasi otorisasi peran (`Super Admin` atau `Store Manager`). Operator dengan peran Customer Service dilarang menghapus promo.
+   - Mencari baris kampanye berdasarkan `campaign_id` pada sheet `CampaignsAndBundles` dan menghapus baris bersangkutan dengan `sheet.deleteRow(rowNumber)`.
+   - Memanggil `SpreadsheetApp.flush()` dan mencatat aktivitas ke lembar kerja `AuditLogs` dengan detail nama dan ID kampanye.
+2. **Endpoint Pembuatan & Pembaruan Kampanye (`addCampaign` & `updateCampaign`)**:
+   - Menerima parameter `campaignData` dan `role`.
+   - Memvalidasi integritas numerik `normal_price` dan `bundle_price`.
+   - Menyimpan daftar SKU produk penyusun dalam format string JSON array (`bundle_items_json`).
+3. **Standar Antarmuka Konsol Admin Tab 7 (`#admin-panel-bundles`)**:
+   - Menyediakan tombol primer `+ Tambah Paket Promo` (`openAddBundleModal()`).
+   - Menyediakan modal terdedikasi (`#admin-bundle-modal`) dengan input ID, judul, deskripsi, harga normal, harga bundle, batas waktu (`ends_at`), status (`is_active`), URL gambar, dan daftar SKU produk.
+   - Menyediakan tombol aksi pada setiap kartu kampanye: `Aktifkan/Nonaktifkan`, `Edit`, dan `Hapus` yang terhubung langsung dengan backend API dan MockDB.
+
+---
+
 ## 3. KONTRAK REKAYASA ANTARMUKA PENGGUNA (`index.html`)
 
 ### 3.1 Benteng Anti-Freeze UI (Resilient Frontend Interactions)

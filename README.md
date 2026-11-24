@@ -9,6 +9,26 @@
 
 ---
 
+## 🚀 Pembaruan Rilis v2.3.0 (Full Interactive Flash Sale & Bundling CRUD Engine)
+
+1. **Manajemen Interaktif Flash Sale & Paket Bundling (Konsol Admin Tab 7)**:
+   - **Tombol Tambah Paket Promo (+ Tambah Paket Promo)**: Terletak di pojok kanan atas Tab 7, membuka modal manajemen promo komprehensif (`#admin-bundle-modal`).
+   - **Formulir Input Lengkap**: Mendukung pengaturan ID kampanye unik (`CMP-XXX`), judul banner editorial, deskripsi naratif promo, harga normal gabungan, harga spesial bundle, batas waktu hitung mundur flash sale (`ends_at`), status aktif/nonaktif, URL gambar banner/lookbook, serta daftar SKU produk penyusun paket bundle (`bundle_items`).
+   - **Kartu Manajemen Dinamis**: Setiap paket promo menyajikan informasi visual lengkap meliputi status lencana (`AKTIF` / `NONAKTIF`), kalkulasi otomatis nominal hemat pelanggan (`Hemat Rp X`), tanggal kedaluwarsa flash sale, dan daftar SKU penyusun.
+   - **Aksi Cepat 3-in-1**:
+     - **Sakelar Status Instan (`Nonaktifkan / Aktifkan`)**: Mengubah status aktifitas kampanye promo tanpa menghapus data (`toggleBundleStatusAction`).
+     - **Mode Edit Cepat (`Edit`)**: Membuka modal dengan seluruh data pra-terisi otomatis untuk penyesuaian harga, batas waktu hitung mundur, atau judul promo (`editBundleModal`).
+     - **Penghapusan Bersih (`Hapus`)**: Menghapus kampanye promo secara permanen dari basis data dengan konfirmasi keamanan dialog (`deleteBundleAction`).
+
+2. **Backend Engine & Otorisasi RBAC (`code.gs`)**:
+   - **Endpoint `deleteCampaign(campaignId, role)`**: Memvalidasi otorisasi peran (`Super Admin` atau `Store Manager`), menghapus baris kampanye dari sheet `CampaignsAndBundles`, mengeksekusi `SpreadsheetApp.flush()`, dan mencatat aksi ke sheet `AuditLogs`.
+   - **Endpoint `addCampaign` & `updateCampaign`**: Menjamin pembaruan data secara atomik dan akuntabel sesuai standar indeks kolom `COL_CAMPAIGNS`.
+
+3. **Sinkronisasi Reaktif Etalase Publik (Storefront Live Sync)**:
+   - Setiap mutasi promo di konsol admin langsung menyinkronkan state memori klien (`AppState.campaigns.bundles`) dan merender ulang komponen hitung mundur serta kartu bundle di halaman depan secara instan (`renderBundles()`) tanpa perlu me-reload peramban.
+
+---
+
 ## 🚀 Pembaruan Rilis v2.2.0 (Strict Inventory Governance, Web-Style Admin Navigation & SKU Variant Lifecycle)
 
 1. **Navigasi Konsol Web Tanpa Tab Geser (Web-Style Admin Navigation)**:
