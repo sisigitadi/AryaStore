@@ -83,7 +83,13 @@ Angka Finansial & Kode SKU: 'Plus Jakarta Sans', tabular-nums
 
 > **Kepatuhan Aturan antislop R-02**: Seluruh teks antarmuka dan salinan promosi dilarang menggunakan tanda pisah panjang (*em dash* / U+2014). Gunakan tanda titik dua (`:`), tanda koma (`,`), atau tanda kurung (`()`) sebagai pengganti pemisah klausa.
 
-### 3. Standar Sentuh Seluler & Ergonomi Interaksi (Mobile Ergonomics)
+### 3. Standar Sentuh Seluler & Ergonomi Interaksi (Mobile Ergonomics v2.1)
+- **Pencegahan Auto-Zoom iOS Safari**: Seluruh formulir input, textarea, dan select pada viewport layar kecil (< 640px) diwajibkan menggunakan `font-size: 16px !important; touch-action: manipulation;` guna mencegah lonjakan pembesaran otomatis browser mobile yang merusak layout editorial.
+- **Standar Touch Target Minimal 44x44px**: Seluruh tombol interaktif utama, tombol penutup modal, filter kategori, chip varian ukuran/warna, dan kontrol kuantitas keranjang belanja memenuhi standar ergonomi tap minimum 40px hingga 48px dengan umpan balik sentuh mikro (`active:scale-95`).
+- **Tab Bar Horizontal Admin Mobile**: Bilah menu konsol admin pada perangkat mobile bergeser dari tumpukan vertikal yang menghabiskan ruang menjadi deretan tab pill horizontal yang dapat digulir dengan mulus (`overflow-x-auto scrollbar-none`).
+- **Dynamic Lookbook Hero Imagery**: Foto utama lookbook hero beranda dikelola dinamis melalui antarmuka admin dengan rasio aspek editorial 3:4 dan transisi skala mikro pada interaksi hover.
+
+
 - **Target Sentuh Minimum 44x44px**: Seluruh elemen yang dapat diklik atau disentuh pada perangkat bergerak (tombol navigasi, chip ukuran baju, switcher bahasa/valas, tombol kuantitas keranjang, penutup modal) wajib memiliki luas tap area minimal 44x44 piksel (`min-h-[44px] min-w-[44px] flex items-center justify-center`).
 - **Geometri Sudut Tegas (Border Radius)**:
   - Tombol dan Input: `rounded-sm` (2px) hingga `rounded` (4px).

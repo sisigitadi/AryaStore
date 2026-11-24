@@ -268,6 +268,32 @@ Google Spreadsheet (AryaStore Database Engine)
 | `PIN_CUSTOMER_SERVICE` | `7777` | PIN otorisasi Customer Service (RAHASIA) |
 | `DRIVE_FOLDER_NAME` | `ARYASTORE_PAYMENTS` | Nama folder Google Drive bukti bayar (RAHASIA) |
 | `DRIVE_PRODUCTS_FOLDER_NAME` | `ARYASTORE_PRODUCTS` | Nama folder Google Drive foto produk & varian warna (RAHASIA) |
+| `HERO_BADGE` | `Koleksi Esensial 2026 : Volume I` | Badge edisi koleksi hero lookbook |
+| `HERO_BADGE_EN` | `Essential Collection 2026 : Volume I` | Badge edisi koleksi hero lookbook (EN) |
+| `HERO_TITLE` | `Siluet Minimalis,<br>Presisi Material Abadi.` | Judul utama hero lookbook |
+| `HERO_TITLE_EN` | `Minimalist Silhouettes,<br>Enduring Precision.` | Judul utama hero lookbook (EN) |
+| `HERO_DESC` | `Koleksi busana kontemporer berpotongan terstruktur...` | Deskripsi editorial hero beranda |
+| `HERO_DESC_EN` | `Contemporary tailored apparel designed for daily...` | Deskripsi editorial hero beranda (EN) |
+| `HERO_IMAGE_URL` | `https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf...` | Foto editorial utama hero lookbook |
+| `HERO_CAPTION_TITLE` | `Atelier Lookbook 2026` | Judul kartu keterangan foto hero |
+| `HERO_CAPTION_TITLE_EN` | `Atelier Lookbook 2026` | Judul kartu keterangan foto hero (EN) |
+| `HERO_CAPTION_DESC` | `Dirancang di Jakarta, dikirimkan dengan cermat...` | Deskripsi kartu keterangan foto hero |
+| `HERO_CAPTION_DESC_EN` | `Designed in Jakarta, carefully shipped worldwide.` | Deskripsi kartu keterangan foto hero (EN) |
+| `HERO_CTA_EXPLORE` | `Jelajahi Katalog` | Teks tombol jelajah katalog |
+| `HERO_CTA_EXPLORE_EN` | `Explore Catalog` | Teks tombol jelajah katalog (EN) |
+| `HERO_CTA_GUIDE` | `Panduan Ukuran (XS - 5XL)` | Teks tombol panduan ukuran |
+| `HERO_CTA_GUIDE_EN` | `Size Guide (XS - 5XL)` | Teks tombol panduan ukuran (EN) |
+| `ANNOUNCEMENT_TAG` | `Koleksi Musim Terbatas` | Tag banner pengumuman atas |
+| `ANNOUNCEMENT_TAG_EN` | `Limited Seasonal Collection` | Tag banner pengumuman atas (EN) |
+| `ANNOUNCEMENT_TITLE` | `Potongan Spesial Flash Sale Berlangsung` | Judul banner pengumuman berjalan |
+| `ANNOUNCEMENT_TITLE_EN` | `Special Flash Sale In Progress` | Judul banner pengumuman berjalan (EN) |
+| `ATELIER_ADDRESS` | `Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan 12190` | Alamat fisik studio atelier |
+| `CUSTOMER_CARE_HOURS` | `Senin - Sabtu: 09.00 - 18.00 WIB` | Jam operasional concierge |
+| `CUSTOMER_CARE_HOURS_EN` | `Monday - Saturday: 09:00 - 18:00 WIB` | Jam operasional concierge (EN) |
+| `CUSTOMER_CARE_EMAIL` | `concierge@aryastore.id` | Email resmi layanan pelanggan |
+| `FOOTER_ABOUT_TEXT` | `Studio busana kontemporer independen yang berdedikasi...` | Teks profil atelier di footer |
+| `FOOTER_ABOUT_TEXT_EN` | `Independent contemporary fashion studio dedicated...` | Teks profil atelier di footer (EN) |
+| `VALUE_PROPOSITIONS_JSON` | `[{"title":"Pengiriman Seluruh Dunia",...}]` | Konfigurasi 4 kartu nilai kepercayaan (Trust Bar) |
 
 #### Aturan Sanitasi Keamanan `getPublicConfig()`
 Fungsi endpoint publik `getPublicConfig()` yang melayani antarmuka browser `index.html` **WAJIB MENYARING DAN MENIADAKAN** kunci PIN otorisasi (`PIN_SUPER_ADMIN`, `PIN_STORE_MANAGER`, `PIN_CUSTOMER_SERVICE`), API key pihak ketiga (`RAJAONGKIR_API_KEY`, `BITESHIP_API_KEY`), serta nama folder internal Google Drive (`DRIVE_FOLDER_NAME`, `DRIVE_PRODUCTS_FOLDER_NAME`). Sebagai pengganti kunci rahasia, sertakan boolean `RAJAONGKIR_CONFIGURED: !!settings.RAJAONGKIR_API_KEY` dan `BITESHIP_CONFIGURED: !!settings.BITESHIP_API_KEY` agar antarmuka storefront mengetahui ketersediaan integrasi kurir live secara aman.
@@ -276,3 +302,4 @@ Fungsi endpoint publik `getPublicConfig()` yang melayani antarmuka browser `inde
 
 - **v1.0.0 (2026-11-21)**: Perancangan fondasi awal serverless GAS + Google Sheets. Eliminasi loyalti poin dan ulasan produk, implementasi wishlist localStorage, dan sistem RBAC PIN.
 - **v2.0.0 (2026-11-24)**: Ekspansi skala global. Baseline katalog 19 produk busana terverifikasi visual, dukungan bilingual (ID/EN), multi-valas 8 mata uang, mesin ekspedisi hibrida (Live RajaOngkir Komerce v2, Biteship v1, kalkulator tarif live, dan fallback matriks otomatis), penyimpanan foto produk & galeri varian warna di Google Drive dengan pergantian foto warna live di storefront, generator hangtag barcode fisik ganda (QR + Code128) dengan aturan cetak `@media print`, strip linkout marketplace eksternal, aset SEO teknis (`robots.txt`, `sitemap.xml`, OpenGraph, Schema.org), serta konfigurasi pelacak analitik digital multi-platform dengan Consent Mode v2, atribusi UTM, ekspor feed katalog CSV, dan panel diagnostik piksel langsung.
+- **v2.1.0 (2026-11-24)**: Penguatan tata kelola RBAC v2.1 (Super Admin, Store Manager, Customer Service) dengan akuntabilitas nama operator dan auto-lock inaktivitas 30 menit. Implementasi Dynamic Storefront CMS untuk eliminasi 100% teks mati di beranda toko dengan pengunggah foto lookbook utama ke Google Drive publik. Audit dan revisi ergonomi mobile dengan pencegahan auto-zoom iOS Safari (16px), touch target minimal 44x44px, dan tab bar horizontal admin.

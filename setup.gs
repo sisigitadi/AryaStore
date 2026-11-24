@@ -599,6 +599,165 @@ function seedDatabase() {
         key: 'BITESHIP_COURIERS',
         value: 'jne,jnt,sicepat,paxel,anteraja,pos,dhl,tlx,rayspeed',
         description: 'Daftar kode kurir aktif untuk Biteship (dipisahkan koma)'
+      },
+      {
+        key: 'HERO_BADGE',
+        value: 'Koleksi Esensial 2026 : Volume I',
+        description: 'Teks badge editorial seksi Hero Lookbook (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_BADGE_EN',
+        value: 'Essential Collection 2026 : Volume I',
+        description: 'Teks badge editorial seksi Hero Lookbook (English)'
+      },
+      {
+        key: 'HERO_TITLE',
+        value: 'Siluet Minimalis,<br>Presisi Material Abadi.',
+        description: 'Judul utama headline Hero Lookbook (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_TITLE_EN',
+        value: 'Minimalist Silhouette,<br>Timeless Precision Materials.',
+        description: 'Judul utama headline Hero Lookbook (English)'
+      },
+      {
+        key: 'HERO_DESC',
+        value: 'Koleksi busana kontemporer berpotongan terstruktur untuk kenyamanan mobilitas harian dan keanggunan formal. Dirancang dengan serat pilihan berkualitas tinggi dan jahitan halus presisi.',
+        description: 'Paragraf deskripsi Hero Lookbook (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_DESC_EN',
+        value: 'Contemporary structured apparel curated for everyday mobility and formal poise. Crafted with premium natural fibres and refined tailoring.',
+        description: 'Paragraf deskripsi Hero Lookbook (English)'
+      },
+      {
+        key: 'HERO_IMAGE_URL',
+        value: 'https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf?auto=format&fit=crop&w=1000&q=80',
+        description: 'URL foto utama Hero Lookbook (dapat diunggah langsung ke Google Drive via admin)'
+      },
+      {
+        key: 'HERO_CAPTION_TITLE',
+        value: 'Atelier Lookbook 2026',
+        description: 'Judul kartu caption foto Hero Lookbook (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_CAPTION_TITLE_EN',
+        value: 'Atelier Lookbook 2026',
+        description: 'Judul kartu caption foto Hero Lookbook (English)'
+      },
+      {
+        key: 'HERO_CAPTION_DESC',
+        value: 'Dirancang di Jakarta, dikirimkan dengan cermat ke seluruh dunia.',
+        description: 'Deskripsi kartu caption foto Hero Lookbook (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_CAPTION_DESC_EN',
+        value: 'Crafted in Jakarta, meticulously dispatched worldwide.',
+        description: 'Deskripsi kartu caption foto Hero Lookbook (English)'
+      },
+      {
+        key: 'HERO_CTA_EXPLORE',
+        value: 'Jelajahi Katalog',
+        description: 'Label tombol CTA jelajah katalog Hero (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_CTA_EXPLORE_EN',
+        value: 'Explore Catalog',
+        description: 'Label tombol CTA jelajah katalog Hero (English)'
+      },
+      {
+        key: 'HERO_CTA_GUIDE',
+        value: 'Panduan Ukuran (XS - 5XL)',
+        description: 'Label tombol CTA panduan ukuran Hero (Bahasa Indonesia)'
+      },
+      {
+        key: 'HERO_CTA_GUIDE_EN',
+        value: 'Size Guide (XS - 5XL)',
+        description: 'Label tombol CTA panduan ukuran Hero (English)'
+      },
+      {
+        key: 'ANNOUNCEMENT_TAG',
+        value: 'Koleksi Musim Terbatas',
+        description: 'Tag headline pada bilah pengumuman atas (Bahasa Indonesia)'
+      },
+      {
+        key: 'ANNOUNCEMENT_TAG_EN',
+        value: 'Limited Season Drop',
+        description: 'Tag headline pada bilah pengumuman atas (English)'
+      },
+      {
+        key: 'ANNOUNCEMENT_TITLE',
+        value: 'Potongan Spesial Flash Sale Berlangsung',
+        description: 'Judul promo banner bilah pengumuman atas (Bahasa Indonesia)'
+      },
+      {
+        key: 'ANNOUNCEMENT_TITLE_EN',
+        value: 'Special Flash Sale Curation Now Live',
+        description: 'Judul promo banner bilah pengumuman atas (English)'
+      },
+      {
+        key: 'ATELIER_ADDRESS',
+        value: 'Atelier Studio: Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan 12190',
+        description: 'Alamat fisik studio atelier pada footer dan faktur'
+      },
+      {
+        key: 'CUSTOMER_CARE_HOURS',
+        value: 'Senin - Sabtu: 09.00 - 18.00 WIB',
+        description: 'Jam operasional layanan pelanggan (Bahasa Indonesia)'
+      },
+      {
+        key: 'CUSTOMER_CARE_HOURS_EN',
+        value: 'Monday - Saturday: 09.00 - 18.00 WIB (UTC+7)',
+        description: 'Jam operasional layanan pelanggan (English)'
+      },
+      {
+        key: 'CUSTOMER_CARE_EMAIL',
+        value: 'concierge@aryastore.id',
+        description: 'Email resmi concierge atelier'
+      },
+      {
+        key: 'FOOTER_ABOUT_TEXT',
+        value: 'Studio busana kontemporer independen yang berdedikasi pada siluet minimalis, presisi material abadi, dan keanggunan berkarakter.',
+        description: 'Narasi ringkas tentang brand AryaStore pada footer (Bahasa Indonesia)'
+      },
+      {
+        key: 'FOOTER_ABOUT_TEXT_EN',
+        value: 'Independent contemporary apparel studio dedicated to structured silhouettes, timeless textile precision, and quiet poise.',
+        description: 'Narasi ringkas tentang brand AryaStore pada footer (English)'
+      },
+      {
+        key: 'VALUE_PROPOSITIONS_JSON',
+        value: JSON.stringify([
+          {
+            key: 'shipping',
+            title: 'Pengiriman Seluruh Dunia',
+            title_en: 'Worldwide Dispatch',
+            desc: 'Layanan kurir domestik tercepat dan ekspres internasional tepercaya ke 50+ negara.',
+            desc_en: 'Fast domestic logistics and trusted express worldwide delivery to 50+ destinations.'
+          },
+          {
+            key: 'material',
+            title: 'Bahan Serat Alami Pilihan',
+            title_en: 'Curated Natural Fibres',
+            desc: 'Wol terstruktur, linen murni bernapas, katun combed premium, dan kulit sintetis ramah lingkungan.',
+            desc_en: 'Structured wool, breathable pure linen, premium combed cotton, and sustainable trims.'
+          },
+          {
+            key: 'exchange',
+            title: 'Garansi Tukar Ukuran 3 Hari',
+            title_en: '3-Day Size Exchange Guarantee',
+            desc: 'Ketidaksesuaian ukuran pakaian dapat ditukarkan dengan cepat melalui studio atelier kami.',
+            desc_en: 'Effortless and prompt size exchanges handled directly through our atelier studio.'
+          },
+          {
+            key: 'service',
+            title: 'Layanan Personal Atelier',
+            title_en: 'Dedicated Atelier Concierge',
+            desc: 'Konsultasi gaya, rekomendasi ukuran, dan pelacakan langsung via WhatsApp resmi.',
+            desc_en: 'Styling advice, size recommendations, and real-time tracking via official WhatsApp.'
+          }
+        ]),
+        description: 'Konfigurasi 4 kartu keunggulan atelier (Trust Bar) dwibahasa'
       }
     ];
 

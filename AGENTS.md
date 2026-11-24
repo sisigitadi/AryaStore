@@ -2,7 +2,7 @@
 
 > **Standar Mutlak Rekayasa Sistem, Tata Kelola Repositori & Kontrak Agen AI Coding**  
 > Mengikat seluruh agen pengembang (*docs-worker*, *setup-worker*, *backend-worker*, *ui-worker*, *verifier*, *catalog-auditor*)  
-> Versi Kontrak: **v2.0.0 (Global E-Commerce Expansion, Technical SEO & Internationalization)**  
+> Versi Kontrak: **v2.1.0 (Strict RBAC Accountability, Dynamic Storefront CMS & Mobile Ergonomics)**  
 > Kepatuhan Standar: **RetroBOT Core v3.0 & antislop Filter**
 
 ---
@@ -219,6 +219,32 @@ Lembar kerja `Settings` pada v2.0 memuat kunci konfigurasi komprehensif:
 | `PIN_CUSTOMER_SERVICE` | `7777` | PIN otorisasi Customer Service (RAHASIA) |
 | `DRIVE_FOLDER_NAME` | `ARYASTORE_PAYMENTS` | Nama folder Google Drive bukti bayar (RAHASIA) |
 | `DRIVE_PRODUCTS_FOLDER_NAME` | `ARYASTORE_PRODUCTS` | Nama folder Google Drive foto produk & varian warna (RAHASIA) |
+| `HERO_BADGE` | `Koleksi Esensial 2026 : Volume I` | Badge edisi koleksi hero lookbook |
+| `HERO_BADGE_EN` | `Essential Collection 2026 : Volume I` | Badge edisi koleksi hero lookbook (EN) |
+| `HERO_TITLE` | `Siluet Minimalis,<br>Presisi Material Abadi.` | Judul utama hero lookbook |
+| `HERO_TITLE_EN` | `Minimalist Silhouettes,<br>Enduring Precision.` | Judul utama hero lookbook (EN) |
+| `HERO_DESC` | `Koleksi busana kontemporer berpotongan terstruktur...` | Deskripsi editorial hero beranda |
+| `HERO_DESC_EN` | `Contemporary tailored apparel designed for daily...` | Deskripsi editorial hero beranda (EN) |
+| `HERO_IMAGE_URL` | `https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf...` | Foto editorial utama hero lookbook |
+| `HERO_CAPTION_TITLE` | `Atelier Lookbook 2026` | Judul kartu keterangan foto hero |
+| `HERO_CAPTION_TITLE_EN` | `Atelier Lookbook 2026` | Judul kartu keterangan foto hero (EN) |
+| `HERO_CAPTION_DESC` | `Dirancang di Jakarta, dikirimkan dengan cermat...` | Deskripsi kartu keterangan foto hero |
+| `HERO_CAPTION_DESC_EN` | `Designed in Jakarta, carefully shipped worldwide.` | Deskripsi kartu keterangan foto hero (EN) |
+| `HERO_CTA_EXPLORE` | `Jelajahi Katalog` | Teks tombol jelajah katalog |
+| `HERO_CTA_EXPLORE_EN` | `Explore Catalog` | Teks tombol jelajah katalog (EN) |
+| `HERO_CTA_GUIDE` | `Panduan Ukuran (XS - 5XL)` | Teks tombol panduan ukuran |
+| `HERO_CTA_GUIDE_EN` | `Size Guide (XS - 5XL)` | Teks tombol panduan ukuran (EN) |
+| `ANNOUNCEMENT_TAG` | `Koleksi Musim Terbatas` | Tag banner pengumuman atas |
+| `ANNOUNCEMENT_TAG_EN` | `Limited Seasonal Collection` | Tag banner pengumuman atas (EN) |
+| `ANNOUNCEMENT_TITLE` | `Potongan Spesial Flash Sale Berlangsung` | Judul banner pengumuman berjalan |
+| `ANNOUNCEMENT_TITLE_EN` | `Special Flash Sale In Progress` | Judul banner pengumuman berjalan (EN) |
+| `ATELIER_ADDRESS` | `Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan 12190` | Alamat fisik studio atelier |
+| `CUSTOMER_CARE_HOURS` | `Senin - Sabtu: 09.00 - 18.00 WIB` | Jam operasional concierge |
+| `CUSTOMER_CARE_HOURS_EN` | `Monday - Saturday: 09:00 - 18:00 WIB` | Jam operasional concierge (EN) |
+| `CUSTOMER_CARE_EMAIL` | `concierge@aryastore.id` | Email resmi layanan pelanggan |
+| `FOOTER_ABOUT_TEXT` | `Studio busana kontemporer independen yang berdedikasi...` | Teks profil atelier di footer |
+| `FOOTER_ABOUT_TEXT_EN` | `Independent contemporary fashion studio dedicated...` | Teks profil atelier di footer (EN) |
+| `VALUE_PROPOSITIONS_JSON` | `[{"title":"Pengiriman Seluruh Dunia",...}]` | Konfigurasi 4 kartu nilai kepercayaan (Trust Bar) |
 
 #### Aturan Keamanan Mutlak `getPublicConfig()`
 Fungsi endpoint publik `getPublicConfig()` yang dipanggil oleh antarmuka browser (`index.html`) **WAJIB MENYARING DAN MENIADAKAN** kunci PIN otorisasi, kunci rahasia API eksternal, dan nama folder Google Drive internal:
@@ -245,6 +271,34 @@ Fungsi endpoint publik `getPublicConfig()` yang dipanggil oleh antarmuka browser
   - Pada kartu produk katalog: chip indikator warna interaktif memungkinkan pratinjau foto warna lain secara langsung pada kartu produk.
   - Pada modal detail produk (`#product-detail-modal`): memilih warna swatch secara dinamis memperbarui foto utama ke foto warna tersebut dengan transisi fade 150ms (`MOTION 1`), dilengkapi deretan thumbnail foto warna (*thumbnail strip*) di bawah foto utama.
   - Pada keranjang belanja: item yang ditambahkan ke keranjang menyimpan foto warna yang dipilih.
+
+---
+
+### 2.8 Matriks Otorisasi RBAC v2.1 & Akuntabilitas Operator
+Sistem membedakan secara ketat hak akses 3 peran tim operasional dengan akuntabilitas nama operator:
+
+| Fitur & Modul Konsol Admin | Super Admin (`9999`) | Store Manager (`8888`) | Customer Service (`7777`) |
+|---|:---:|:---:|:---:|
+| 1. Ringkasan & KPI (`overview`) | Ya | Ya | Ya |
+| 2. Produk & Varian (`products`) | Ya (Kelola & Upload Foto) | Ya (Kelola & Upload Foto) | Tidak (Tersembunyi) |
+| 3. Pesanan (`orders`) | Ya (Penuh + Ongkir Manual + Batalkan) | Ya (Penuh + Ongkir Manual + Batalkan) | Ya (Verifikasi Resi, Dilarang Ongkir Manual & Batalkan) |
+| 4. Retur & Pengembalian (`returns`) | Ya (Setujui / Tolak) | Ya (Setujui / Tolak) | Ya (Setujui / Tolak) |
+| 5. Kupon & Promo (`coupons`) | Ya (Buat & Nonaktifkan) | Ya (Buat & Nonaktifkan) | Tidak (Tersembunyi) |
+| 6. Direktori Pelanggan (`customers`) | Ya (Penuh + Catatan VIP) | Tidak (Tersembunyi) | Ya (Penuh + Catatan CS) |
+| 7. Flash Sale & Bundle (`bundles`) | Ya (Penuh) | Ya (Penuh) | Tidak (Tersembunyi) |
+| 8. Konten & Tampilan CMS (`content`) | Ya (Penuh + Upload Hero) | Ya (Penuh + Upload Hero) | Tidak (Tersembunyi) |
+| 9. Analitik & Atribusi UTM (`analytics`) | Ya | Ya | Tidak (Tersembunyi) |
+| 10. Log Audit & Event (`audit`) | Ya | Tidak (Tersembunyi) | Tidak (Tersembunyi) |
+| 11. Pengaturan Toko (`settings`) | Ya (PIN, API Carrier, DB Reset) | Tidak (Tersembunyi) | Tidak (Tersembunyi) |
+
+#### Akuntabilitas Nama Operator & Kunci Sesi Otomatis
+- **Pencatatan Operator**: Login admin mewajibkan nama operator (`operatorName`). Log audit mencatat peran spesifik dalam format `Role (Nama Operator)` (contoh: `Store Manager (Budi Santoso)`).
+- **Inactivity Auto-Lock**: Sesi admin otomatis terkunci setelah 30 menit tanpa aktivitas interaksi untuk mencegah penyalahgunaan konsol operasional.
+
+### 2.9 Arsitektur Konten Etalase Dinamis (Storefront CMS Tanpa Teks Mati)
+- **Eliminasi Teks Statis**: Seluruh elemen tekstual pada etalase toko (hero banner, pengumuman atas, 4 kartu nilai kepercayaan, alamat atelier, kontak concierge, serta teks profil footer) terikat langsung ke lembar kerja `Settings` via `getPublicConfig()`.
+- **Dukungan Bilingual Real-Time**: Setiap entri konten menyimpan versi Bahasa Indonesia (`_ID`) dan Bahasa Inggris (`_EN`), yang otomatis di-render ulang saat bahasa antarmuka berganti.
+- **Penyimpanan Foto Hero di Google Drive**: Endpoint `uploadHeroImage` mengompresi foto editorial dan menyimpannya ke folder `DRIVE_PRODUCTS_FOLDER_NAME` Google Drive publik.
 
 ---
 

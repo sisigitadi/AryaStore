@@ -698,7 +698,7 @@
 
     <!-- Value Propositions / Studio Trust Bar -->
     <section class="border-t border-[#E7E5E4] bg-[#FFFFFF] py-10 px-4 sm:px-8">
-      <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div id="trust-bar-container" class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="space-y-1">
           <p data-i18n="prop_shipping_title" class="font-serif font-bold text-[#1C1917] text-sm">Pengiriman Seluruh Dunia</p>
           <p data-i18n="prop_shipping_desc" class="text-xs text-[#57534E]">Layanan kurir domestik tercepat dan ekspres internasional tepercaya ke 50+ negara.</p>
@@ -725,10 +725,10 @@
         <!-- Col 1: Brand & Atelier Address -->
         <div class="lg:col-span-4 space-y-3">
           <span class="font-serif text-2xl font-bold tracking-tight text-white">AryaStore</span>
-          <p class="text-xs text-stone-400 leading-relaxed">
+          <p id="footer-about-text" class="text-xs text-stone-400 leading-relaxed">
             Studio busana kontemporer independen yang berdedikasi pada siluet minimalis, presisi material abadi, dan keanggunan berkarakter.
           </p>
-          <p class="text-[11px] text-stone-400 font-mono">
+          <p id="footer-atelier-address" class="text-[11px] text-stone-400 font-mono">
             Atelier Studio: Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan 12190
           </p>
         </div>
@@ -751,7 +751,7 @@
           <div class="pt-2 text-[11px] text-stone-400">
             <p data-i18n="footer_care" class="font-bold text-stone-300 uppercase tracking-wider text-[10px]">Layanan Pelanggan:</p>
             <p data-i18n="footer_care_hours">Senin - Sabtu: 09.00 - 18.00 WIB</p>
-            <a href="mailto:concierge@aryastore.id" class="text-[#C2410C] hover:underline">concierge@aryastore.id</a>
+            <a id="footer-care-email" href="mailto:concierge@aryastore.id" class="text-[#C2410C] hover:underline">concierge@aryastore.id</a>
           </div>
         </div>
 
@@ -1409,6 +1409,10 @@
 
         <form id="admin-login-form" onsubmit="adminLoginAction(event)" class="space-y-4">
           <div>
+            <label class="block text-xs font-semibold text-[#1C1917] mb-1">Nama Petugas / Operator</label>
+            <input type="text" id="admin-operator-name" required placeholder="Contoh: Budi Santoso" class="w-full py-2.5 px-3 bg-[#FAFAF9] border border-[#E7E5E4] focus:border-[#1C1917] text-xs text-[#1C1917] min-h-[44px]">
+          </div>
+          <div>
             <label class="block text-xs font-semibold text-[#1C1917] mb-1">PIN Otorisasi 4-Digit</label>
             <input type="password" id="admin-pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" required placeholder="&bull;&bull;&bull;&bull;" class="w-full text-center tracking-[0.5em] text-xl font-mono py-3 sm:py-2.5 bg-[#FAFAF9] border border-[#E7E5E4] focus:border-[#1C1917] min-h-[48px]">
           </div>
@@ -1470,9 +1474,10 @@
         <button onclick="switchAdminTab('coupons')" id="tab-nav-coupons" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">5. Kupon & Promo</button>
         <button onclick="switchAdminTab('customers')" id="tab-nav-customers" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">6. Direktori Pelanggan</button>
         <button onclick="switchAdminTab('bundles')" id="tab-nav-bundles" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">7. Flash Sale & Bundle</button>
-        <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">8. Analitik & Atribusi UTM</button>
-        <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">9. Log Audit & Event</button>
-        <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">10. Pengaturan Toko</button>
+        <button onclick="switchAdminTab('content')" id="tab-nav-content" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">8. Konten & Tampilan</button>
+        <button onclick="switchAdminTab('analytics')" id="tab-nav-analytics" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">9. Analitik & Atribusi UTM</button>
+        <button onclick="switchAdminTab('audit')" id="tab-nav-audit" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">10. Log Audit & Event</button>
+        <button onclick="switchAdminTab('settings')" id="tab-nav-settings" class="admin-tab-btn shrink-0 md:w-full text-left px-3.5 py-2.5 text-xs font-semibold rounded-sm text-[#57534E] hover:bg-stone-200 min-h-[40px] whitespace-nowrap active:scale-95">11. Pengaturan Toko</button>
       </aside>
 
       <!-- Admin Tab Panels Container -->
@@ -1665,6 +1670,237 @@
           <div id="admin-bundles-container" class="space-y-4">
             <!-- Populated dynamically -->
           </div>
+        </div>
+
+        <!-- TAB 8: KONTEN & TAMPILAN (STOREFRONT CMS) -->
+        <div id="admin-panel-content" class="admin-panel hidden space-y-6">
+          <div class="border-b border-[#E7E5E4] pb-4">
+            <h2 class="font-serif text-xl font-bold text-[#1C1917]">Manajemen Konten & Tampilan Etalase (Storefront CMS)</h2>
+            <p class="text-xs text-[#57534E]">Sesuaikan seluruh teks editorial, gambar lookbook, banner pengumuman, dan kartu nilai tanpa teks mati.</p>
+          </div>
+
+          <!-- Seksi 1: Unggah Foto Lookbook Hero -->
+          <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold uppercase tracking-wider text-[#1C1917] text-xs">1. Foto Utama Lookbook Hero</h3>
+                <p class="text-[11px] text-[#57534E]">Unggah foto editorial utama yang tampil di beranda toko. Otomatis disimpan ke Google Drive.</p>
+              </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div class="w-32 aspect-[3/4] bg-stone-200 border border-[#E7E5E4] overflow-hidden shrink-0">
+                <img id="cms-hero-preview-img" src="https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf?auto=format&fit=crop&w=1000&q=80" alt="Preview Hero" class="w-full h-full object-cover">
+              </div>
+              <div class="flex-1 space-y-2 w-full">
+                <label class="block text-xs font-semibold text-[#1C1917]">Pilih Berkas Foto (JPEG, PNG, WebP):</label>
+                <input type="file" id="cms-hero-file-input" accept="image/jpeg,image/png,image/webp" class="block w-full text-xs text-[#57534E] file:mr-3 file:py-2 file:px-3 file:border file:border-[#1C1917] file:text-xs file:font-semibold file:bg-[#1C1917] file:text-white hover:file:bg-[#292524] cursor-pointer">
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="button" onclick="uploadHeroImageAction()" id="cms-hero-upload-btn" class="px-4 py-2 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors min-h-[40px] flex items-center justify-center">
+                    Unggah Foto ke Drive
+                  </button>
+                  <span id="cms-hero-upload-status" class="text-xs text-stone-500 font-mono"></span>
+                </div>
+                <input type="hidden" id="cms-hero-image-url" value="">
+              </div>
+            </div>
+          </div>
+
+          <!-- Seksi 2: Formulir Teks Editorial & Informasi Toko -->
+          <form id="admin-cms-form" onsubmit="submitStorefrontContentAction(event)" class="space-y-6 text-xs">
+            
+            <!-- Hero Copywriting -->
+            <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] space-y-4">
+              <h3 class="font-bold uppercase tracking-wider text-[#1C1917] text-xs">2. Teks Editorial Hero Lookbook</h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Badge Musim (ID)</label>
+                  <input type="text" id="cms-hero-badge" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Season Badge (EN)</label>
+                  <input type="text" id="cms-hero-badge-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Judul Utama Hero (ID - gunakan &lt;br&gt; untuk baris baru)</label>
+                  <input type="text" id="cms-hero-title" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Main Hero Headline (EN - use &lt;br&gt; for line break)</label>
+                  <input type="text" id="cms-hero-title-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Deskripsi Editorial (ID)</label>
+                  <textarea id="cms-hero-desc" rows="3" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Editorial Description (EN)</label>
+                  <textarea id="cms-hero-desc-en" rows="3" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Teks Tombol Jelajah (ID)</label>
+                  <input type="text" id="cms-hero-cta-explore" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Explore Button Text (EN)</label>
+                  <input type="text" id="cms-hero-cta-explore-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Teks Tombol Panduan Ukuran (ID)</label>
+                  <input type="text" id="cms-hero-cta-guide" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Size Guide Button Text (EN)</label>
+                  <input type="text" id="cms-hero-cta-guide-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Judul Kartu Keterangan Foto (ID)</label>
+                  <input type="text" id="cms-hero-caption-title" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Photo Caption Title (EN)</label>
+                  <input type="text" id="cms-hero-caption-title-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Deskripsi Kartu Keterangan Foto (ID)</label>
+                  <input type="text" id="cms-hero-caption-desc" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Photo Caption Description (EN)</label>
+                  <input type="text" id="cms-hero-caption-desc-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Announcement Bar -->
+            <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] space-y-4">
+              <h3 class="font-bold uppercase tracking-wider text-[#1C1917] text-xs">3. Banner Pengumuman Atas (Top Announcement Bar)</h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Tag Pengumuman (ID)</label>
+                  <input type="text" id="cms-announcement-tag" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Announcement Tag (EN)</label>
+                  <input type="text" id="cms-announcement-tag-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Judul Pengumuman Berjalan (ID)</label>
+                  <input type="text" id="cms-announcement-title" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Announcement Title (EN)</label>
+                  <input type="text" id="cms-announcement-title-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+            </div>
+
+            <!-- Atelier Studio & Customer Care -->
+            <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] space-y-4">
+              <h3 class="font-bold uppercase tracking-wider text-[#1C1917] text-xs">4. Informasi Studio Atelier & Layanan Pelanggan</h3>
+              
+              <div>
+                <label class="block font-semibold text-[#1C1917] mb-1">Alamat Studio Atelier</label>
+                <input type="text" id="cms-atelier-address" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Jam Operasional Layanan (ID)</label>
+                  <input type="text" id="cms-care-hours" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Operating Hours (EN)</label>
+                  <input type="text" id="cms-care-hours-en" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-[#1C1917] mb-1">Email Layanan Pelanggan (Concierge)</label>
+                <input type="email" id="cms-care-email" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs min-h-[38px]">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">Teks Tentang Brand di Footer (ID)</label>
+                  <textarea id="cms-footer-about" rows="3" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+                <div>
+                  <label class="block font-semibold text-[#1C1917] mb-1">About Brand Text in Footer (EN)</label>
+                  <textarea id="cms-footer-about-en" rows="3" required class="w-full p-2 bg-white border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Value Propositions -->
+            <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] space-y-4">
+              <h3 class="font-bold uppercase tracking-wider text-[#1C1917] text-xs">5. Empat Kartu Nilai Kepercayaan (Trust Bar)</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-3 bg-white border border-[#E7E5E4] space-y-2">
+                  <span class="font-bold text-[11px] text-[#C2410C]">Kartu 1: Logistik / Pengiriman</span>
+                  <input type="text" id="cms-prop-title-1" placeholder="Judul (ID)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <input type="text" id="cms-prop-title-1-en" placeholder="Title (EN)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <textarea id="cms-prop-desc-1" placeholder="Deskripsi (ID)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                  <textarea id="cms-prop-desc-1-en" placeholder="Description (EN)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+
+                <div class="p-3 bg-white border border-[#E7E5E4] space-y-2">
+                  <span class="font-bold text-[11px] text-[#C2410C]">Kartu 2: Material / Kualitas</span>
+                  <input type="text" id="cms-prop-title-2" placeholder="Judul (ID)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <input type="text" id="cms-prop-title-2-en" placeholder="Title (EN)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <textarea id="cms-prop-desc-2" placeholder="Deskripsi (ID)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                  <textarea id="cms-prop-desc-2-en" placeholder="Description (EN)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+
+                <div class="p-3 bg-white border border-[#E7E5E4] space-y-2">
+                  <span class="font-bold text-[11px] text-[#C2410C]">Kartu 3: Garansi / Tukar Ukuran</span>
+                  <input type="text" id="cms-prop-title-3" placeholder="Judul (ID)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <input type="text" id="cms-prop-title-3-en" placeholder="Title (EN)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <textarea id="cms-prop-desc-3" placeholder="Deskripsi (ID)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                  <textarea id="cms-prop-desc-3-en" placeholder="Description (EN)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+
+                <div class="p-3 bg-white border border-[#E7E5E4] space-y-2">
+                  <span class="font-bold text-[11px] text-[#C2410C]">Kartu 4: Layanan / Personal Concierge</span>
+                  <input type="text" id="cms-prop-title-4" placeholder="Judul (ID)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <input type="text" id="cms-prop-title-4-en" placeholder="Title (EN)" class="w-full p-1.5 border border-[#E7E5E4] text-xs">
+                  <textarea id="cms-prop-desc-4" placeholder="Deskripsi (ID)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                  <textarea id="cms-prop-desc-4-en" placeholder="Description (EN)" rows="2" class="w-full p-1.5 border border-[#E7E5E4] text-xs"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tombol Simpan -->
+            <div class="pt-2">
+              <button type="submit" id="cms-save-btn" class="w-full sm:w-auto px-8 py-3 bg-[#1C1917] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#292524] transition-colors min-h-[44px] flex items-center justify-center active:scale-95">
+                Simpan Seluruh Konten Etalase
+              </button>
+            </div>
+          </form>
         </div>
 
         <!-- TAB 8: ANALITIK & ATRIBUSI UTM -->
@@ -4992,9 +5228,54 @@ const AppState = {
         case 'getSettings':
           return { success: true, settings: MockDB.settings };
 
-        case 'updateSettings':
+        case 'updateSettings': {
+          const role = args[1] || (AppState.adminUser ? AppState.adminUser.role : '');
+          const baseRole = String(role).split('(')[0].trim();
+          if (baseRole !== 'Super Admin') {
+            return { success: false, message: 'Hanya Super Admin yang berwenang mengubah konfigurasi sistem toko' };
+          }
           MockDB.settings = Object.assign(MockDB.settings, args[0]);
           return { success: true, settings: MockDB.settings };
+        }
+
+        case 'uploadHeroImage': {
+          const base64Data = args[0] || '';
+          const role = args[3] || (AppState.adminUser ? AppState.adminUser.role : '');
+          const baseRole = String(role).split('(')[0].trim();
+          if (baseRole !== 'Super Admin' && baseRole !== 'Store Manager') {
+            return { success: false, message: 'Hanya Super Admin atau Store Manager yang dapat mengunggah foto lookbook utama.' };
+          }
+          const simulatedUrl = base64Data && base64Data.startsWith('data:image')
+            ? base64Data
+            : 'https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf?auto=format&fit=crop&w=1000&q=80';
+          MockDB.settings.HERO_IMAGE_URL = simulatedUrl;
+          MockDB.auditLogs.unshift({
+            timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+            actor_role: role || 'Store Manager',
+            module: 'CMS_CONTENT',
+            action_detail: 'Perbarui foto lookbook utama toko'
+          });
+          return { success: true, imageUrl: simulatedUrl, message: 'Foto lookbook berhasil diunggah' };
+        }
+
+        case 'updateStorefrontContent': {
+          const contentSettings = args[0] || {};
+          const role = args[1] || (AppState.adminUser ? AppState.adminUser.role : '');
+          const baseRole = String(role).split('(')[0].trim();
+          if (baseRole !== 'Super Admin' && baseRole !== 'Store Manager') {
+            return { success: false, message: 'Hanya Super Admin atau Store Manager yang dapat mengedit konten etalase toko.' };
+          }
+          Object.keys(contentSettings).forEach(k => {
+            MockDB.settings[k] = contentSettings[k];
+          });
+          MockDB.auditLogs.unshift({
+            timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+            actor_role: role || 'Store Manager',
+            module: 'CMS_CONTENT',
+            action_detail: 'Pembaruan teks dan konfigurasi etalase toko (' + Object.keys(contentSettings).length + ' parameter)'
+          });
+          return { success: true, message: 'Konten etalase toko berhasil diperbarui.' };
+        }
 
         case 'searchShippingDestination': {
           const query = String(args[0] || '').toLowerCase().trim();
@@ -5260,6 +5541,111 @@ const AppState = {
       return text;
     }
 
+    // 10.A Dynamic Storefront CMS Content Hydration
+    function hydrateStorefrontContent() {
+      const cfg = AppState.publicConfig || (typeof MockDB !== 'undefined' ? MockDB.settings : null);
+      if (!cfg) return;
+
+      const isEn = AppState.language === 'en';
+
+      // 1. Hero Main Image
+      const heroImg = document.getElementById('hero-main-img');
+      if (heroImg && cfg.HERO_IMAGE_URL) {
+        heroImg.src = cfg.HERO_IMAGE_URL;
+      }
+
+      // 2. Hero Editorial Copy
+      const heroBadge = document.querySelector('[data-i18n="hero_badge"]');
+      if (heroBadge) {
+        heroBadge.textContent = isEn ? (cfg.HERO_BADGE_EN || cfg.HERO_BADGE || '') : (cfg.HERO_BADGE || '');
+      }
+
+      const heroTitle = document.querySelector('[data-i18n="hero_title"]');
+      if (heroTitle) {
+        heroTitle.innerHTML = isEn ? (cfg.HERO_TITLE_EN || cfg.HERO_TITLE || '') : (cfg.HERO_TITLE || '');
+      }
+
+      const heroDesc = document.querySelector('[data-i18n="hero_desc"]');
+      if (heroDesc) {
+        heroDesc.textContent = isEn ? (cfg.HERO_DESC_EN || cfg.HERO_DESC || '') : (cfg.HERO_DESC || '');
+      }
+
+      const heroCtaExp = document.querySelector('[data-i18n="hero_cta_explore"]');
+      if (heroCtaExp) {
+        heroCtaExp.textContent = isEn ? (cfg.HERO_CTA_EXPLORE_EN || cfg.HERO_CTA_EXPLORE || 'Explore') : (cfg.HERO_CTA_EXPLORE || 'Jelajahi Katalog');
+      }
+
+      const heroCtaGuide = document.querySelector('[data-i18n="hero_cta_guide"]');
+      if (heroCtaGuide) {
+        heroCtaGuide.textContent = isEn ? (cfg.HERO_CTA_GUIDE_EN || cfg.HERO_CTA_GUIDE || 'Size Guide') : (cfg.HERO_CTA_GUIDE || 'Panduan Ukuran (XS - 5XL)');
+      }
+
+      const heroCapTitle = document.querySelector('[data-i18n="hero_caption_title"]');
+      if (heroCapTitle) {
+        heroCapTitle.textContent = isEn ? (cfg.HERO_CAPTION_TITLE_EN || cfg.HERO_CAPTION_TITLE || '') : (cfg.HERO_CAPTION_TITLE || '');
+      }
+
+      const heroCapDesc = document.querySelector('[data-i18n="hero_caption_desc"]');
+      if (heroCapDesc) {
+        heroCapDesc.textContent = isEn ? (cfg.HERO_CAPTION_DESC_EN || cfg.HERO_CAPTION_DESC || '') : (cfg.HERO_CAPTION_DESC || '');
+      }
+
+      // 3. Top Announcement Banner
+      const annTag = document.querySelector('[data-i18n="announcement_tag"]');
+      if (annTag) {
+        annTag.textContent = isEn ? (cfg.ANNOUNCEMENT_TAG_EN || cfg.ANNOUNCEMENT_TAG || '') : (cfg.ANNOUNCEMENT_TAG || '');
+      }
+
+      const annTitle = document.getElementById('announcement-banner-title') || document.querySelector('[data-i18n="announcement_title"]');
+      if (annTitle) {
+        annTitle.textContent = isEn ? (cfg.ANNOUNCEMENT_TITLE_EN || cfg.ANNOUNCEMENT_TITLE || '') : (cfg.ANNOUNCEMENT_TITLE || '');
+      }
+
+      // 4. Value Propositions (Trust Bar)
+      const trustContainer = document.getElementById('trust-bar-container');
+      if (trustContainer && cfg.VALUE_PROPOSITIONS_JSON) {
+        try {
+          const props = typeof cfg.VALUE_PROPOSITIONS_JSON === 'string'
+            ? JSON.parse(cfg.VALUE_PROPOSITIONS_JSON)
+            : cfg.VALUE_PROPOSITIONS_JSON;
+          if (Array.isArray(props) && props.length > 0) {
+            trustContainer.innerHTML = props.map(function(p) {
+              const pTitle = isEn && p.title_en ? p.title_en : p.title;
+              const pDesc = isEn && p.desc_en ? p.desc_en : p.desc;
+              return '<div class="space-y-1">' +
+                '<p class="font-serif font-bold text-[#1C1917] text-sm">' + escapeHtml(pTitle) + '</p>' +
+                '<p class="text-xs text-[#57534E]">' + escapeHtml(pDesc) + '</p>' +
+                '</div>';
+            }).join('');
+          }
+        } catch (e) {
+          console.warn('Gagal mem-parsing VALUE_PROPOSITIONS_JSON:', e);
+        }
+      }
+
+      // 5. Atelier Studio & Footer Customer Care
+      const footerAbout = document.getElementById('footer-about-text');
+      if (footerAbout) {
+        footerAbout.textContent = isEn ? (cfg.FOOTER_ABOUT_TEXT_EN || cfg.FOOTER_ABOUT_TEXT || '') : (cfg.FOOTER_ABOUT_TEXT || '');
+      }
+
+      const footerAtelier = document.getElementById('footer-atelier-address');
+      if (footerAtelier && cfg.ATELIER_ADDRESS) {
+        footerAtelier.textContent = 'Atelier Studio: ' + cfg.ATELIER_ADDRESS;
+      }
+
+      const careHours = document.querySelector('[data-i18n="footer_care_hours"]');
+      if (careHours) {
+        careHours.textContent = isEn ? (cfg.CUSTOMER_CARE_HOURS_EN || cfg.CUSTOMER_CARE_HOURS || '') : (cfg.CUSTOMER_CARE_HOURS || '');
+      }
+
+      const careEmail = document.getElementById('footer-care-email');
+      if (careEmail && cfg.CUSTOMER_CARE_EMAIL) {
+        careEmail.href = 'mailto:' + cfg.CUSTOMER_CARE_EMAIL;
+        careEmail.textContent = cfg.CUSTOMER_CARE_EMAIL;
+      }
+    }
+
     function setLanguage(lang) {
       if (!lang || (lang !== 'id' && lang !== 'en')) return;
       AppState.language = lang;
@@ -5320,6 +5706,7 @@ const AppState = {
       if (AppState.activeDetailProduct) {
         renderProductDetailModalContent(AppState.activeDetailProduct);
       }
+      hydrateStorefrontContent();
     }
 
     // 11. Pure-JS Code128 1D SVG Barcode Generator
@@ -5677,6 +6064,19 @@ const AppState = {
     }
 
     function loadStorefrontData() {
+      // Ambil konfigurasi dinamis etalase (CMS)
+      callApi('getPublicConfig').then(res => {
+        if (res && res.success && res.config) {
+          AppState.publicConfig = res.config;
+          hydrateStorefrontContent();
+        }
+      }).catch(() => {
+        if (typeof MockDB !== 'undefined' && MockDB.settings) {
+          AppState.publicConfig = MockDB.settings;
+          hydrateStorefrontContent();
+        }
+      });
+
       callApi('getProducts').then(res => {
         if (res && res.success && res.products) {
           AppState.products = res.products;
@@ -7526,21 +7926,63 @@ const AppState = {
       document.getElementById('admin-login-modal').classList.add('hidden');
     }
 
+    // Inactivity Auto-Lock Controller (30 Menit Tanpa Interaksi)
+    let adminInactivityTimer = null;
+    const ADMIN_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+
+    function resetAdminInactivityTimer() {
+      if (!AppState.adminUser) return;
+      if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
+      adminInactivityTimer = setTimeout(() => {
+        if (AppState.adminUser) {
+          logoutAdmin();
+          showToast('Sesi otomatis terkunci karena tidak ada aktivitas selama 30 menit demi keamanan sistem.', 'warning');
+        }
+      }, ADMIN_INACTIVITY_TIMEOUT_MS);
+    }
+
+    function startAdminInactivityTimer() {
+      resetAdminInactivityTimer();
+      ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+        window.removeEventListener(evt, resetAdminInactivityTimer);
+        window.addEventListener(evt, resetAdminInactivityTimer, { passive: true });
+      });
+    }
+
+    function stopAdminInactivityTimer() {
+      if (adminInactivityTimer) {
+        clearTimeout(adminInactivityTimer);
+        adminInactivityTimer = null;
+      }
+      ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+        window.removeEventListener(evt, resetAdminInactivityTimer);
+      });
+    }
+
     function adminLoginAction(evt) {
       evt.preventDefault();
       const pin = document.getElementById('admin-pin-input').value.trim();
+      const operatorInput = document.getElementById('admin-operator-name');
+      const operatorName = operatorInput ? operatorInput.value.trim() : '';
       const errEl = document.getElementById('admin-login-error');
       const btn = document.getElementById('admin-login-btn');
 
       withButtonLoading(btn, () => {
-        return callApi('adminLogin', pin).then(res => {
+        return callApi('adminLogin', pin, operatorName).then(res => {
           if (res && res.success) {
-            AppState.adminUser = { role: res.role, pin: pin };
+            const actorDisplay = res.actorDisplay || (operatorName ? (res.role + ' (' + operatorName + ')') : res.role);
+            AppState.adminUser = {
+              role: res.role,
+              actorDisplay: actorDisplay,
+              operatorName: operatorName,
+              pin: pin
+            };
             closeAdminLoginModal();
             switchView('admin');
-            setupAdminRoleUI(res.role);
+            setupAdminRoleUI(actorDisplay);
+            startAdminInactivityTimer();
             loadAdminTabContent(AppState.adminActiveTab);
-            showToast('Selamat datang, ' + res.role + ' AryaStore.', 'success');
+            showToast('Selamat bertugas, ' + actorDisplay + '.', 'success');
           } else {
             errEl.textContent = res.message || 'PIN tidak valid.';
             errEl.classList.remove('hidden');
@@ -7550,6 +7992,7 @@ const AppState = {
     }
 
     function logoutAdmin() {
+      stopAdminInactivityTimer();
       AppState.adminUser = null;
       switchView('storefront');
       showToast('Sesi admin berakhir.', 'info');
@@ -7570,7 +8013,9 @@ const AppState = {
     function setupAdminRoleUI(role) {
       document.getElementById('admin-role-badge').textContent = role;
 
-      // Filter sidebar buttons based on RBAC matrix
+      const baseRole = String(role).split('(')[0].trim();
+
+      // Filter sidebar buttons based on RBAC v2.1 matrix
       const tabs = {
         overview: document.getElementById('tab-nav-overview'),
         products: document.getElementById('tab-nav-products'),
@@ -7579,19 +8024,20 @@ const AppState = {
         coupons: document.getElementById('tab-nav-coupons'),
         customers: document.getElementById('tab-nav-customers'),
         bundles: document.getElementById('tab-nav-bundles'),
+        content: document.getElementById('tab-nav-content'),
         analytics: document.getElementById('tab-nav-analytics'),
         audit: document.getElementById('tab-nav-audit'),
         settings: document.getElementById('tab-nav-settings')
       };
 
-      if (role === 'Customer Service') {
-        ['products', 'coupons', 'bundles', 'analytics', 'audit', 'settings'].forEach(t => tabs[t] && tabs[t].classList.add('hidden'));
+      if (baseRole === 'Customer Service') {
+        ['products', 'coupons', 'bundles', 'content', 'analytics', 'audit', 'settings'].forEach(t => tabs[t] && tabs[t].classList.add('hidden'));
         ['overview', 'orders', 'returns', 'customers'].forEach(t => tabs[t] && tabs[t].classList.remove('hidden'));
-      } else if (role === 'Store Manager') {
+      } else if (baseRole === 'Store Manager') {
         ['customers', 'audit', 'settings'].forEach(t => tabs[t] && tabs[t].classList.add('hidden'));
-        ['overview', 'products', 'orders', 'returns', 'coupons', 'bundles', 'analytics'].forEach(t => tabs[t] && tabs[t].classList.remove('hidden'));
+        ['overview', 'products', 'orders', 'returns', 'coupons', 'bundles', 'content', 'analytics'].forEach(t => tabs[t] && tabs[t].classList.remove('hidden'));
       } else {
-        // Super Admin gets all 10 tabs
+        // Super Admin gets all 11 tabs
         Object.values(tabs).forEach(el => el && el.classList.remove('hidden'));
       }
     }
@@ -7629,6 +8075,7 @@ const AppState = {
         case 'coupons': return loadAdminCoupons();
         case 'customers': return loadAdminCustomers();
         case 'bundles': return loadAdminBundles();
+        case 'content': return loadAdminContentTab();
         case 'analytics': return loadAdminAnalytics();
         case 'audit': return loadAdminAudit();
         case 'settings': return loadAdminSettings();
@@ -8191,7 +8638,16 @@ const AppState = {
                 <td class="p-2.5 font-mono">${o.whatsapp_no}</td>
                 <td class="p-2.5 font-mono">${formatMoney(o.subtotal, 'IDR')}</td>
                 <td class="p-2.5 font-mono">
-                  <input type="number" value="${o.shipping_cost || 0}" onchange="updateInlineOngkir('${o.invoice_no}', this.value)" class="w-24 p-1 border border-[#E7E5E4] font-mono text-xs">
+                  ${
+                    (function() {
+                      const r = AppState.adminUser ? AppState.adminUser.role : '';
+                      const baseR = String(r).split('(')[0].trim();
+                      if (baseR === 'Customer Service') {
+                        return '<span class="text-stone-600 font-mono">' + formatMoney(o.shipping_cost || 0, 'IDR') + '</span>';
+                      }
+                      return '<input type="number" value="' + (o.shipping_cost || 0) + '" onchange="updateInlineOngkir(\'' + o.invoice_no + '\', this.value)" class="w-24 p-1 border border-[#E7E5E4] font-mono text-xs">';
+                    })()
+                  }
                 </td>
                 <td class="p-2.5 font-mono font-bold text-[#1C1917]">${formatMoney(o.grand_total, 'IDR')}</td>
                 <td class="p-2.5">
@@ -8219,16 +8675,24 @@ const AppState = {
     }
 
     function renderStatusProgressionButtons(order) {
+      const r = AppState.adminUser ? AppState.adminUser.role : '';
+      const baseR = String(r).split('(')[0].trim();
+      let btns = '';
+
       if (order.status === 'Menunggu Pembayaran' || order.status === 'Verifikasi Pembayaran') {
-        return `<button onclick="advanceOrderStatus('${order.invoice_no}', 'Diproses')" class="px-2 py-1 bg-[#1C1917] text-white text-[11px]">Verifikasi</button>`;
+        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Diproses\')" class="px-2 py-1 bg-[#1C1917] text-white text-[11px]">Verifikasi</button>';
+      } else if (order.status === 'Diproses') {
+        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Dikirim\')" class="px-2 py-1 bg-blue-700 text-white text-[11px]">Kirim Resi</button>';
+      } else if (order.status === 'Dikirim') {
+        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Selesai\')" class="px-2 py-1 bg-emerald-700 text-white text-[11px]">Selesai</button>';
       }
-      if (order.status === 'Diproses') {
-        return `<button onclick="advanceOrderStatus('${order.invoice_no}', 'Dikirim')" class="px-2 py-1 bg-blue-700 text-white text-[11px]">Kirim Resi</button>`;
+
+      // Opsi Batalkan hanya untuk Super Admin dan Store Manager
+      if (order.status !== 'Selesai' && order.status !== 'Dibatalkan' && baseR !== 'Customer Service') {
+        btns += ' <button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Dibatalkan\')" class="px-2 py-1 bg-red-800 hover:bg-red-900 text-white text-[11px]">Batalkan</button>';
       }
-      if (order.status === 'Dikirim') {
-        return `<button onclick="advanceOrderStatus('${order.invoice_no}', 'Selesai')" class="px-2 py-1 bg-emerald-700 text-white text-[11px]">Selesai</button>`;
-      }
-      return '';
+
+      return btns;
     }
 
     function advanceOrderStatus(invoiceNo, newStatus) {
@@ -8507,6 +8971,200 @@ const AppState = {
       });
     }
 
+
+    // 35.B Admin Storefront CMS Controllers
+    function loadAdminContentTab() {
+      return callApi('getPublicConfig').then(res => {
+        const cfg = (res && res.success && res.config)
+          ? res.config
+          : (typeof MockDB !== 'undefined' ? MockDB.settings : {});
+
+        // Hero Lookbook
+        const previewImg = document.getElementById('cms-hero-preview-img');
+        if (previewImg && cfg.HERO_IMAGE_URL) previewImg.src = cfg.HERO_IMAGE_URL;
+        const hiddenImgUrl = document.getElementById('cms-hero-image-url');
+        if (hiddenImgUrl) hiddenImgUrl.value = cfg.HERO_IMAGE_URL || '';
+
+        document.getElementById('cms-hero-badge').value = cfg.HERO_BADGE || '';
+        document.getElementById('cms-hero-badge-en').value = cfg.HERO_BADGE_EN || '';
+        document.getElementById('cms-hero-title').value = cfg.HERO_TITLE || '';
+        document.getElementById('cms-hero-title-en').value = cfg.HERO_TITLE_EN || '';
+        document.getElementById('cms-hero-desc').value = cfg.HERO_DESC || '';
+        document.getElementById('cms-hero-desc-en').value = cfg.HERO_DESC_EN || '';
+        document.getElementById('cms-hero-cta-explore').value = cfg.HERO_CTA_EXPLORE || '';
+        document.getElementById('cms-hero-cta-explore-en').value = cfg.HERO_CTA_EXPLORE_EN || '';
+        document.getElementById('cms-hero-cta-guide').value = cfg.HERO_CTA_GUIDE || '';
+        document.getElementById('cms-hero-cta-guide-en').value = cfg.HERO_CTA_GUIDE_EN || '';
+        document.getElementById('cms-hero-caption-title').value = cfg.HERO_CAPTION_TITLE || '';
+        document.getElementById('cms-hero-caption-title-en').value = cfg.HERO_CAPTION_TITLE_EN || '';
+        document.getElementById('cms-hero-caption-desc').value = cfg.HERO_CAPTION_DESC || '';
+        document.getElementById('cms-hero-caption-desc-en').value = cfg.HERO_CAPTION_DESC_EN || '';
+
+        // Announcement
+        document.getElementById('cms-announcement-tag').value = cfg.ANNOUNCEMENT_TAG || '';
+        document.getElementById('cms-announcement-tag-en').value = cfg.ANNOUNCEMENT_TAG_EN || '';
+        document.getElementById('cms-announcement-title').value = cfg.ANNOUNCEMENT_TITLE || '';
+        document.getElementById('cms-announcement-title-en').value = cfg.ANNOUNCEMENT_TITLE_EN || '';
+
+        // Atelier & Customer Care
+        document.getElementById('cms-atelier-address').value = cfg.ATELIER_ADDRESS || '';
+        document.getElementById('cms-care-hours').value = cfg.CUSTOMER_CARE_HOURS || '';
+        document.getElementById('cms-care-hours-en').value = cfg.CUSTOMER_CARE_HOURS_EN || '';
+        document.getElementById('cms-care-email').value = cfg.CUSTOMER_CARE_EMAIL || '';
+        document.getElementById('cms-footer-about').value = cfg.FOOTER_ABOUT_TEXT || '';
+        document.getElementById('cms-footer-about-en').value = cfg.FOOTER_ABOUT_TEXT_EN || '';
+
+        // Value Propositions (Trust Bar)
+        if (cfg.VALUE_PROPOSITIONS_JSON) {
+          try {
+            const props = typeof cfg.VALUE_PROPOSITIONS_JSON === 'string'
+              ? JSON.parse(cfg.VALUE_PROPOSITIONS_JSON)
+              : cfg.VALUE_PROPOSITIONS_JSON;
+            if (Array.isArray(props)) {
+              for (let i = 0; i < 4; i++) {
+                const idx = i + 1;
+                const p = props[i] || {};
+                const tEl = document.getElementById('cms-prop-title-' + idx);
+                const tEnEl = document.getElementById('cms-prop-title-' + idx + '-en');
+                const dEl = document.getElementById('cms-prop-desc-' + idx);
+                const dEnEl = document.getElementById('cms-prop-desc-' + idx + '-en');
+                if (tEl) tEl.value = p.title || '';
+                if (tEnEl) tEnEl.value = p.title_en || '';
+                if (dEl) dEl.value = p.desc || '';
+                if (dEnEl) dEnEl.value = p.desc_en || '';
+              }
+            }
+          } catch (e) {
+            console.warn('Gagal mengisi form kartu nilai:', e);
+          }
+        }
+      });
+    }
+
+    function uploadHeroImageAction() {
+      const fileInput = document.getElementById('cms-hero-file-input');
+      const statusEl = document.getElementById('cms-hero-upload-status');
+      const btn = document.getElementById('cms-hero-upload-btn');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showToast('Pilih berkas foto lookbook terlebih dahulu.', 'warning');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      statusEl.textContent = 'Membaca berkas...';
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const rawBase64 = e.target.result;
+        statusEl.textContent = 'Mengompresi gambar...';
+
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          statusEl.textContent = 'Mengunggah ke Drive...';
+          withButtonLoading(btn, () => {
+            const role = AppState.adminUser ? AppState.adminUser.role : 'Store Manager';
+            return callApi('uploadHeroImage', compressedBase64, 'image/jpeg', 'hero_' + Date.now() + '.jpg', role).then(res => {
+              if (res && res.success && res.imageUrl) {
+                document.getElementById('cms-hero-preview-img').src = res.imageUrl;
+                document.getElementById('cms-hero-image-url').value = res.imageUrl;
+                statusEl.textContent = 'Unggah sukses!';
+                showToast('Foto lookbook berhasil diunggah ke Google Drive.', 'success');
+                // Refresh storefront in background
+                loadStorefrontData();
+              } else {
+                statusEl.textContent = 'Gagal';
+                showToast((res && res.message) ? res.message : 'Gagal mengunggah foto ke Drive', 'error');
+              }
+            });
+          });
+        };
+        img.src = rawBase64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitStorefrontContentAction(evt) {
+      evt.preventDefault();
+      const btn = document.getElementById('cms-save-btn');
+
+      // Kumpulkan 4 Value Propositions
+      const valueProps = [];
+      for (let i = 1; i <= 4; i++) {
+        valueProps.push({
+          title: (document.getElementById('cms-prop-title-' + i).value || '').trim(),
+          title_en: (document.getElementById('cms-prop-title-' + i + '-en').value || '').trim(),
+          desc: (document.getElementById('cms-prop-desc-' + i).value || '').trim(),
+          desc_en: (document.getElementById('cms-prop-desc-' + i + '-en').value || '').trim()
+        });
+      }
+
+      const payload = {
+        HERO_BADGE: document.getElementById('cms-hero-badge').value.trim(),
+        HERO_BADGE_EN: document.getElementById('cms-hero-badge-en').value.trim(),
+        HERO_TITLE: document.getElementById('cms-hero-title').value.trim(),
+        HERO_TITLE_EN: document.getElementById('cms-hero-title-en').value.trim(),
+        HERO_DESC: document.getElementById('cms-hero-desc').value.trim(),
+        HERO_DESC_EN: document.getElementById('cms-hero-desc-en').value.trim(),
+        HERO_CTA_EXPLORE: document.getElementById('cms-hero-cta-explore').value.trim(),
+        HERO_CTA_EXPLORE_EN: document.getElementById('cms-hero-cta-explore-en').value.trim(),
+        HERO_CTA_GUIDE: document.getElementById('cms-hero-cta-guide').value.trim(),
+        HERO_CTA_GUIDE_EN: document.getElementById('cms-hero-cta-guide-en').value.trim(),
+        HERO_CAPTION_TITLE: document.getElementById('cms-hero-caption-title').value.trim(),
+        HERO_CAPTION_TITLE_EN: document.getElementById('cms-hero-caption-title-en').value.trim(),
+        HERO_CAPTION_DESC: document.getElementById('cms-hero-caption-desc').value.trim(),
+        HERO_CAPTION_DESC_EN: document.getElementById('cms-hero-caption-desc-en').value.trim(),
+        ANNOUNCEMENT_TAG: document.getElementById('cms-announcement-tag').value.trim(),
+        ANNOUNCEMENT_TAG_EN: document.getElementById('cms-announcement-tag-en').value.trim(),
+        ANNOUNCEMENT_TITLE: document.getElementById('cms-announcement-title').value.trim(),
+        ANNOUNCEMENT_TITLE_EN: document.getElementById('cms-announcement-title-en').value.trim(),
+        ATELIER_ADDRESS: document.getElementById('cms-atelier-address').value.trim(),
+        CUSTOMER_CARE_HOURS: document.getElementById('cms-care-hours').value.trim(),
+        CUSTOMER_CARE_HOURS_EN: document.getElementById('cms-care-hours-en').value.trim(),
+        CUSTOMER_CARE_EMAIL: document.getElementById('cms-care-email').value.trim(),
+        FOOTER_ABOUT_TEXT: document.getElementById('cms-footer-about').value.trim(),
+        FOOTER_ABOUT_TEXT_EN: document.getElementById('cms-footer-about-en').value.trim(),
+        VALUE_PROPOSITIONS_JSON: JSON.stringify(valueProps)
+      };
+
+      const heroImgUrl = document.getElementById('cms-hero-image-url').value;
+      if (heroImgUrl) {
+        payload.HERO_IMAGE_URL = heroImgUrl;
+      }
+
+      const role = AppState.adminUser ? AppState.adminUser.role : 'Store Manager';
+      withButtonLoading(btn, () => {
+        return callApi('updateStorefrontContent', payload, role).then(res => {
+          if (res && res.success) {
+            showToast('Seluruh konten etalase toko berhasil disimpan.', 'success');
+            loadStorefrontData();
+          } else {
+            showToast((res && res.message) ? res.message : 'Gagal menyimpan konten etalase toko', 'error');
+          }
+        });
+      });
+    }
+
     function loadAdminSettings() {
       const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
       return callApi('getSettings', role).then(res => {
@@ -8731,6 +9389,10 @@ const AppState = {
     window.openAdminLoginModal = openAdminLoginModal;
     window.closeAdminLoginModal = closeAdminLoginModal;
     window.adminLoginAction = adminLoginAction;
+    window.loadAdminContentTab = loadAdminContentTab;
+    window.uploadHeroImageAction = uploadHeroImageAction;
+    window.submitStorefrontContentAction = submitStorefrontContentAction;
+    window.hydrateStorefrontContent = hydrateStorefrontContent;
     window.switchAdminTab = switchAdminTab;
     window.logoutAdmin = logoutAdmin;
     window.refreshAdminData = refreshAdminData;

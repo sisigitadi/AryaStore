@@ -9,6 +9,22 @@
 
 ---
 
+## 🚀 Pembaruan Rilis v2.1.0 (Strict RBAC, Dynamic Storefront CMS & Mobile Ergonomics)
+
+1. **Tata Kelola Otorisasi Ketat (RBAC v2.1)**:
+   - **Super Admin (9999)**: Akses menyeluruh 11 modul, manajemen rahasia API kurir, PIN otorisasi, reset database, pembatalan pesanan, dan ongkir manual.
+   - **Store Manager (8888)**: Kurasi katalog produk, foto varian warna, pesanan, bundling, diskon, dan manajemen konten etalase (CMS).
+   - **Customer Service (7777)**: Penanganan langsung pesanan, pelacakan resi, retur, dan direktori pelanggan (ongkir manual dan opsi pembatalan terkunci demi kepatuhan SOP).
+   - **Akuntabilitas Operator & Kunci Sesi**: Setiap aksi login mencatat nama petugas di `AuditLogs` (`Role (Operator Name)`), serta dilengkapi auto-lock inaktivitas 30 menit.
+2. **Dynamic Storefront CMS (Zero Dead Content)**:
+   - Seluruh teks hero, judul lookbook, deskripsi, CTA, pengumuman atas, 4 kartu nilai kepercayaan (Trust Bar), dan profil studio dapat diubah langsung dari Admin Console Tab 8.
+   - Unggah foto editorial lookbook utama langsung ke Google Drive publik via `uploadHeroImage`.
+   - Sinkronisasi dwi-bahasa real-time (ID/EN) saat pelanggan mengganti bahasa toko.
+3. **Optimalisasi Ergonomi Mobile**:
+   - Bebas auto-zoom iOS Safari (input teks 16px pada mobile).
+   - Touch target minimal 44x44px di seluruh kontrol interaktif.
+   - Navigasi admin horizontal scrollable pill bar pada layar sentuh.
+
 ## ✨ Fitur Utama (v2.0.0 Global Expansion)
 
 ### 🛍️ Storefront Pelanggan Global

@@ -360,7 +360,33 @@ function getPublicConfig() {
       'META_PIXEL_ID',
       'TIKTOK_PIXEL_ID',
       'SHIPPING_METHODS',
-      'SHIPPING_PROVIDER'
+      'SHIPPING_PROVIDER',
+      'HERO_BADGE',
+      'HERO_BADGE_EN',
+      'HERO_TITLE',
+      'HERO_TITLE_EN',
+      'HERO_DESC',
+      'HERO_DESC_EN',
+      'HERO_IMAGE_URL',
+      'HERO_CAPTION_TITLE',
+      'HERO_CAPTION_TITLE_EN',
+      'HERO_CAPTION_DESC',
+      'HERO_CAPTION_DESC_EN',
+      'HERO_CTA_EXPLORE',
+      'HERO_CTA_EXPLORE_EN',
+      'HERO_CTA_GUIDE',
+      'HERO_CTA_GUIDE_EN',
+      'ANNOUNCEMENT_TAG',
+      'ANNOUNCEMENT_TAG_EN',
+      'ANNOUNCEMENT_TITLE',
+      'ANNOUNCEMENT_TITLE_EN',
+      'ATELIER_ADDRESS',
+      'CUSTOMER_CARE_HOURS',
+      'CUSTOMER_CARE_HOURS_EN',
+      'CUSTOMER_CARE_EMAIL',
+      'FOOTER_ABOUT_TEXT',
+      'FOOTER_ABOUT_TEXT_EN',
+      'VALUE_PROPOSITIONS_JSON'
     ];
 
     var publicConfig = {};
@@ -2012,15 +2038,16 @@ function testShippingProvider(provider, role) {
 // ================================================================================
 
 /**
- * Authenticates admin operator using 4-digit PIN stored in Settings.
+ * Authenticates admin operator using 4-digit PIN and Operator Name stored in Settings.
  */
-function adminLogin(pin) {
+function adminLogin(pin, operatorName) {
   try {
     if (!pin) {
       return { success: false, message: 'PIN otentikasi wajib diisi' };
     }
 
     var cleanPin = String(pin).trim();
+    var cleanOperator = String(operatorName || '').trim();
     var settings = loadSettingsDictionary();
 
     var pinSuperAdmin = settings['PIN_SUPER_ADMIN'] || '9999';
@@ -2035,24 +2062,27 @@ function adminLogin(pin) {
       permissions = ['ALL'];
     } else if (cleanPin === pinStoreManager) {
       role = 'Store Manager';
-      permissions = ['PRODUCTS', 'VARIANTS', 'ORDERS', 'CAMPAIGNS'];
+      permissions = ['PRODUCTS', 'VARIANTS', 'ORDERS', 'CAMPAIGNS', 'CMS'];
     } else if (cleanPin === pinCustomerService) {
       role = 'Customer Service';
       permissions = ['ORDERS', 'RETURNS', 'CUSTOMERS'];
     }
 
     if (!role) {
-      logAudit('System', 'Security', 'Percobaan login admin gagal dengan PIN tidak dikenal');
+      logAudit('System', 'Security', 'Percobaan login admin gagal dengan PIN tidak dikenal' + (cleanOperator ? ' (Petugas: ' + cleanOperator + ')' : ''));
       return { success: false, message: 'PIN otentikasi salah. Akses ditolak.' };
     }
 
-    logAudit(role, 'Auth', 'Login admin berhasil sebagai ' + role);
+    var actorDisplay = cleanOperator ? role + ' (' + cleanOperator + ')' : role;
+    logAudit(actorDisplay, 'Auth', 'Login admin berhasil sebagai ' + actorDisplay);
 
     return {
       success: true,
       role: role,
+      operator: cleanOperator,
+      actorDisplay: actorDisplay,
       permissions: permissions,
-      message: 'Login berhasil sebagai ' + role
+      message: 'Login berhasil sebagai ' + actorDisplay
     };
   } catch (err) {
     return {
@@ -2064,9 +2094,11 @@ function adminLogin(pin) {
 
 function verifyRoleAuthorization(role, allowedRoles) {
   if (!role) return false;
-  if (role === 'Super Admin') return true;
+  // Extract base role if in format "Role (Operator Name)"
+  var baseRole = String(role).split('(')[0].trim();
+  if (baseRole === 'Super Admin' || role === 'Super Admin') return true;
   for (var i = 0; i < allowedRoles.length; i++) {
-    if (allowedRoles[i] === role) return true;
+    if (allowedRoles[i] === baseRole || allowedRoles[i] === role) return true;
   }
   return false;
 }
@@ -2255,6 +2287,16 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
 
     if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager', 'Customer Service'])) {
       return { success: false, message: 'Otorisasi ditolak. Peran Anda tidak diizinkan mengubah status pesanan.' };
+    }
+
+    var baseRole = String(role || '').split('(')[0].trim();
+    if (baseRole === 'Customer Service') {
+      if (manualOngkir !== null && manualOngkir !== undefined && manualOngkir !== '') {
+        return { success: false, message: 'Otorisasi ditolak. Customer Service tidak berwenang mengubah ongkos kirim manual atau nilai transaksi.' };
+      }
+      if (newStatus === 'Dibatalkan') {
+        return { success: false, message: 'Otorisasi ditolak. Pembatalan pesanan hanya dapat dilakukan oleh Store Manager atau Super Admin.' };
+      }
     }
 
     if (!invoiceNo) {
@@ -3160,8 +3202,9 @@ function exportOrdersCSV() {
 function getSettings(role) {
   try {
     var dict = loadSettingsDictionary();
+    var baseRole = String(role || '').split('(')[0].trim();
 
-    if (role !== 'Super Admin') {
+    if (baseRole !== 'Super Admin') {
       delete dict['PIN_SUPER_ADMIN'];
       delete dict['PIN_STORE_MANAGER'];
       delete dict['PIN_CUSTOMER_SERVICE'];
@@ -3203,7 +3246,8 @@ function getSettings(role) {
  */
 function updateSettings(newSettings, role) {
   try {
-    if (role !== 'Super Admin') {
+    var baseRole = String(role || '').split('(')[0].trim();
+    if (baseRole !== 'Super Admin') {
       return { success: false, message: 'Otorisasi ditolak. Hanya Super Admin yang berhak mengubah konfigurasi sistem.' };
     }
 
@@ -3245,7 +3289,7 @@ function updateSettings(newSettings, role) {
     }
 
     SpreadsheetApp.flush();
-    logAudit('Super Admin', 'Settings', 'Konfigurasi sistem diperbarui (' + updatedCount + ' parameter)');
+    logAudit(role || 'Super Admin', 'Settings', 'Konfigurasi sistem diperbarui (' + updatedCount + ' parameter)');
 
     return {
       success: true,
@@ -3256,6 +3300,180 @@ function updateSettings(newSettings, role) {
     return {
       success: false,
       message: 'Gagal memperbarui pengaturan: ' + err.toString()
+    };
+  }
+}
+
+/**
+ * Updates storefront CMS content parameters (Hero, Announcement, Values, Atelier Info).
+ * Accessible to Super Admin and Store Manager.
+ */
+function updateStorefrontContent(contentSettings, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Pengaturan konten etalase hanya untuk Super Admin dan Store Manager.' };
+    }
+
+    if (!contentSettings || typeof contentSettings !== 'object') {
+      return { success: false, message: 'Data konten tidak valid' };
+    }
+
+    var allowedCmsKeys = [
+      'HERO_BADGE', 'HERO_BADGE_EN',
+      'HERO_TITLE', 'HERO_TITLE_EN',
+      'HERO_DESC', 'HERO_DESC_EN',
+      'HERO_IMAGE_URL',
+      'HERO_CAPTION_TITLE', 'HERO_CAPTION_TITLE_EN',
+      'HERO_CAPTION_DESC', 'HERO_CAPTION_DESC_EN',
+      'HERO_CTA_EXPLORE', 'HERO_CTA_EXPLORE_EN',
+      'HERO_CTA_GUIDE', 'HERO_CTA_GUIDE_EN',
+      'ANNOUNCEMENT_TAG', 'ANNOUNCEMENT_TAG_EN',
+      'ANNOUNCEMENT_TITLE', 'ANNOUNCEMENT_TITLE_EN',
+      'ATELIER_ADDRESS',
+      'CUSTOMER_CARE_HOURS', 'CUSTOMER_CARE_HOURS_EN',
+      'CUSTOMER_CARE_EMAIL',
+      'FOOTER_ABOUT_TEXT', 'FOOTER_ABOUT_TEXT_EN',
+      'VALUE_PROPOSITIONS_JSON'
+    ];
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var sheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
+    if (!sheet) return { success: false, message: 'Sheet Settings tidak ditemukan' };
+
+    var lastRow = sheet.getLastRow();
+    var rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues() : [];
+    var updatedCount = 0;
+
+    for (var i = 0; i < allowedCmsKeys.length; i++) {
+      var key = allowedCmsKeys[i];
+      if (contentSettings[key] !== undefined) {
+        var newVal = String(contentSettings[key]);
+        var foundIdx = -1;
+        for (var r = 0; r < rows.length; r++) {
+          if (rows[r][COL_SETTINGS.KEY] === key) {
+            foundIdx = r + 2;
+            break;
+          }
+        }
+
+        if (foundIdx > 0) {
+          sheet.getRange(foundIdx, COL_SETTINGS.VALUE + 1).setValue(newVal);
+          updatedCount++;
+        } else {
+          sheet.appendRow([key, newVal, 'Parameter konten etalase']);
+          updatedCount++;
+        }
+      }
+    }
+
+    SpreadsheetApp.flush();
+    logAudit(role, 'CMS', 'Konten etalase storefront diperbarui (' + updatedCount + ' parameter)');
+
+    return {
+      success: true,
+      updatedCount: updatedCount,
+      message: 'Konten etalase storefront berhasil diperbarui'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal memperbarui konten storefront: ' + err.toString()
+    };
+  }
+}
+
+/**
+ * Uploads a custom Lookbook Hero image to Google Drive and updates HERO_IMAGE_URL in Settings.
+ * Accessible to Super Admin and Store Manager.
+ */
+function uploadHeroImage(base64Data, mimeType, fileName, role) {
+  try {
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager'])) {
+      return { success: false, message: 'Otorisasi ditolak. Pengunggahan foto lookbook hero hanya untuk Admin/Store Manager.' };
+    }
+
+    if (!base64Data) {
+      return { success: false, message: 'Data foto base64 wajib disertakan' };
+    }
+
+    var cleanBase64 = base64Data;
+    if (cleanBase64.indexOf(',') > -1) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
+
+    mimeType = mimeType || 'image/jpeg';
+    var ext = mimeType.indexOf('png') > -1 ? '.png' : (mimeType.indexOf('webp') > -1 ? '.webp' : '.jpg');
+    var autoName = 'LOOKBOOK_HERO_' + new Date().getTime() + ext;
+    fileName = fileName || autoName;
+
+    var decodedBytes;
+    try {
+      decodedBytes = Utilities.base64Decode(cleanBase64);
+    } catch (e) {
+      return { success: false, message: 'Format base64 gambar tidak valid' };
+    }
+
+    var blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
+
+    var settings = loadSettingsDictionary();
+    var folderName = settings['DRIVE_PRODUCTS_FOLDER_NAME'] || 'ARYASTORE_PRODUCTS';
+
+    var directImageUrl = '';
+    var directThumbUrl = '';
+    var fileId = '';
+
+    if (typeof DriveApp !== 'undefined') {
+      var folderIterator = DriveApp.getFoldersByName(folderName);
+      var targetFolder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(folderName);
+
+      var driveFile = targetFolder.createFile(blob);
+      driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileId = driveFile.getId();
+
+      directImageUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+      directThumbUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+    } else {
+      fileId = 'sim_hero_' + new Date().getTime();
+      directImageUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+      directThumbUrl = directImageUrl;
+    }
+
+    // Update Settings sheet directly with the new HERO_IMAGE_URL
+    var ss = getSpreadsheet();
+    if (ss) {
+      var settingsSheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
+      if (settingsSheet) {
+        var lastRow = settingsSheet.getLastRow();
+        var keys = settingsSheet.getRange(1, 1, lastRow, 1).getValues();
+        var found = false;
+        for (var r = 0; r < keys.length; r++) {
+          if (String(keys[r][0]).trim().toUpperCase() === 'HERO_IMAGE_URL') {
+            settingsSheet.getRange(r + 1, 2).setValue(directImageUrl);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          settingsSheet.appendRow(['HERO_IMAGE_URL', directImageUrl, 'URL foto utama Hero Lookbook']);
+        }
+        SpreadsheetApp.flush();
+      }
+    }
+
+    logAudit(role, 'CMS', 'Foto Lookbook Hero diperbarui di Google Drive: ' + fileName + ' (ID: ' + fileId + ')');
+
+    return {
+      success: true,
+      fileId: fileId,
+      imageUrl: directImageUrl,
+      thumbnailUrl: directThumbUrl,
+      message: 'Foto Lookbook Hero berhasil diunggah ke Google Drive dan konfigurasi diperbarui.'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: 'Gagal mengunggah foto hero ke Google Drive: ' + err.toString()
     };
   }
 }
