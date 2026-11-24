@@ -81,7 +81,11 @@ var COL_ORDERS = {
   SHIPPING_ZONE: 14,
   CURRENCY_CODE: 15,
   EXCHANGE_RATE: 16,
-  UTM_SOURCE: 17
+  UTM_SOURCE: 17,
+  TRACKING_NUMBER: 18,
+  SHIPPING_STATUS: 19,
+  SHIPPED_AT: 20,
+  SHIPPING_NOTES: 21
 };
 
 var COL_CUSTOMERS = {
@@ -177,7 +181,11 @@ var SCHEMA_DEFINITIONS = {
       'shipping_zone',
       'currency_code',
       'exchange_rate',
-      'utm_source'
+      'utm_source',
+      'tracking_number',
+      'shipping_status',
+      'shipped_at',
+      'shipping_notes'
     ],
     colMap: COL_ORDERS
   },
@@ -986,7 +994,11 @@ function createOrder(payload) {
       shippingZone,
       currencyCode,
       exchangeRate,
-      utmSource
+      utmSource,
+      '',
+      'Belum Dikirim',
+      '',
+      ''
     ];
 
     ordersSheet.appendRow(newOrderRow);
@@ -1072,7 +1084,11 @@ function lookupOrder(invoiceNo, whatsappNo) {
           shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
           currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR',
           exchange_rate: parseFloat(row[COL_ORDERS.EXCHANGE_RATE]) || 1,
-          utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct'
+          utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct',
+          tracking_number: row[COL_ORDERS.TRACKING_NUMBER] || '',
+          shipping_status: row[COL_ORDERS.SHIPPING_STATUS] || (row[COL_ORDERS.STATUS] === 'Selesai' ? 'Terkirim' : (row[COL_ORDERS.STATUS] === 'Dikirim' ? 'Dalam Pengiriman' : 'Belum Dikirim')),
+          shipped_at: row[COL_ORDERS.SHIPPED_AT] || '',
+          shipping_notes: row[COL_ORDERS.SHIPPING_NOTES] || ''
         };
         break;
       }
@@ -2106,50 +2122,125 @@ function verifyRoleAuthorization(role, allowedRoles) {
 /**
  * Retrieves executive KPI summary metrics, recent orders, and status tallies.
  */
-function getAdminDashboard() {
+function getAdminDashboard(role) {
   try {
+    var baseRole = String(role || 'Super Admin').split('(')[0].trim();
+    var isCS = baseRole === 'Customer Service';
+    var isManager = baseRole === 'Store Manager';
+
     var orderRows = getSheetDisplayRows(SHEET_NAMES.ORDERS);
     var customerRows = getSheetDisplayRows(SHEET_NAMES.CUSTOMERS);
     var variantRows = getSheetDisplayRows(SHEET_NAMES.VARIANTS);
+    var returnRows = getSheetDisplayRows(SHEET_NAMES.RETURNS);
+    var productRows = getSheetDisplayRows(SHEET_NAMES.PRODUCTS);
+
+    var productCategoryMap = {};
+    for (var p = 0; p < productRows.length; p++) {
+      productCategoryMap[productRows[p][COL_PRODUCTS.ID]] = productRows[p][COL_PRODUCTS.CATEGORY] || 'Lainnya';
+    }
 
     var totalRevenue = 0;
+    var validRevenueOrders = 0;
     var totalOrders = orderRows.length;
     var unitsSold = 0;
     var totalCustomers = customerRows.length;
     var lowStockCount = 0;
+    var activeShipments = 0;
+    var pendingVerification = 0;
 
     var statusCounts = {
       'Menunggu Pembayaran': 0,
-      'Bukti Diupload': 0,
+      'Verifikasi Pembayaran': 0,
       'Diproses': 0,
       'Dikirim': 0,
       'Selesai': 0,
       'Dibatalkan': 0
     };
 
+    var shippingBreakdown = {
+      'Belum Dikirim': 0,
+      'Menunggu Pick-up': 0,
+      'Dalam Pengiriman': 0,
+      'Transit Hub': 0,
+      'Kurir Menuju Alamat': 0,
+      'Terkirim': 0,
+      'Kendala Pengiriman': 0
+    };
+
+    var categorySales = {
+      'Outerwear': { revenue: 0, units: 0 },
+      'Tops': { revenue: 0, units: 0 },
+      'Bottoms': { revenue: 0, units: 0 },
+      'Footwear': { revenue: 0, units: 0 },
+      'Accessories': { revenue: 0, units: 0 }
+    };
+
+    var dailyMap = {};
     var recentOrders = [];
 
     for (var i = 0; i < orderRows.length; i++) {
       var row = orderRows[i];
       var status = row[COL_ORDERS.STATUS];
+      if (status === 'Bukti Diupload') status = 'Verifikasi Pembayaran';
       var grandTotal = parseFloat(row[COL_ORDERS.GRAND_TOTAL]) || 0;
+      var shipStatus = row[COL_ORDERS.SHIPPING_STATUS] || (status === 'Selesai' ? 'Terkirim' : (status === 'Dikirim' ? 'Dalam Pengiriman' : 'Belum Dikirim'));
 
       if (statusCounts[status] !== undefined) {
         statusCounts[status]++;
       }
+      if (shippingBreakdown[shipStatus] !== undefined) {
+        shippingBreakdown[shipStatus]++;
+      }
 
-      if (status === 'Selesai' || status === 'Diproses' || status === 'Dikirim') {
+      if (status === 'Verifikasi Pembayaran' || status === 'Menunggu Pembayaran') {
+        pendingVerification++;
+      }
+      if (status === 'Dikirim') {
+        activeShipments++;
+      }
+
+      var isRevOrder = (status === 'Selesai' || status === 'Diproses' || status === 'Dikirim');
+      if (isRevOrder) {
         totalRevenue += grandTotal;
+        validRevenueOrders++;
       }
 
-      if (status === 'Selesai') {
-        try {
-          var items = JSON.parse(row[COL_ORDERS.ITEMS_JSON]);
-          for (var it = 0; it < items.length; it++) {
-            unitsSold += (parseInt(items[it].quantity, 10) || 1);
-          }
-        } catch (e) {}
+      // Parse daily date key YYYY-MM-DD for chronological sorting
+      var rawDate = String(row[COL_ORDERS.CREATED_AT] || '').trim();
+      var isoDay = '2026-11-24';
+      var dispDay = '24:11:2026';
+      var mIso = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      var mDmy = rawDate.match(/^(\d{2})[:\/-](\d{2})[:\/-](\d{4})/);
+      if (mIso) {
+        isoDay = mIso[1] + '-' + mIso[2] + '-' + mIso[3];
+        dispDay = mIso[3] + ':' + mIso[2] + ':' + mIso[1];
+      } else if (mDmy) {
+        isoDay = mDmy[3] + '-' + mDmy[2] + '-' + mDmy[1];
+        dispDay = mDmy[1] + ':' + mDmy[2] + ':' + mDmy[3];
       }
+
+      if (!dailyMap[isoDay]) {
+        dailyMap[isoDay] = { date_iso: isoDay, date_display: dispDay, revenue: 0, orders: 0, customers_set: {} };
+      }
+      dailyMap[isoDay].orders += 1;
+      if (isRevOrder) dailyMap[isoDay].revenue += grandTotal;
+      var custKey = row[COL_ORDERS.CUSTOMER_ID] || row[COL_ORDERS.WHATSAPP_NO] || row[COL_ORDERS.CUSTOMER_NAME];
+      if (custKey) dailyMap[isoDay].customers_set[custKey] = true;
+
+      try {
+        var items = JSON.parse(row[COL_ORDERS.ITEMS_JSON]);
+        for (var it = 0; it < items.length; it++) {
+          var qty = parseInt(items[it].quantity, 10) || 1;
+          var itemPrice = parseFloat(items[it].price || items[it].base_price) || 0;
+          if (status === 'Selesai') unitsSold += qty;
+          if (isRevOrder) {
+            var cat = productCategoryMap[items[it].product_id] || 'Outerwear';
+            if (!categorySales[cat]) categorySales[cat] = { revenue: 0, units: 0 };
+            categorySales[cat].units += qty;
+            categorySales[cat].revenue += (itemPrice * qty);
+          }
+        }
+      } catch (e) {}
 
       if (recentOrders.length < 10) {
         recentOrders.push({
@@ -2157,11 +2248,14 @@ function getAdminDashboard() {
           created_at: row[COL_ORDERS.CREATED_AT],
           customer_name: row[COL_ORDERS.CUSTOMER_NAME],
           whatsapp_no: row[COL_ORDERS.WHATSAPP_NO],
-          grand_total: grandTotal,
+          grand_total: isCS ? null : grandTotal,
           status: status,
           payment_proof_url: row[COL_ORDERS.PAYMENT_PROOF_URL],
           shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
-          currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR'
+          currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR',
+          tracking_number: row[COL_ORDERS.TRACKING_NUMBER] || '',
+          shipping_status: shipStatus,
+          shipped_at: row[COL_ORDERS.SHIPPED_AT] || ''
         });
       }
     }
@@ -2173,16 +2267,79 @@ function getAdminDashboard() {
       }
     }
 
+    var returnsBreakdown = { 'Diajukan': 0, 'Disetujui': 0, 'Selesai': 0, 'Ditolak': 0 };
+    var activeReturnsCount = 0;
+    for (var r = 0; r < returnRows.length; r++) {
+      var rSt = returnRows[r][COL_RETURNS.STATUS] || 'Diajukan';
+      if (returnsBreakdown[rSt] !== undefined) returnsBreakdown[rSt]++;
+      if (rSt === 'Diajukan') activeReturnsCount++;
+    }
+
+    var newCust = 0;
+    var repeatCust = 0;
+    var vipCust = 0;
+    for (var c = 0; c < customerRows.length; c++) {
+      var cOrd = parseInt(customerRows[c][COL_CUSTOMERS.TOTAL_ORDERS], 10) || 1;
+      var cSpent = parseFloat(customerRows[c][COL_CUSTOMERS.TOTAL_SPENT]) || 0;
+      if (cSpent >= 2000000 || cOrd >= 3) {
+        vipCust++;
+      } else if (cOrd >= 2) {
+        repeatCust++;
+      } else {
+        newCust++;
+      }
+    }
+
+    var seriesDaily = Object.keys(dailyMap).sort().map(function(k) {
+      var d = dailyMap[k];
+      return {
+        date_iso: d.date_iso,
+        date_display: d.date_display,
+        revenue: isCS ? null : d.revenue,
+        orders: d.orders,
+        customers: Object.keys(d.customers_set).length
+      };
+    });
+
+    var aov = validRevenueOrders > 0 ? Math.round(totalRevenue / validRevenueOrders) : 0;
+
+    // Sanitize category revenue for Customer Service
+    if (isCS) {
+      Object.keys(categorySales).forEach(function(catKey) {
+        categorySales[catKey].revenue = null;
+      });
+    }
+
     return {
       success: true,
+      role_scope: baseRole,
       kpis: {
-        totalRevenue: totalRevenue,
+        revenue: isCS ? null : totalRevenue,
+        aov: isCS ? null : aov,
+        orders_count: totalOrders,
+        customers_count: isManager ? null : totalCustomers,
+        returns_count: activeReturnsCount,
+        active_shipments: activeShipments,
+        pending_verification: pendingVerification,
+        low_stock_count: lowStockCount,
+        units_sold: unitsSold,
+        totalRevenue: isCS ? null : totalRevenue,
         totalOrders: totalOrders,
-        unitsSold: unitsSold,
-        totalCustomers: totalCustomers,
+        totalCustomers: isManager ? null : totalCustomers,
         lowStockCount: lowStockCount
       },
+      series_daily: seriesDaily,
+      status_breakdown: statusCounts,
       statusCounts: statusCounts,
+      shipping_breakdown: shippingBreakdown,
+      category_sales: isCS ? null : categorySales,
+      customer_segments: isManager ? null : {
+        new_customers: newCust,
+        repeat_customers: repeatCust,
+        vip_customers: vipCust,
+        total_customers: totalCustomers
+      },
+      returns_breakdown: returnsBreakdown,
       recentOrders: recentOrders
     };
   } catch (err) {
@@ -2219,7 +2376,8 @@ function getOrders(filters) {
       }
 
       if (search) {
-        var haystack = (rInv + ' ' + rCust + ' ' + rPhone).toLowerCase();
+        var rTrack = row[COL_ORDERS.TRACKING_NUMBER] || '';
+        var haystack = (rInv + ' ' + rCust + ' ' + rPhone + ' ' + rTrack).toLowerCase();
         if (haystack.indexOf(search) === -1) {
           continue;
         }
@@ -2248,7 +2406,11 @@ function getOrders(filters) {
         shipping_zone: row[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
         currency_code: row[COL_ORDERS.CURRENCY_CODE] || 'IDR',
         exchange_rate: parseFloat(row[COL_ORDERS.EXCHANGE_RATE]) || 1,
-        utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct'
+        utm_source: row[COL_ORDERS.UTM_SOURCE] || 'direct',
+        tracking_number: row[COL_ORDERS.TRACKING_NUMBER] || '',
+        shipping_status: row[COL_ORDERS.SHIPPING_STATUS] || (rStatus === 'Selesai' ? 'Terkirim' : (rStatus === 'Dikirim' ? 'Dalam Pengiriman' : 'Belum Dikirim')),
+        shipped_at: row[COL_ORDERS.SHIPPED_AT] || '',
+        shipping_notes: row[COL_ORDERS.SHIPPING_NOTES] || ''
       });
     }
 
@@ -2418,6 +2580,107 @@ function updateOrderStatus(invoiceNo, newStatus, manualOngkir, notes, role) {
       success: false,
       message: 'Gagal memperbarui status pesanan: ' + err.toString()
     };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+/**
+ * Updates courier, tracking number (resi), shipping status, ship date (dd:mm:yyyy), and shipping notes for an order.
+ * Protected by ScriptLock mutex and RBAC authorization.
+ */
+function updateOrderShipping(invoiceNo, shippingPayload, role) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+
+    if (!verifyRoleAuthorization(role, ['Super Admin', 'Store Manager', 'Customer Service'])) {
+      return { success: false, message: 'Otorisasi ditolak. Peran Anda tidak berwenang memperbarui resi pengiriman.' };
+    }
+
+    if (!invoiceNo) {
+      return { success: false, message: 'Nomor invoice wajib diisi' };
+    }
+
+    shippingPayload = shippingPayload || {};
+    var cleanInv = String(invoiceNo).trim().toUpperCase();
+    var trackingNo = String(shippingPayload.tracking_number || '').trim().toUpperCase();
+    var shipStatus = String(shippingPayload.shipping_status || 'Dalam Pengiriman').trim();
+    var shippedAt = String(shippingPayload.shipped_at || '').trim();
+    var shipNotes = String(shippingPayload.shipping_notes || '').trim();
+    var courierMethod = String(shippingPayload.shipping_method || '').trim();
+    var autoUpdateOrderStatus = shippingPayload.auto_update_status !== false;
+
+    var ss = getSpreadsheet();
+    if (!ss) return { success: false, message: 'Spreadsheet tidak dapat diakses' };
+    var ordersSheet = ss.getSheetByName(SHEET_NAMES.ORDERS);
+    if (!ordersSheet) return { success: false, message: 'Sheet Orders tidak ditemukan' };
+
+    // Ensure rightmost tracking headers exist (Safe Migration)
+    if (ordersSheet.getLastColumn() < 22) {
+      ordersSheet.getRange(1, COL_ORDERS.TRACKING_NUMBER + 1).setValue('tracking_number');
+      ordersSheet.getRange(1, COL_ORDERS.SHIPPING_STATUS + 1).setValue('shipping_status');
+      ordersSheet.getRange(1, COL_ORDERS.SHIPPED_AT + 1).setValue('shipped_at');
+      ordersSheet.getRange(1, COL_ORDERS.SHIPPING_NOTES + 1).setValue('shipping_notes');
+    }
+
+    var lastRow = ordersSheet.getLastRow();
+    if (lastRow <= 1) return { success: false, message: 'Data pesanan kosong' };
+
+    var rows = ordersSheet.getRange(2, 1, lastRow - 1, Math.max(ordersSheet.getLastColumn(), 22)).getDisplayValues();
+    var targetRowIdx = -1;
+    var currentStatus = '';
+
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][COL_ORDERS.INVOICE_NO]).trim().toUpperCase() === cleanInv) {
+        targetRowIdx = i + 2;
+        currentStatus = rows[i][COL_ORDERS.STATUS];
+        break;
+      }
+    }
+
+    if (targetRowIdx === -1) {
+      return { success: false, message: 'Pesanan ' + cleanInv + ' tidak ditemukan' };
+    }
+
+    if (courierMethod) {
+      ordersSheet.getRange(targetRowIdx, COL_ORDERS.SHIPPING_METHOD + 1).setValue(courierMethod);
+    }
+    ordersSheet.getRange(targetRowIdx, COL_ORDERS.TRACKING_NUMBER + 1).setValue(trackingNo);
+    ordersSheet.getRange(targetRowIdx, COL_ORDERS.SHIPPING_STATUS + 1).setValue(shipStatus);
+    ordersSheet.getRange(targetRowIdx, COL_ORDERS.SHIPPED_AT + 1).setValue(shippedAt);
+    ordersSheet.getRange(targetRowIdx, COL_ORDERS.SHIPPING_NOTES + 1).setValue(shipNotes);
+
+    var nextOrderStatus = currentStatus;
+    if (autoUpdateOrderStatus) {
+      if (shipStatus === 'Terkirim') {
+        nextOrderStatus = 'Selesai';
+      } else if (trackingNo && (currentStatus === 'Diproses' || currentStatus === 'Verifikasi Pembayaran' || currentStatus === 'Menunggu Pembayaran')) {
+        nextOrderStatus = 'Dikirim';
+      }
+      if (nextOrderStatus !== currentStatus) {
+        ordersSheet.getRange(targetRowIdx, COL_ORDERS.STATUS + 1).setValue(nextOrderStatus);
+      }
+    }
+
+    SpreadsheetApp.flush();
+
+    logAudit(role, 'Orders', 'Resi pengiriman ' + cleanInv + ' diperbarui: ' + (courierMethod || 'Kurir') + ' | Resi: ' + (trackingNo || '-') + ' | Status Kirim: ' + shipStatus + ' | Tgl Kirim: ' + (shippedAt || '-'));
+
+    return {
+      success: true,
+      invoice_no: cleanInv,
+      status: nextOrderStatus,
+      tracking_number: trackingNo,
+      shipping_status: shipStatus,
+      shipped_at: shippedAt,
+      shipping_notes: shipNotes,
+      shipping_method: courierMethod,
+      message: 'Resi dan status pengiriman ' + cleanInv + ' berhasil disimpan.'
+    };
+  } catch (err) {
+    return { success: false, message: 'Gagal memperbarui resi pengiriman: ' + err.toString() };
   } finally {
     lock.releaseLock();
   }
@@ -3460,7 +3723,11 @@ function exportOrdersCSV() {
       'Zona Pengiriman',
       'Mata Uang',
       'Nilai Tukar',
-      'UTM Source'
+      'UTM Source',
+      'Nomor Resi',
+      'Status Pengiriman',
+      'Tanggal Kirim',
+      'Catatan Pengiriman'
     ];
 
     var csvLines = [headers.join(',')];
@@ -3484,7 +3751,11 @@ function exportOrdersCSV() {
         r[COL_ORDERS.SHIPPING_ZONE] || 'DOMESTIK',
         r[COL_ORDERS.CURRENCY_CODE] || 'IDR',
         r[COL_ORDERS.EXCHANGE_RATE] || '1',
-        r[COL_ORDERS.UTM_SOURCE] || 'direct'
+        r[COL_ORDERS.UTM_SOURCE] || 'direct',
+        r[COL_ORDERS.TRACKING_NUMBER] || '',
+        r[COL_ORDERS.SHIPPING_STATUS] || '',
+        r[COL_ORDERS.SHIPPED_AT] || '',
+        r[COL_ORDERS.SHIPPING_NOTES] || ''
       ];
 
       var escapedFields = fields.map(function(val) {

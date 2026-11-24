@@ -1263,6 +1263,34 @@
             <div id="step-5" class="py-1 border-b-2 border-stone-300 text-stone-400">5. Selesai</div>
           </div>
 
+          <!-- Informasi Resi & Status Pengiriman -->
+          <div id="tracker-shipping-card" class="hidden p-3.5 bg-blue-50/70 border border-blue-200 text-xs space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold uppercase tracking-wider text-blue-950 text-[11px]">Informasi Pengiriman & Resi</span>
+              <span id="tracker-ship-status-badge" class="px-2 py-0.5 text-[10px] font-mono font-bold bg-blue-100 text-blue-800"></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <span class="text-[#57534E] block">Ekspedisi / Kurir:</span>
+                <span id="tracker-ship-courier" class="font-semibold text-[#1C1917]"></span>
+              </div>
+              <div>
+                <span class="text-[#57534E] block">Tanggal Kirim:</span>
+                <span id="tracker-ship-date" class="font-mono font-semibold text-[#1C1917]"></span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between bg-white px-2.5 py-2 border border-blue-200">
+              <div>
+                <span class="text-[10px] text-[#57534E] block">Nomor Resi Pengiriman</span>
+                <span id="tracker-ship-resi" class="font-mono font-bold text-sm text-[#1C1917] tracking-wider"></span>
+              </div>
+              <button type="button" id="tracker-copy-resi-btn" onclick="copyTrackingNumber(document.getElementById('tracker-ship-resi').textContent)" class="px-2.5 py-1.5 bg-[#1C1917] text-white text-[10px] font-semibold uppercase tracking-wider hover:bg-[#292524]">
+                Salin Resi
+              </button>
+            </div>
+            <p id="tracker-ship-notes" class="text-[11px] text-[#57534E] italic hidden"></p>
+          </div>
+
           <!-- Rincian Pesanan -->
           <div id="tracker-items-list" class="p-3 bg-[#FAFAF9] border border-[#E7E5E4] text-xs space-y-2">
             <!-- Items rendered dynamically -->
@@ -1608,10 +1636,23 @@
         
         <!-- TAB 1: RINGKASAN & KPI -->
         <div id="admin-panel-overview" class="admin-panel space-y-6">
-          <h2 class="font-serif text-xl font-bold text-[#1C1917]">Ringkasan Operasional Toko</h2>
-          
-          <!-- 4-Card KPI Grid -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E7E5E4] pb-4">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="font-serif text-xl font-bold text-[#1C1917]">Ringkasan & KPI Operasional</h2>
+                <span id="overview-rbac-scope-badge" class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1C1917] text-[#FAFAF9]">Super Admin</span>
+              </div>
+              <p id="overview-rbac-scope-desc" class="text-xs text-[#57534E] mt-0.5">Visualisasi performa bisnis, arus pesanan, pengiriman, dan metrik sesuai hak akses peran Anda.</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs">
+              <button type="button" onclick="setOverviewPeriod('7d')" id="ov-period-7d" class="px-2.5 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold text-[11px] min-h-[36px]">7 Hari</button>
+              <button type="button" onclick="setOverviewPeriod('30d')" id="ov-period-30d" class="px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] text-[11px] min-h-[36px]">30 Hari</button>
+              <button type="button" onclick="setOverviewPeriod('all')" id="ov-period-all" class="px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] text-[11px] min-h-[36px]">Semua</button>
+            </div>
+          </div>
+
+          <!-- Dynamic RBAC-Scoped KPI Cards -->
+          <div id="overview-kpi-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4]">
               <span class="text-[11px] uppercase tracking-wider text-[#57534E] font-semibold">Total Omzet</span>
               <p id="kpi-revenue" class="font-serif text-xl font-bold text-[#1C1917] mt-1">Rp 0</p>
@@ -1630,8 +1671,24 @@
             </div>
           </div>
 
-          <!-- Corong Konversi 4-Tahap Pure CSS -->
-          <div class="space-y-3 pt-4 border-t border-[#E7E5E4]">
+          <!-- Dynamic RBAC-Scoped Interactive SVG Charts Grid -->
+          <div id="overview-charts-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
+            <!-- Populated dynamically per RBAC role -->
+          </div>
+
+          <!-- Antrean Cepat Layanan Pelanggan (Khusus Customer Service & Super Admin) -->
+          <div id="overview-cs-queue-section" class="hidden space-y-3 pt-4 border-t border-[#E7E5E4]">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Antrean Prioritas Layanan & Pengiriman</h3>
+              <button type="button" onclick="switchAdminTab('orders')" class="text-[11px] font-semibold text-[#C2410C] hover:underline">Buka Semua Pesanan &rarr;</button>
+            </div>
+            <div id="overview-cs-queue-container" class="space-y-2 text-xs">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Corong Konversi 4-Tahap (Super Admin & Store Manager) -->
+          <div id="overview-funnel-section" class="space-y-3 pt-4 border-t border-[#E7E5E4]">
             <h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Corong Konversi Pelanggan (Funnel)</h3>
             <div class="space-y-2 text-xs">
               <div>
@@ -1673,8 +1730,8 @@
             </div>
           </div>
 
-          <!-- Alert Stok Menipis (<5) -->
-          <div class="space-y-3 pt-4 border-t border-[#E7E5E4]">
+          <!-- Alert Stok Menipis (<5) (Super Admin & Store Manager) -->
+          <div id="overview-low-stock-section" class="space-y-3 pt-4 border-t border-[#E7E5E4]">
             <h3 class="text-xs uppercase tracking-wider font-bold text-red-700">Peringatan Stok Varian Menipis (&lt; 5 Unit)</h3>
             <div id="overview-low-stock-container" class="space-y-1.5 text-xs">
               <!-- Populated dynamically -->
@@ -1746,14 +1803,19 @@
             </button>
           </div>
 
-          <!-- Filter Status Pesanan -->
-          <div class="flex flex-wrap gap-1.5 text-xs">
-            <button onclick="filterAdminOrders('')" id="ord-filter-all" class="px-3 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold">Semua</button>
-            <button onclick="filterAdminOrders('Menunggu Pembayaran')" id="ord-filter-waiting" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Menunggu</button>
-            <button onclick="filterAdminOrders('Verifikasi Pembayaran')" id="ord-filter-verify" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Verifikasi</button>
-            <button onclick="filterAdminOrders('Diproses')" id="ord-filter-proc" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Diproses</button>
-            <button onclick="filterAdminOrders('Dikirim')" id="ord-filter-ship" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Dikirim</button>
-            <button onclick="filterAdminOrders('Selesai')" id="ord-filter-done" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Selesai</button>
+          <!-- Pencarian & Filter Status Pesanan -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#FAFAF9] p-3 border border-[#E7E5E4]">
+            <div class="flex-1 max-w-sm">
+              <input type="text" id="admin-orders-search" placeholder="Cari invoice, nama pelanggan, WA, atau no. resi..." oninput="filterAdminOrdersSearch(this.value)" class="w-full px-3 py-2 bg-white border border-[#E7E5E4] text-xs focus:outline-none focus:border-[#1C1917]">
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <button onclick="filterAdminOrders('')" id="ord-filter-all" class="px-3 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold">Semua</button>
+              <button onclick="filterAdminOrders('Menunggu Pembayaran')" id="ord-filter-waiting" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Menunggu</button>
+              <button onclick="filterAdminOrders('Verifikasi Pembayaran')" id="ord-filter-verify" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Verifikasi</button>
+              <button onclick="filterAdminOrders('Diproses')" id="ord-filter-proc" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Diproses</button>
+              <button onclick="filterAdminOrders('Dikirim')" id="ord-filter-ship" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Dikirim</button>
+              <button onclick="filterAdminOrders('Selesai')" id="ord-filter-done" class="px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]">Selesai</button>
+            </div>
           </div>
 
           <!-- Tabel Pesanan -->
@@ -2561,14 +2623,44 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold text-[#57534E] mb-1">Batas Waktu Promo (YYYY-MM-DD HH:mm:ss)</label>
-              <input type="text" id="bundle-form-ends-at" required placeholder="2026-12-31 23:59:59" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-mono">
+          <!-- Pengaturan Tanggal & Waktu Terstruktur (Format dd:mm:yyyy, Tanpa Input Isian Teks) -->
+          <div class="space-y-3 p-3 bg-[#FAFAF9] border border-[#E7E5E4]">
+            <div class="flex items-center justify-between gap-2">
+              <label class="block font-semibold text-[#1C1917]">Batas Waktu Promo (dd:mm:yyyy HH:mm WIB)</label>
+              <div class="flex items-center gap-1.5">
+                <span id="bundle-ends-preview" class="px-2 py-0.5 bg-[#1C1917] text-[#FAFAF9] font-mono text-[11px] font-bold">31:12:2026 23:59</span>
+                <button type="button" onclick="openNativeCalendarPicker('bundle-ends')" title="Pilih dari Kalender" class="p-1.5 bg-white border border-[#E7E5E4] hover:border-[#1C1917] text-[#1C1917] flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </button>
+                <input type="date" id="bundle-ends-native" onchange="onNativeCalendarPick('bundle-ends', this.value, true)" class="sr-only" tabindex="-1">
+              </div>
+            </div>
+            <input type="hidden" id="bundle-form-ends-at" value="31:12:2026 23:59">
+            <div class="grid grid-cols-5 gap-1.5">
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Tgl (DD)</span>
+                <select id="bundle-ends-day" onchange="onStructuredDateChange('bundle-ends', true)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Bln (MM)</span>
+                <select id="bundle-ends-month" onchange="syncDatePickerDays('bundle-ends'); onStructuredDateChange('bundle-ends', true)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Thn (YYYY)</span>
+                <select id="bundle-ends-year" onchange="syncDatePickerDays('bundle-ends'); onStructuredDateChange('bundle-ends', true)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Jam (HH)</span>
+                <select id="bundle-ends-hour" onchange="onStructuredDateChange('bundle-ends', true)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Menit</span>
+                <select id="bundle-ends-minute" onchange="onStructuredDateChange('bundle-ends', true)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
             </div>
             <div>
               <label class="block font-semibold text-[#57534E] mb-1">Status Publikasi</label>
-              <select id="bundle-form-is-active" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-semibold">
+              <select id="bundle-form-is-active" class="w-full p-2 bg-white border border-[#E7E5E4] font-semibold">
                 <option value="true">Aktif (Tampil di Toko)</option>
                 <option value="false">Nonaktif (Draft / Berakhir)</option>
               </select>
@@ -2609,6 +2701,115 @@
             </button>
             <button type="submit" class="px-4 py-2 bg-[#1C1917] hover:bg-[#292524] text-white font-semibold min-h-[40px]">
               Simpan Paket Promo
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14B. ADMIN SHIPPING & RESI MODAL (#admin-shipping-modal) -->
+  <div id="admin-shipping-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="admin-shipping-modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 modal-backdrop transition-opacity" onclick="closeAdminShippingModal()"></div>
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+      <div class="relative transform overflow-hidden bg-[#FFFFFF] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-[#E7E5E4] p-6 space-y-4 animate-modal-enter">
+        <div class="flex items-center justify-between border-b border-[#E7E5E4] pb-3">
+          <div>
+            <h3 id="admin-shipping-modal-title" class="font-serif text-lg font-bold text-[#1C1917]">Kelola Resi & Status Pengiriman</h3>
+            <p id="shipping-modal-subtitle" class="text-[11px] font-mono text-[#57534E] mt-0.5">Invoice: -</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="hidden sm:inline-flex px-1.5 py-0.5 border border-[#E7E5E4] bg-[#FAFAF9] text-[10px] font-mono text-[#57534E]">ESC</span>
+            <button type="button" onclick="closeAdminShippingModal()" class="text-[#57534E] hover:text-[#1C1917] p-2 min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <form id="admin-shipping-form" onsubmit="saveOrderShippingAction(event, false)" class="space-y-3.5 text-xs">
+          <input type="hidden" id="ship-form-invoice">
+          <input type="hidden" id="ship-form-wa">
+          <input type="hidden" id="ship-form-cust-name">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Ekspedisi / Layanan Kurir</label>
+              <select id="ship-form-courier" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-semibold">
+                <option value="JNE Regular">JNE Regular</option>
+                <option value="JNE YES">JNE YES (Yakin Esok Sampai)</option>
+                <option value="SiCepat Regular">SiCepat Regular</option>
+                <option value="SiCepat BEST">SiCepat BEST</option>
+                <option value="J&T Express">J&amp;T Express</option>
+                <option value="AnterAja Regular">AnterAja Regular</option>
+                <option value="Paxel SameDay">Paxel SameDay / NextDay</option>
+                <option value="Pos Indonesia EMS">Pos Indonesia EMS / Domestik</option>
+                <option value="DHL Express International">DHL Express International</option>
+                <option value="FedEx International">FedEx International</option>
+                <option value="Kurir Internal Atelier">Kurir Internal Atelier</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-[#57534E] mb-1">Status Pengiriman Terkini</label>
+              <select id="ship-form-status" class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4] font-semibold">
+                <option value="Belum Dikirim">Belum Dikirim</option>
+                <option value="Menunggu Pick-up">Menunggu Pick-up Kurir</option>
+                <option value="Dalam Pengiriman">Dalam Pengiriman</option>
+                <option value="Transit Hub">Transit Hub Sortir</option>
+                <option value="Kurir Menuju Alamat">Kurir Menuju Alamat Penerima</option>
+                <option value="Terkirim">Terkirim (Selesaikan Pesanan)</option>
+                <option value="Kendala Pengiriman">Kendala Pengiriman</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">Nomor Resi Pengiriman (Airwaybill / Tracking No.)</label>
+            <input type="text" id="ship-form-tracking" placeholder="Contoh: JNE8821049210 atau SICEPAT004192883" class="w-full p-2.5 bg-[#FAFAF9] border border-[#E7E5E4] font-mono uppercase font-bold text-[#1C1917] tracking-wider">
+          </div>
+
+          <!-- Tanggal Kirim Terstruktur dd:mm:yyyy (Tanpa Input Teks) -->
+          <div class="space-y-2 p-3 bg-[#FAFAF9] border border-[#E7E5E4]">
+            <div class="flex items-center justify-between">
+              <label class="block font-semibold text-[#1C1917]">Tanggal Pengiriman (dd:mm:yyyy)</label>
+              <div class="flex items-center gap-1.5">
+                <span id="ship-date-preview" class="px-2 py-0.5 bg-[#1C1917] text-[#FAFAF9] font-mono text-[11px] font-bold">24:11:2026</span>
+                <button type="button" onclick="openNativeCalendarPicker('ship-date')" title="Pilih Tanggal dari Kalender" class="p-1.5 bg-white border border-[#E7E5E4] hover:border-[#1C1917] text-[#1C1917] flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </button>
+                <input type="date" id="ship-date-native" onchange="onNativeCalendarPick('ship-date', this.value, false)" class="sr-only" tabindex="-1">
+              </div>
+            </div>
+            <input type="hidden" id="ship-form-date" value="24:11:2026">
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Tanggal (DD)</span>
+                <select id="ship-date-day" onchange="onStructuredDateChange('ship-date', false)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Bulan (MM)</span>
+                <select id="ship-date-month" onchange="syncDatePickerDays('ship-date'); onStructuredDateChange('ship-date', false)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+              <div>
+                <span class="block text-[10px] font-mono text-[#57534E] mb-0.5">Tahun (YYYY)</span>
+                <select id="ship-date-year" onchange="syncDatePickerDays('ship-date'); onStructuredDateChange('ship-date', false)" class="w-full p-1.5 bg-white border border-[#E7E5E4] font-mono text-xs font-semibold"></select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#57534E] mb-1">Catatan Pengiriman / Lokasi Paket Terkini</label>
+            <textarea id="ship-form-notes" rows="2" placeholder="Contoh: Paket telah diserahkan ke gerai JNE Senopati, estimasi tiba 2 hari kerja." class="w-full p-2 bg-[#FAFAF9] border border-[#E7E5E4]"></textarea>
+          </div>
+
+          <div class="pt-3 border-t border-[#E7E5E4] flex flex-col sm:flex-row justify-end gap-2">
+            <button type="button" onclick="closeAdminShippingModal()" class="px-3 py-2 border border-[#E7E5E4] text-[#57534E] hover:bg-stone-100 font-semibold min-h-[40px]">
+              Batal
+            </button>
+            <button type="submit" id="ship-save-btn" class="px-4 py-2 bg-[#1C1917] text-white font-semibold uppercase tracking-wider hover:bg-[#292524] min-h-[40px]">
+              Simpan Resi
+            </button>
+            <button type="button" onclick="saveOrderShippingAction(event, true)" id="ship-save-wa-btn" class="px-4 py-2 bg-emerald-700 text-white font-semibold uppercase tracking-wider hover:bg-emerald-800 min-h-[40px]">
+              Simpan & Kirim WA
             </button>
           </div>
         </form>
@@ -3982,21 +4183,12 @@
   "orders": [
     {
       "invoice_no": "INV-202611-001",
-      "created_at": "2026-11-20 10:15:00",
+      "created_at": "18:11:2026 10:15",
       "customer_id": "CUST-0001",
       "customer_name": "Aditya Pratama",
       "whatsapp_no": "6281298765432",
       "items": [
-        {
-          "product_id": "PRD-001",
-          "variant_id": "VAR-0002",
-          "sku": "COAT-CML-M",
-          "name": "Mantel Wol Terstruktur Atelier",
-          "color": "Camel Hangat",
-          "size": "M",
-          "quantity": 1,
-          "base_price": 1250000
-        }
+        { "product_id": "PRD-001", "variant_id": "VAR-0002", "sku": "COAT-CML-M", "name": "Mantel Wol Terstruktur Atelier", "color": "Camel Hangat", "size": "M", "quantity": 1, "base_price": 1250000 }
       ],
       "subtotal": 1250000,
       "coupon_code": "WELCOME10",
@@ -4004,92 +4196,78 @@
       "shipping_method": "JNE Regular",
       "shipping_cost": 18000,
       "grand_total": 1143000,
-      "payment_proof_url": "",
-      "status": "Menunggu Pembayaran",
+      "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
+      "status": "Selesai",
       "shipping_zone": "JABODETABEK",
       "currency_code": "IDR",
       "exchange_rate": 1,
-      "utm_source": "instagram"
+      "utm_source": "instagram",
+      "tracking_number": "JNE8821049210",
+      "shipping_status": "Terkirim",
+      "shipped_at": "19:11:2026",
+      "shipping_notes": "Paket diterima langsung oleh Aditya di Kemang, Jakarta Selatan"
     },
     {
       "invoice_no": "INV-202611-002",
-      "created_at": "2026-11-21 14:30:00",
+      "created_at": "19:11:2026 14:30",
       "customer_id": "CUST-0002",
       "customer_name": "Clarissa Valerie",
       "whatsapp_no": "6281311223344",
       "items": [
-        {
-          "product_id": "PRD-002",
-          "variant_id": "VAR-0007",
-          "sku": "LNSH-WHT-M",
-          "name": "Kemeja Linen Santai Minimalis",
-          "color": "Putih Tulang",
-          "size": "M",
-          "quantity": 1,
-          "base_price": 420000
-        }
+        { "product_id": "PRD-002", "variant_id": "VAR-0007", "sku": "LNSH-WHT-M", "name": "Kemeja Linen Santai Minimalis", "color": "Putih Tulang", "size": "M", "quantity": 2, "base_price": 420000 }
       ],
-      "subtotal": 420000,
+      "subtotal": 840000,
       "coupon_code": "",
       "coupon_discount": 0,
       "shipping_method": "SiCepat Regular",
       "shipping_cost": 18000,
-      "grand_total": 438000,
+      "grand_total": 858000,
       "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
-      "status": "Verifikasi Pembayaran",
+      "status": "Selesai",
       "shipping_zone": "JABODETABEK",
       "currency_code": "IDR",
       "exchange_rate": 1,
-      "utm_source": "google"
+      "utm_source": "google",
+      "tracking_number": "SICEPAT009281741",
+      "shipping_status": "Terkirim",
+      "shipped_at": "20:11:2026",
+      "shipping_notes": "Diterima oleh resepsionis apartemen SCBD"
     },
     {
       "invoice_no": "INV-202611-003",
-      "created_at": "2026-11-22 09:12:00",
+      "created_at": "20:11:2026 09:12",
       "customer_id": "CUST-0003",
       "customer_name": "Jonathan Tan",
       "whatsapp_no": "6591234567",
       "items": [
-        {
-          "product_id": "PRD-003",
-          "variant_id": "VAR-0011",
-          "sku": "PLTD-SND-M",
-          "name": "Celana Lipit Wide-Leg Atelier",
-          "color": "Pasir Krem",
-          "size": "M",
-          "quantity": 1,
-          "base_price": 580000
-        }
+        { "product_id": "PRD-003", "variant_id": "VAR-0011", "sku": "PLTD-SND-M", "name": "Celana Lipit Wide-Leg Atelier", "color": "Pasir Krem", "size": "M", "quantity": 1, "base_price": 580000 },
+        { "product_id": "PRD-007", "variant_id": "VAR-0026", "sku": "LOAF-BLK-42", "name": "Sepatu Pantofel Kulit Minimalis", "color": "Hitam Matte", "size": "42", "quantity": 1, "base_price": 890000 }
       ],
-      "subtotal": 580000,
-      "coupon_code": "",
-      "coupon_discount": 0,
-      "shipping_method": "Pos Indonesia Express Mail Service (EMS)",
-      "shipping_cost": 120000,
-      "grand_total": 700000,
+      "subtotal": 1470000,
+      "coupon_code": "GLOBALSHIP",
+      "coupon_discount": 100000,
+      "shipping_method": "DHL Express International",
+      "shipping_cost": 180000,
+      "grand_total": 1550000,
       "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
-      "status": "Diproses",
+      "status": "Dikirim",
       "shipping_zone": "SEA_MY_SG",
       "currency_code": "SGD",
       "exchange_rate": 0.000085,
-      "utm_source": "facebook"
+      "utm_source": "facebook",
+      "tracking_number": "DHL992817264SG",
+      "shipping_status": "Transit Hub",
+      "shipped_at": "21:11:2026",
+      "shipping_notes": "Paket tiba di DHL Singapore Changi Hub, proses bea cukai selesai"
     },
     {
       "invoice_no": "INV-202611-004",
-      "created_at": "2026-11-23 16:45:00",
+      "created_at": "21:11:2026 16:45",
       "customer_id": "CUST-0004",
       "customer_name": "Sarah Wijaya",
       "whatsapp_no": "6281788990011",
       "items": [
-        {
-          "product_id": "PRD-008",
-          "variant_id": "VAR-0030",
-          "sku": "TOTE-TAN-M",
-          "name": "Tas Tote Kanvas Atelier",
-          "color": "Cokelat Pasir",
-          "size": "M",
-          "quantity": 1,
-          "base_price": 350000
-        }
+        { "product_id": "PRD-008", "variant_id": "VAR-0030", "sku": "TOTE-TAN-M", "name": "Tas Tote Kanvas Atelier", "color": "Cokelat Pasir", "size": "M", "quantity": 1, "base_price": 350000 }
       ],
       "subtotal": 350000,
       "coupon_code": "",
@@ -4102,7 +4280,115 @@
       "shipping_zone": "JAWA_BARAT",
       "currency_code": "IDR",
       "exchange_rate": 1,
-      "utm_source": "tiktok"
+      "utm_source": "tiktok",
+      "tracking_number": "JP7712904412",
+      "shipping_status": "Kurir Menuju Alamat",
+      "shipped_at": "22:11:2026",
+      "shipping_notes": "Kurir J&T Bandung Dago sedang menuju alamat penerima"
+    },
+    {
+      "invoice_no": "INV-202611-005",
+      "created_at": "22:11:2026 11:20",
+      "customer_id": "CUST-0001",
+      "customer_name": "Aditya Pratama",
+      "whatsapp_no": "6281298765432",
+      "items": [
+        { "product_id": "PRD-004", "variant_id": "VAR-0015", "sku": "KNIT-CHR-L", "name": "Sweter Rajut Merino Halus", "color": "Arang Gelap", "size": "L", "quantity": 2, "base_price": 540000 }
+      ],
+      "subtotal": 1080000,
+      "coupon_code": "HEMAT50K",
+      "coupon_discount": 50000,
+      "shipping_method": "SiCepat BEST",
+      "shipping_cost": 25000,
+      "grand_total": 1055000,
+      "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
+      "status": "Dikirim",
+      "shipping_zone": "JABODETABEK",
+      "currency_code": "IDR",
+      "exchange_rate": 1,
+      "utm_source": "instagram",
+      "tracking_number": "SICEPAT004192883",
+      "shipping_status": "Dalam Pengiriman",
+      "shipped_at": "23:11:2026",
+      "shipping_notes": "Paket telah keluar dari gudang sortir Jakarta Selatan"
+    },
+    {
+      "invoice_no": "INV-202611-006",
+      "created_at": "23:11:2026 13:05",
+      "customer_id": "CUST-0005",
+      "customer_name": "Nadia Kusuma",
+      "whatsapp_no": "6281590011223",
+      "items": [
+        { "product_id": "PRD-006", "variant_id": "VAR-0023", "sku": "BLZR-OLV-M", "name": "Blazer Potongan Santai Atelier", "color": "Zaitun Redup", "size": "M", "quantity": 1, "base_price": 780000 }
+      ],
+      "subtotal": 780000,
+      "coupon_code": "",
+      "coupon_discount": 0,
+      "shipping_method": "JNE YES",
+      "shipping_cost": 28000,
+      "grand_total": 808000,
+      "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
+      "status": "Diproses",
+      "shipping_zone": "JABODETABEK",
+      "currency_code": "IDR",
+      "exchange_rate": 1,
+      "utm_source": "google",
+      "tracking_number": "",
+      "shipping_status": "Menunggu Pick-up",
+      "shipped_at": "",
+      "shipping_notes": "Pesanan sedang dikemas dan melewati quality control atelier"
+    },
+    {
+      "invoice_no": "INV-202611-007",
+      "created_at": "24:11:2026 09:40",
+      "customer_id": "CUST-0006",
+      "customer_name": "Raka Mahendra",
+      "whatsapp_no": "6282133445566",
+      "items": [
+        { "product_id": "PRD-005", "variant_id": "VAR-0019", "sku": "HTEE-WHT-M", "name": "Kaos Katun Tebal Oversized", "color": "Putih Tulang", "size": "M", "quantity": 3, "base_price": 240000 }
+      ],
+      "subtotal": 720000,
+      "coupon_code": "WELCOME10",
+      "coupon_discount": 72000,
+      "shipping_method": "AnterAja Regular",
+      "shipping_cost": 16000,
+      "grand_total": 664000,
+      "payment_proof_url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
+      "status": "Verifikasi Pembayaran",
+      "shipping_zone": "JAWA_BALI",
+      "currency_code": "IDR",
+      "exchange_rate": 1,
+      "utm_source": "tiktok",
+      "tracking_number": "",
+      "shipping_status": "Belum Dikirim",
+      "shipped_at": "",
+      "shipping_notes": ""
+    },
+    {
+      "invoice_no": "INV-202611-008",
+      "created_at": "24:11:2026 15:10",
+      "customer_id": "CUST-0002",
+      "customer_name": "Clarissa Valerie",
+      "whatsapp_no": "6281311223344",
+      "items": [
+        { "product_id": "PRD-001", "variant_id": "VAR-0002", "sku": "COAT-CML-M", "name": "Mantel Wol Terstruktur Atelier", "color": "Camel Hangat", "size": "M", "quantity": 1, "base_price": 1250000 }
+      ],
+      "subtotal": 1250000,
+      "coupon_code": "",
+      "coupon_discount": 0,
+      "shipping_method": "Paxel SameDay",
+      "shipping_cost": 25000,
+      "grand_total": 1275000,
+      "payment_proof_url": "",
+      "status": "Menunggu Pembayaran",
+      "shipping_zone": "JABODETABEK",
+      "currency_code": "IDR",
+      "exchange_rate": 1,
+      "utm_source": "instagram",
+      "tracking_number": "",
+      "shipping_status": "Belum Dikirim",
+      "shipped_at": "",
+      "shipping_notes": ""
     }
   ],
   "customers": [
@@ -4110,28 +4396,28 @@
       "customer_id": "CUST-0001",
       "name": "Aditya Pratama",
       "whatsapp_no": "6281298765432",
-      "total_orders": 1,
-      "total_spent": 1143000,
-      "created_at": "2026-11-20 10:15:00",
-      "notes": "Pelanggan pertama promo newsletter"
+      "total_orders": 3,
+      "total_spent": 2198000,
+      "created_at": "18:11:2026 10:15",
+      "notes": "Pelanggan VIP reguler, menyukai potongan outerwear netral"
     },
     {
       "customer_id": "CUST-0002",
       "name": "Clarissa Valerie",
       "whatsapp_no": "6281311223344",
-      "total_orders": 1,
-      "total_spent": 438000,
-      "created_at": "2026-11-21 14:30:00",
-      "notes": "Prefensi warna monokrom netral"
+      "total_orders": 2,
+      "total_spent": 2133000,
+      "created_at": "19:11:2026 14:30",
+      "notes": "Repeat customer, preferensi warna putih tulang dan camel"
     },
     {
       "customer_id": "CUST-0003",
       "name": "Jonathan Tan",
       "whatsapp_no": "6591234567",
       "total_orders": 1,
-      "total_spent": 700000,
-      "created_at": "2026-11-22 09:12:00",
-      "notes": "Pelanggan internasional Singapura"
+      "total_spent": 1550000,
+      "created_at": "20:11:2026 09:12",
+      "notes": "Pelanggan internasional Singapura (DHL Express)"
     },
     {
       "customer_id": "CUST-0004",
@@ -4139,8 +4425,26 @@
       "whatsapp_no": "6281788990011",
       "total_orders": 1,
       "total_spent": 372000,
-      "created_at": "2026-11-23 16:45:00",
-      "notes": "Pengiriman via J&T resi aktif"
+      "created_at": "21:11:2026 16:45",
+      "notes": "Pengiriman via J&T resi aktif JP7712904412"
+    },
+    {
+      "customer_id": "CUST-0005",
+      "name": "Nadia Kusuma",
+      "whatsapp_no": "6281590011223",
+      "total_orders": 2,
+      "total_spent": 1348000,
+      "created_at": "23:11:2026 13:05",
+      "notes": "Repeat customer, sering memesan blazer formal"
+    },
+    {
+      "customer_id": "CUST-0006",
+      "name": "Raka Mahendra",
+      "whatsapp_no": "6282133445566",
+      "total_orders": 1,
+      "total_spent": 664000,
+      "created_at": "24:11:2026 09:40",
+      "notes": "Pelanggan baru dari kampanye TikTok"
     }
   ],
   "returns": [
@@ -4151,7 +4455,25 @@
       "reason": "Tukar Ukuran",
       "requested_size": "L",
       "status": "Diajukan",
-      "admin_notes": "Menunggu konfirmasi kedatangan barang di studio atelier"
+      "admin_notes": ""
+    },
+    {
+      "return_id": "RTR-202611-002",
+      "invoice_no": "INV-202611-002",
+      "customer_name": "Clarissa Valerie",
+      "reason": "Tukar Warna",
+      "requested_size": "M",
+      "status": "Disetujui",
+      "admin_notes": "Disetujui untuk penukaran warna zaitun"
+    },
+    {
+      "return_id": "RTR-202611-003",
+      "invoice_no": "INV-202611-004",
+      "customer_name": "Sarah Wijaya",
+      "reason": "Kemasan Kurir Penyok",
+      "requested_size": "M",
+      "status": "Selesai",
+      "admin_notes": "Penggantian kotak kemasan selesai dikirim"
     }
   ],
   "auditLogs": [
@@ -5369,36 +5691,186 @@ const AppState = {
           if (pin === MockDB.settings.PIN_CUSTOMER_SERVICE) return { success: true, role: 'Customer Service' };
           return { success: false, message: 'PIN otorisasi tidak valid' };
 
-        case 'getAdminDashboard':
+        case 'getAdminDashboard': {
+          const reqRole = args[0] || (AppState.adminUser ? AppState.adminUser.role : 'Super Admin');
+          const baseRole = String(reqRole).split('(')[0].trim();
+          const isCS = baseRole === 'Customer Service';
+          const isManager = baseRole === 'Store Manager';
+
+          const statusBreakdown = {
+            'Menunggu Pembayaran': 0,
+            'Verifikasi Pembayaran': 0,
+            'Diproses': 0,
+            'Dikirim': 0,
+            'Selesai': 0,
+            'Dibatalkan': 0
+          };
+          const shippingBreakdown = {
+            'Belum Dikirim': 0,
+            'Menunggu Pick-up': 0,
+            'Dalam Pengiriman': 0,
+            'Transit Hub': 0,
+            'Kurir Menuju Alamat': 0,
+            'Terkirim': 0,
+            'Kendala Pengiriman': 0
+          };
+          const catMap = {};
+          (MockDB.products || []).forEach(p => { catMap[p.id] = p.category || 'Lainnya'; });
+          const categorySales = {
+            'Outerwear': { revenue: 0, units: 0 },
+            'Tops': { revenue: 0, units: 0 },
+            'Bottoms': { revenue: 0, units: 0 },
+            'Footwear': { revenue: 0, units: 0 },
+            'Accessories': { revenue: 0, units: 0 }
+          };
+
+          let totalRev = 0;
+          let revOrdCount = 0;
+          let activeShipments = 0;
+          let pendingVerification = 0;
+          const dailyMap = {};
+
+          (MockDB.orders || []).forEach(o => {
+            const st = o.status || 'Menunggu Pembayaran';
+            if (statusBreakdown[st] !== undefined) statusBreakdown[st]++;
+            const shSt = o.shipping_status || (st === 'Selesai' ? 'Terkirim' : (st === 'Dikirim' ? 'Dalam Pengiriman' : 'Belum Dikirim'));
+            if (shippingBreakdown[shSt] !== undefined) shippingBreakdown[shSt]++;
+            if (st === 'Verifikasi Pembayaran' || st === 'Menunggu Pembayaran') pendingVerification++;
+            if (st === 'Dikirim') activeShipments++;
+
+            const isRev = (st === 'Selesai' || st === 'Diproses' || st === 'Dikirim');
+            if (isRev) {
+              totalRev += (o.grand_total || 0);
+              revOrdCount++;
+            }
+
+            const dObj = parseFlexibleDate(o.created_at);
+            const isoKey = dObj ? (dObj.getFullYear() + '-' + ('0' + (dObj.getMonth() + 1)).slice(-2) + '-' + ('0' + dObj.getDate()).slice(-2)) : '2026-11-24';
+            const dispKey = formatDateDDMMYYYY(o.created_at);
+            if (!dailyMap[isoKey]) dailyMap[isoKey] = { date_iso: isoKey, date_display: dispKey, revenue: 0, orders: 0, custs: new Set() };
+            dailyMap[isoKey].orders += 1;
+            if (isRev) dailyMap[isoKey].revenue += (o.grand_total || 0);
+            if (o.customer_id || o.customer_name) dailyMap[isoKey].custs.add(o.customer_id || o.customer_name);
+
+            (o.items || []).forEach(it => {
+              if (isRev) {
+                const cat = catMap[it.product_id] || 'Outerwear';
+                if (!categorySales[cat]) categorySales[cat] = { revenue: 0, units: 0 };
+                const qty = parseInt(it.quantity, 10) || 1;
+                const price = parseFloat(it.base_price || it.price) || 0;
+                categorySales[cat].units += qty;
+                categorySales[cat].revenue += (price * qty);
+              }
+            });
+          });
+
+          const seriesDaily = Object.keys(dailyMap).sort().map(k => ({
+            date_iso: dailyMap[k].date_iso,
+            date_display: dailyMap[k].date_display,
+            revenue: isCS ? null : dailyMap[k].revenue,
+            orders: dailyMap[k].orders,
+            customers: dailyMap[k].custs.size
+          }));
+
+          let lowStockCount = 0;
+          (MockDB.products || []).forEach(p => (p.variants || []).forEach(v => { if ((v.stock || 0) < 5) lowStockCount++; }));
+
+          let newCust = 0, repeatCust = 0, vipCust = 0;
+          (MockDB.customers || []).forEach(c => {
+            if ((c.total_spent || 0) >= 2000000 || (c.total_orders || 0) >= 3) vipCust++;
+            else if ((c.total_orders || 0) >= 2) repeatCust++;
+            else newCust++;
+          });
+
+          const returnsBreakdown = { 'Diajukan': 0, 'Disetujui': 0, 'Selesai': 0, 'Ditolak': 0 };
+          (MockDB.returns || []).forEach(r => { if (returnsBreakdown[r.status] !== undefined) returnsBreakdown[r.status]++; });
+
+          const aov = revOrdCount > 0 ? Math.round(totalRev / revOrdCount) : 0;
+
+          if (isCS) {
+            Object.keys(categorySales).forEach(c => { categorySales[c].revenue = null; });
+          }
+
           return {
             success: true,
+            role_scope: baseRole,
             kpis: {
-              revenue: MockDB.orders.reduce((sum, o) => sum + (o.grand_total || 0), 0),
+              revenue: isCS ? null : totalRev,
+              aov: isCS ? null : aov,
               orders_count: MockDB.orders.length,
-              customers_count: MockDB.customers.length,
-              returns_count: MockDB.returns.filter(r => r.status === 'Diajukan').length
+              customers_count: isManager ? null : MockDB.customers.length,
+              returns_count: MockDB.returns.filter(r => r.status === 'Diajukan').length,
+              active_shipments: activeShipments,
+              pending_verification: pendingVerification,
+              low_stock_count: lowStockCount
             },
+            series_daily: seriesDaily,
+            status_breakdown: statusBreakdown,
+            shipping_breakdown: shippingBreakdown,
+            category_sales: isCS ? null : categorySales,
+            customer_segments: isManager ? null : {
+              new_customers: newCust,
+              repeat_customers: repeatCust,
+              vip_customers: vipCust,
+              total_customers: MockDB.customers.length
+            },
+            returns_breakdown: returnsBreakdown,
             funnel: MockDB.funnel,
-            recent_orders: MockDB.orders.slice(0, 5)
+            recent_orders: MockDB.orders.slice(0, 8)
           };
+        }
 
         case 'getOrders':
           return { success: true, orders: MockDB.orders };
 
-        case 'updateOrderStatus':
+        case 'updateOrderStatus': {
           const oInv = args[0];
           const newSt = args[1];
           const manOngkir = args[2];
           const ord = MockDB.orders.find(o => o.invoice_no === oInv);
           if (ord) {
-            ord.status = newSt;
+            if (newSt) {
+              ord.status = newSt;
+              if (newSt === 'Selesai') ord.shipping_status = 'Terkirim';
+              if (newSt === 'Diproses' && (!ord.shipping_status || ord.shipping_status === 'Belum Dikirim')) ord.shipping_status = 'Menunggu Pick-up';
+            }
             if (manOngkir !== undefined && manOngkir !== null && manOngkir !== '') {
               ord.shipping_cost = parseInt(manOngkir, 10);
-              ord.grand_total = ord.subtotal - ord.coupon_discount + ord.shipping_cost;
+              ord.grand_total = Math.max(0, ord.subtotal - (ord.coupon_discount || 0) + ord.shipping_cost);
             }
             return { success: true, order: ord };
           }
           return { success: false, message: 'Pesanan tidak ditemukan' };
+        }
+
+        case 'updateOrderShipping': {
+          const sInv = args[0];
+          const payload = args[1] || {};
+          const role = args[2] || (AppState.adminUser ? AppState.adminUser.role : 'Super Admin');
+          const ord = MockDB.orders.find(o => o.invoice_no === sInv);
+          if (ord) {
+            if (payload.shipping_method) ord.shipping_method = payload.shipping_method;
+            ord.tracking_number = String(payload.tracking_number || '').trim().toUpperCase();
+            ord.shipping_status = payload.shipping_status || 'Dalam Pengiriman';
+            ord.shipped_at = payload.shipped_at || formatDateDDMMYYYY(new Date());
+            ord.shipping_notes = payload.shipping_notes || '';
+            if (payload.auto_update_status !== false) {
+              if (ord.shipping_status === 'Terkirim') {
+                ord.status = 'Selesai';
+              } else if (ord.tracking_number && (ord.status === 'Diproses' || ord.status === 'Verifikasi Pembayaran' || ord.status === 'Menunggu Pembayaran')) {
+                ord.status = 'Dikirim';
+              }
+            }
+            MockDB.auditLogs.unshift({
+              timestamp: formatDateTimeDDMMYYYY(new Date()),
+              actor_role: role,
+              module: 'Orders',
+              action_detail: 'Resi ' + sInv + ' diperbarui: ' + ord.shipping_method + ' (' + (ord.tracking_number || '-') + ') | ' + ord.shipping_status
+            });
+            return { success: true, order: ord, status: ord.status, tracking_number: ord.tracking_number, shipping_status: ord.shipping_status };
+          }
+          return { success: false, message: 'Pesanan tidak ditemukan' };
+        }
 
         case 'uploadBundleImage': {
           const base64Data = args[0] || '';
@@ -7861,6 +8333,33 @@ const AppState = {
         }
       }
 
+      // Render Shipping & Tracking Card if available
+      const shipCard = document.getElementById('tracker-shipping-card');
+      if (shipCard) {
+        const hasShipInfo = Boolean(order.tracking_number || order.status === 'Dikirim' || order.status === 'Selesai');
+        if (hasShipInfo) {
+          shipCard.classList.remove('hidden');
+          const sStatus = order.shipping_status || (order.status === 'Selesai' ? 'Terkirim' : 'Dalam Pengiriman');
+          document.getElementById('tracker-ship-status-badge').textContent = sStatus;
+          document.getElementById('tracker-ship-courier').textContent = order.shipping_method || 'Kurir Standar';
+          document.getElementById('tracker-ship-date').textContent = order.shipped_at ? formatDateDDMMYYYY(order.shipped_at) : formatDateDDMMYYYY(order.created_at);
+          document.getElementById('tracker-ship-resi').textContent = order.tracking_number || 'Menunggu Input Resi';
+          const copyBtn = document.getElementById('tracker-copy-resi-btn');
+          if (copyBtn) copyBtn.classList.toggle('hidden', !order.tracking_number);
+          const notesEl = document.getElementById('tracker-ship-notes');
+          if (notesEl) {
+            if (order.shipping_notes) {
+              notesEl.textContent = 'Catatan Kurir: ' + order.shipping_notes;
+              notesEl.classList.remove('hidden');
+            } else {
+              notesEl.classList.add('hidden');
+            }
+          }
+        } else {
+          shipCard.classList.add('hidden');
+        }
+      }
+
       // Render Order Items
       const itemsList = document.getElementById('tracker-items-list');
       const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
@@ -8279,8 +8778,15 @@ const AppState = {
     function startCountdownTimer() {
       function updateTimer() {
         const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const diff = Math.max(0, tomorrow - now);
+        let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const activeBundles = (AppState.campaigns && AppState.campaigns.bundles ? AppState.campaigns.bundles : []).filter(b => b.is_active === true || String(b.is_active).toUpperCase() === 'TRUE');
+        if (activeBundles.length > 0 && activeBundles[0].ends_at) {
+          const parsedEnd = parseFlexibleDate(activeBundles[0].ends_at);
+          if (parsedEnd && parsedEnd.getTime() > now.getTime()) {
+            targetDate = parsedEnd;
+          }
+        }
+        const diff = Math.max(0, targetDate - now);
 
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -8537,18 +9043,601 @@ const AppState = {
       }
     }
 
-    function loadAdminOverview() {
-      return callApi('getAdminDashboard').then(res => {
-        if (res && res.success) {
-          document.getElementById('kpi-revenue').textContent = formatMoney(res.kpis.revenue, 'IDR');
-          document.getElementById('kpi-orders-count').textContent = res.kpis.orders_count;
-          document.getElementById('kpi-customers-count').textContent = res.kpis.customers_count;
-          document.getElementById('kpi-returns-count').textContent = res.kpis.returns_count;
+    // === UNIVERSAL DATE & TIME UTILITIES (STANDARD dd:mm:yyyy, ZERO FREE-TEXT) ===
+    const MONTH_NAMES_ID = ['01 - Jan', '02 - Feb', '03 - Mar', '04 - Apr', '05 - Mei', '06 - Jun', '07 - Jul', '08 - Agu', '09 - Sep', '10 - Okt', '11 - Nov', '12 - Des'];
 
-          // Low stock alerts
-          const lowStockContainer = document.getElementById('overview-low-stock-container');
+    function parseFlexibleDate(raw) {
+      if (!raw) return null;
+      if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+      const str = String(raw).trim();
+      if (!str) return null;
+      // Match dd:mm:yyyy [HH:mm[:ss]] or dd/mm/yyyy or dd-mm-yyyy
+      const mDmy = str.match(/^(\d{1,2})[:\/-](\d{1,2})[:\/-](\d{4})(?:[\sT](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+      if (mDmy) {
+        const d = parseInt(mDmy[1], 10), m = parseInt(mDmy[2], 10) - 1, y = parseInt(mDmy[3], 10);
+        const hh = mDmy[4] ? parseInt(mDmy[4], 10) : 0;
+        const mm = mDmy[5] ? parseInt(mDmy[5], 10) : 0;
+        const ss = mDmy[6] ? parseInt(mDmy[6], 10) : 0;
+        return new Date(y, m, d, hh, mm, ss);
+      }
+      // Match yyyy-mm-dd [HH:mm[:ss]]
+      const mYmd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[\sT](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+      if (mYmd) {
+        const y = parseInt(mYmd[1], 10), m = parseInt(mYmd[2], 10) - 1, d = parseInt(mYmd[3], 10);
+        const hh = mYmd[4] ? parseInt(mYmd[4], 10) : 0;
+        const mm = mYmd[5] ? parseInt(mYmd[5], 10) : 0;
+        const ss = mYmd[6] ? parseInt(mYmd[6], 10) : 0;
+        return new Date(y, m, d, hh, mm, ss);
+      }
+      const fallback = new Date(str);
+      return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    function formatDateDDMMYYYY(raw) {
+      const dt = parseFlexibleDate(raw);
+      if (!dt) return '-';
+      const dd = ('0' + dt.getDate()).slice(-2);
+      const mm = ('0' + (dt.getMonth() + 1)).slice(-2);
+      const yyyy = dt.getFullYear();
+      return dd + ':' + mm + ':' + yyyy;
+    }
+
+    function formatDateTimeDDMMYYYY(raw) {
+      const dt = parseFlexibleDate(raw);
+      if (!dt) return '-';
+      const dd = ('0' + dt.getDate()).slice(-2);
+      const mm = ('0' + (dt.getMonth() + 1)).slice(-2);
+      const yyyy = dt.getFullYear();
+      const hh = ('0' + dt.getHours()).slice(-2);
+      const min = ('0' + dt.getMinutes()).slice(-2);
+      return dd + ':' + mm + ':' + yyyy + ' ' + hh + ':' + min;
+    }
+
+    function initDatePickerSelects(prefix, withTime) {
+      const daySel = document.getElementById(prefix + '-day');
+      const monthSel = document.getElementById(prefix + '-month');
+      const yearSel = document.getElementById(prefix + '-year');
+      if (!daySel || !monthSel || !yearSel) return;
+
+      if (!monthSel.options || monthSel.options.length === 0) {
+        MONTH_NAMES_ID.forEach((label, idx) => {
+          const opt = document.createElement('option');
+          opt.value = ('0' + (idx + 1)).slice(-2);
+          opt.textContent = label;
+          monthSel.appendChild(opt);
+        });
+      }
+      if (!yearSel.options || yearSel.options.length === 0) {
+        for (let y = 2025; y <= 2032; y++) {
+          const opt = document.createElement('option');
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearSel.appendChild(opt);
+        }
+      }
+      if (!daySel.options || daySel.options.length === 0) {
+        for (let d = 1; d <= 31; d++) {
+          const opt = document.createElement('option');
+          opt.value = ('0' + d).slice(-2);
+          opt.textContent = ('0' + d).slice(-2);
+          daySel.appendChild(opt);
+        }
+      }
+      if (withTime) {
+        const hourSel = document.getElementById(prefix + '-hour');
+        const minSel = document.getElementById(prefix + '-minute');
+        if (hourSel && (!hourSel.options || hourSel.options.length === 0)) {
+          for (let h = 0; h <= 23; h++) {
+            const opt = document.createElement('option');
+            opt.value = ('0' + h).slice(-2);
+            opt.textContent = ('0' + h).slice(-2);
+            hourSel.appendChild(opt);
+          }
+        }
+        if (minSel && (!minSel.options || minSel.options.length === 0)) {
+          for (let m = 0; m <= 59; m++) {
+            const opt = document.createElement('option');
+            opt.value = ('0' + m).slice(-2);
+            opt.textContent = ('0' + m).slice(-2);
+            minSel.appendChild(opt);
+          }
+        }
+      }
+    }
+
+    function syncDatePickerDays(prefix) {
+      const daySel = document.getElementById(prefix + '-day');
+      const monthSel = document.getElementById(prefix + '-month');
+      const yearSel = document.getElementById(prefix + '-year');
+      if (!daySel || !monthSel || !yearSel) return;
+      const m = parseInt(monthSel.value, 10) || 1;
+      const y = parseInt(yearSel.value, 10) || 2026;
+      const maxDays = new Date(y, m, 0).getDate();
+      const currentDay = Math.min(parseInt(daySel.value, 10) || 1, maxDays);
+      daySel.innerHTML = '';
+      for (let d = 1; d <= maxDays; d++) {
+        const opt = document.createElement('option');
+        opt.value = ('0' + d).slice(-2);
+        opt.textContent = ('0' + d).slice(-2);
+        daySel.appendChild(opt);
+      }
+      daySel.value = ('0' + currentDay).slice(-2);
+    }
+
+    function setStructuredDateTime(prefix, rawVal, withTime) {
+      initDatePickerSelects(prefix, withTime);
+      const dt = parseFlexibleDate(rawVal) || new Date(2026, 11, 31, 23, 59, 0);
+      const y = String(dt.getFullYear());
+      const m = ('0' + (dt.getMonth() + 1)).slice(-2);
+      const d = ('0' + dt.getDate()).slice(-2);
+      const hh = ('0' + dt.getHours()).slice(-2);
+      const min = ('0' + dt.getMinutes()).slice(-2);
+
+      const yearSel = document.getElementById(prefix + '-year');
+      const monthSel = document.getElementById(prefix + '-month');
+      const daySel = document.getElementById(prefix + '-day');
+      if (yearSel) yearSel.value = y;
+      if (monthSel) monthSel.value = m;
+      syncDatePickerDays(prefix);
+      if (daySel) daySel.value = d;
+
+      if (withTime) {
+        const hourSel = document.getElementById(prefix + '-hour');
+        const minSel = document.getElementById(prefix + '-minute');
+        if (hourSel) hourSel.value = hh;
+        if (minSel) minSel.value = min;
+      }
+      onStructuredDateChange(prefix, withTime);
+    }
+
+    function onStructuredDateChange(prefix, withTime) {
+      const daySel = document.getElementById(prefix + '-day');
+      const monthSel = document.getElementById(prefix + '-month');
+      const yearSel = document.getElementById(prefix + '-year');
+      if (!daySel || !monthSel || !yearSel) return;
+
+      const dd = daySel.value || '01';
+      const mm = monthSel.value || '01';
+      const yyyy = yearSel.value || '2026';
+      let formatted = dd + ':' + mm + ':' + yyyy;
+
+      if (withTime) {
+        const hh = (document.getElementById(prefix + '-hour') || {}).value || '23';
+        const min = (document.getElementById(prefix + '-minute') || {}).value || '59';
+        formatted += ' ' + hh + ':' + min;
+      }
+
+      const hiddenId = prefix === 'bundle-ends' ? 'bundle-form-ends-at' : 'ship-form-date';
+      const hiddenEl = document.getElementById(hiddenId);
+      if (hiddenEl) hiddenEl.value = formatted;
+
+      const previewEl = document.getElementById(prefix + '-preview');
+      if (previewEl) previewEl.textContent = formatted;
+
+      const nativeEl = document.getElementById(prefix + '-native');
+      if (nativeEl) nativeEl.value = yyyy + '-' + mm + '-' + dd;
+    }
+
+    function onNativeCalendarPick(prefix, isoVal, withTime) {
+      if (!isoVal) return;
+      const parts = isoVal.split('-');
+      if (parts.length !== 3) return;
+      const yearSel = document.getElementById(prefix + '-year');
+      const monthSel = document.getElementById(prefix + '-month');
+      const daySel = document.getElementById(prefix + '-day');
+      if (yearSel) yearSel.value = parts[0];
+      if (monthSel) monthSel.value = parts[1];
+      syncDatePickerDays(prefix);
+      if (daySel) daySel.value = parts[2];
+      onStructuredDateChange(prefix, withTime);
+    }
+
+    function openNativeCalendarPicker(prefix) {
+      const nativeEl = document.getElementById(prefix + '-native');
+      if (!nativeEl) return;
+      try {
+        if (typeof nativeEl.showPicker === 'function') {
+          nativeEl.showPicker();
+        } else {
+          nativeEl.focus();
+          nativeEl.click();
+        }
+      } catch (e) {
+        nativeEl.focus();
+      }
+    }
+
+    // === RBAC-AWARE OVERVIEW & INTERACTIVE SVG CHARTS ENGINE ===
+    let currentOverviewPeriod = '7d';
+    let currentOverviewDonutMode = 'order';
+    let lastOverviewData = null;
+
+    function setOverviewPeriod(period) {
+      currentOverviewPeriod = period;
+      ['7d', '30d', 'all'].forEach(p => {
+        const btn = document.getElementById('ov-period-' + p);
+        if (btn) {
+          btn.className = p === period
+            ? 'px-2.5 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold text-[11px] min-h-[36px]'
+            : 'px-2.5 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917] text-[11px] min-h-[36px]';
+        }
+      });
+      if (lastOverviewData) renderOverviewDashboard(lastOverviewData);
+    }
+
+    function setOverviewDonutMode(mode) {
+      currentOverviewDonutMode = mode;
+      if (lastOverviewData) renderOverviewDashboard(lastOverviewData);
+    }
+
+    function loadAdminOverview() {
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      return callApi('getAdminDashboard', role).then(res => {
+        if (res && res.success) {
+          lastOverviewData = res;
+          renderOverviewDashboard(res);
+        }
+      });
+    }
+
+    function buildComboRevenueOrdersSVG(series) {
+      if (!series || series.length === 0) {
+        return '<div class="p-6 text-center text-xs text-stone-400">Belum ada data transaksi pada periode ini.</div>';
+      }
+      const W = 520, H = 200, padL = 48, padR = 16, padT = 20, padB = 34;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+      const maxRev = Math.max(100000, ...series.map(d => d.revenue || 0));
+      const maxOrd = Math.max(2, ...series.map(d => d.orders || 0));
+      const stepX = plotW / Math.max(1, series.length);
+      const barW = Math.max(14, Math.min(34, stepX * 0.52));
+
+      // Grid lines
+      let gridLines = '';
+      for (let g = 0; g <= 3; g++) {
+        const y = padT + (plotH * g / 3);
+        const val = Math.round(maxRev * (1 - g / 3));
+        const label = val >= 1000000 ? (val / 1000000).toFixed(1) + 'jt' : (val >= 1000 ? Math.round(val / 1000) + 'rb' : String(val));
+        gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="#E7E5E4" stroke-dasharray="3,3" stroke-width="1"/>';
+        gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" fill="#78716C" font-size="9" font-family="monospace">' + label + '</text>';
+      }
+
+      // Bars for Revenue & Line points for Orders
+      let bars = '';
+      let linePts = [];
+      let dots = '';
+      let xLabels = '';
+
+      series.forEach((d, idx) => {
+        const cx = padL + idx * stepX + stepX / 2;
+        const revH = Math.max(2, ((d.revenue || 0) / maxRev) * plotH);
+        const barY = padT + plotH - revH;
+        const ordY = padT + plotH - (((d.orders || 0) / maxOrd) * plotH * 0.85);
+        linePts.push(cx.toFixed(1) + ',' + ordY.toFixed(1));
+
+        const tooltipText = d.date_display + ' | Omzet: ' + formatMoney(d.revenue || 0, 'IDR') + ' | ' + d.orders + ' Pesanan';
+        bars += '<g class="cursor-pointer group">' +
+          '<rect x="' + (cx - barW / 2).toFixed(1) + '" y="' + barY.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + revH.toFixed(1) + '" fill="#1C1917" opacity="0.88" rx="1.5">' +
+          '<title>' + tooltipText + '</title></rect></g>';
+
+        dots += '<circle cx="' + cx.toFixed(1) + '" cy="' + ordY.toFixed(1) + '" r="4" fill="#C2410C" stroke="#FFFFFF" stroke-width="1.5"><title>' + tooltipText + '</title></circle>';
+        const shortDay = d.date_display.slice(0, 5);
+        xLabels += '<text x="' + cx.toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#57534E" font-size="9" font-family="monospace">' + shortDay + '</text>';
+      });
+
+      const polyline = linePts.length > 1
+        ? '<polyline fill="none" stroke="#C2410C" stroke-width="2" points="' + linePts.join(' ') + '"/>'
+        : '';
+
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full h-auto overflow-visible" role="img" aria-label="Grafik Tren Omzet dan Volume Pesanan">' +
+        gridLines + bars + polyline + dots + xLabels + '</svg>';
+    }
+
+    function buildDonutSVG(entries, centerLabel) {
+      const total = entries.reduce((s, e) => s + e.value, 0);
+      if (total === 0) {
+        return '<div class="p-6 text-center text-xs text-stone-400">Belum ada data untuk ditampilkan.</div>';
+      }
+      const size = 156, cx = 78, cy = 78, r = 56, strokeW = 20;
+      const circ = 2 * Math.PI * r;
+      let offset = 0;
+      let segments = '';
+
+      entries.forEach(e => {
+        if (e.value <= 0) return;
+        const pct = e.value / total;
+        const dash = pct * circ;
+        segments += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="transparent" stroke="' + e.color + '" stroke-width="' + strokeW + '" stroke-dasharray="' + dash.toFixed(2) + ' ' + (circ - dash).toFixed(2) + '" stroke-dashoffset="' + (-offset).toFixed(2) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"><title>' + e.label + ': ' + e.value + ' (' + Math.round(pct * 100) + '%)</title></circle>';
+        offset += dash;
+      });
+
+      const svg = '<svg viewBox="0 0 ' + size + ' ' + size + '" class="w-36 h-36 shrink-0" role="img" aria-label="Grafik Distribusi">' +
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="transparent" stroke="#E7E5E4" stroke-width="' + strokeW + '"/>' +
+        segments +
+        '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" fill="#1C1917" font-size="20" font-weight="700" font-family="Georgia,serif">' + total + '</text>' +
+        '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" fill="#57534E" font-size="9" font-family="monospace">' + centerLabel + '</text>' +
+        '</svg>';
+
+      const legend = '<div class="flex-1 space-y-1.5 text-xs">' + entries.map(e => {
+        const pct = total > 0 ? Math.round((e.value / total) * 100) : 0;
+        return '<div class="flex items-center justify-between gap-2">' +
+          '<div class="flex items-center gap-2 min-w-0">' +
+            '<span class="w-2.5 h-2.5 shrink-0" style="background:' + e.color + '"></span>' +
+            '<span class="text-[#1C1917] truncate">' + e.label + '</span>' +
+          '</div>' +
+          '<span class="font-mono font-bold text-[#1C1917] shrink-0">' + e.value + ' <span class="text-[#78716C] font-normal">(' + pct + '%)</span></span>' +
+        '</div>';
+      }).join('') + '</div>';
+
+      return '<div class="flex flex-col sm:flex-row items-center gap-4">' + svg + legend + '</div>';
+    }
+
+    function buildHorizontalBarList(items, valueFormatter) {
+      const maxVal = Math.max(1, ...items.map(i => i.value || 0));
+      return '<div class="space-y-2.5">' + items.map(item => {
+        const pct = Math.round(((item.value || 0) / maxVal) * 100);
+        return '<div>' +
+          '<div class="flex justify-between text-[11px] mb-1">' +
+            '<span class="font-semibold text-[#1C1917]">' + item.label + '</span>' +
+            '<span class="font-mono font-bold text-[#1C1917]">' + valueFormatter(item) + '</span>' +
+          '</div>' +
+          '<div class="w-full h-2.5 bg-[#FAFAF9] border border-[#E7E5E4] overflow-hidden">' +
+            '<div class="h-full transition-all duration-500" style="width:' + Math.max(pct, item.value > 0 ? 4 : 0) + '%; background:' + (item.color || '#1C1917') + '"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+    }
+
+    function renderOverviewDashboard(res) {
+      const roleStr = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      const baseRole = String(roleStr).split('(')[0].trim();
+      const isCS = baseRole === 'Customer Service';
+      const isManager = baseRole === 'Store Manager';
+      const kpis = res.kpis || {};
+
+      // 1. Update RBAC Scope Header
+      const badgeEl = document.getElementById('overview-rbac-scope-badge');
+      const descEl = document.getElementById('overview-rbac-scope-desc');
+      if (badgeEl) {
+        badgeEl.textContent = isCS ? 'Customer Service (Layanan & Resi)' : (isManager ? 'Store Manager (Komersial & Stok)' : 'Super Admin (Eksekutif Penuh)');
+        badgeEl.className = 'px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ' +
+          (isCS ? 'bg-blue-800 text-white' : (isManager ? 'bg-[#C2410C] text-white' : 'bg-[#1C1917] text-[#FAFAF9]'));
+      }
+      if (descEl) {
+        descEl.textContent = isCS
+          ? 'Tampilan khusus operasional verifikasi pembayaran, pelacakan resi pengiriman, pelanggan, dan SLA retur (data omzet finansial disamarkan sesuai RBAC).'
+          : (isManager
+              ? 'Tampilan komersial omzet, performa kategori busana, konversi etalase, dan kesehatan inventaris stok (data PII direktori pelanggan dibatasi sesuai RBAC).'
+              : 'Tampilan eksekutif penuh mencakup tren omzet finansial, volume pesanan, status pengiriman, segmen pelanggan, kategori busana, dan retur.');
+      }
+
+      // 2. Render Role-Scoped KPI Cards
+      const kpiGrid = document.getElementById('overview-kpi-grid');
+      if (kpiGrid) {
+        let cards = [];
+        if (isCS) {
+          cards = [
+            { label: 'Perlu Verifikasi Bayar', val: kpis.pending_verification ?? 0, id: 'kpi-pending-verify', accent: 'text-purple-800', sub: 'Menunggu & bukti masuk' },
+            { label: 'Dalam Pengiriman', val: kpis.active_shipments ?? 0, id: 'kpi-active-ship', accent: 'text-blue-800', sub: 'Resi kurir sedang berjalan' },
+            { label: 'Pelanggan Terdaftar', val: kpis.customers_count ?? 0, id: 'kpi-customers-count', accent: 'text-[#1C1917]', sub: 'Total direktori pelanggan' },
+            { label: 'Permohonan Retur Aktif', val: kpis.returns_count ?? 0, id: 'kpi-returns-count', accent: 'text-[#C2410C]', sub: 'Menunggu keputusan CS' }
+          ];
+        } else if (isManager) {
+          cards = [
+            { label: 'Total Omzet Terkonfirmasi', val: formatMoney(kpis.revenue || 0, 'IDR'), id: 'kpi-revenue', accent: 'text-[#1C1917]', sub: 'AOV: ' + formatMoney(kpis.aov || 0, 'IDR') },
+            { label: 'Total Pesanan', val: kpis.orders_count ?? 0, id: 'kpi-orders-count', accent: 'text-[#1C1917]', sub: (kpis.active_shipments || 0) + ' sedang dikirim' },
+            { label: 'SKU Stok Menipis (<5)', val: kpis.low_stock_count ?? 0, id: 'kpi-low-stock', accent: 'text-red-700', sub: 'Perlu restok segera' },
+            { label: 'Permohonan Retur Aktif', val: kpis.returns_count ?? 0, id: 'kpi-returns-count', accent: 'text-[#C2410C]', sub: 'Tukar ukuran / garansi' }
+          ];
+        } else {
+          cards = [
+            { label: 'Total Omzet Terkonfirmasi', val: formatMoney(kpis.revenue || 0, 'IDR'), id: 'kpi-revenue', accent: 'text-[#1C1917]', sub: 'Rata-rata (AOV): ' + formatMoney(kpis.aov || 0, 'IDR') },
+            { label: 'Total Pesanan', val: kpis.orders_count ?? 0, id: 'kpi-orders-count', accent: 'text-[#1C1917]', sub: (kpis.active_shipments || 0) + ' dikirim, ' + (kpis.pending_verification || 0) + ' menunggu' },
+            { label: 'Pelanggan Terdaftar', val: kpis.customers_count ?? 0, id: 'kpi-customers-count', accent: 'text-[#1C1917]', sub: (res.customer_segments ? res.customer_segments.vip_customers + ' VIP, ' + res.customer_segments.repeat_customers + ' Repeat' : 'Aktif') },
+            { label: 'Permohonan Retur Aktif', val: kpis.returns_count ?? 0, id: 'kpi-returns-count', accent: 'text-[#C2410C]', sub: (kpis.low_stock_count || 0) + ' varian stok menipis' }
+          ];
+        }
+
+        kpiGrid.innerHTML = cards.map(c =>
+          '<div class="p-4 bg-[#FAFAF9] border border-[#E7E5E4] hover:border-[#1C1917] transition-colors">' +
+            '<span class="text-[11px] uppercase tracking-wider text-[#57534E] font-semibold block">' + c.label + '</span>' +
+            '<p id="' + c.id + '" class="font-serif text-xl font-bold ' + c.accent + ' mt-1">' + c.val + '</p>' +
+            '<span class="text-[10px] font-mono text-[#78716C] mt-1 block">' + c.sub + '</span>' +
+          '</div>'
+        ).join('');
+      }
+
+      // 3. Filter Daily Series by Period
+      let series = (res.series_daily || []).slice();
+      if (currentOverviewPeriod === '7d' && series.length > 7) series = series.slice(-7);
+      if (currentOverviewPeriod === '30d' && series.length > 30) series = series.slice(-30);
+
+      // 4. Build Role-Scoped Interactive Charts
+      const chartsGrid = document.getElementById('overview-charts-grid');
+      if (chartsGrid) {
+        let chartCards = [];
+
+        // CHART A: Tren Omzet & Volume Pesanan (Super Admin & Store Manager ONLY)
+        if (!isCS) {
+          chartCards.push(
+            '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+              '<div class="flex items-center justify-between gap-2 border-b border-[#E7E5E4] pb-2">' +
+                '<div>' +
+                  '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Grafik Tren Omzet & Pesanan</h3>' +
+                  '<p class="text-[10px] text-[#57534E]">Batang: Omzet (IDR) | Garis: Jumlah Pesanan (Format tgl dd:mm)</p>' +
+                '</div>' +
+                '<div class="flex items-center gap-2 text-[10px] font-mono">' +
+                  '<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-[#1C1917] inline-block"></span>Omzet</span>' +
+                  '<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-[#C2410C] inline-block"></span>Pesanan</span>' +
+                '</div>' +
+              '</div>' +
+              buildComboRevenueOrdersSVG(series) +
+            '</div>'
+          );
+        }
+
+        // CHART B: Distribusi Status Pesanan & Pengiriman (ALL 3 ROLES)
+        const stBr = res.status_breakdown || {};
+        const shBr = res.shipping_breakdown || {};
+        const orderDonutEntries = [
+          { label: 'Menunggu Pembayaran', value: stBr['Menunggu Pembayaran'] || 0, color: '#A8A29E' },
+          { label: 'Verifikasi Pembayaran', value: stBr['Verifikasi Pembayaran'] || 0, color: '#7E22CE' },
+          { label: 'Diproses Atelier', value: stBr['Diproses'] || 0, color: '#D97706' },
+          { label: 'Dikirim (Resi Aktif)', value: stBr['Dikirim'] || 0, color: '#2563EB' },
+          { label: 'Selesai / Terkirim', value: stBr['Selesai'] || 0, color: '#059669' },
+          { label: 'Dibatalkan', value: stBr['Dibatalkan'] || 0, color: '#B91C1C' }
+        ];
+        const shipDonutEntries = [
+          { label: 'Belum Dikirim', value: shBr['Belum Dikirim'] || 0, color: '#A8A29E' },
+          { label: 'Menunggu Pick-up', value: shBr['Menunggu Pick-up'] || 0, color: '#D97706' },
+          { label: 'Dalam Pengiriman', value: shBr['Dalam Pengiriman'] || 0, color: '#2563EB' },
+          { label: 'Transit Hub', value: shBr['Transit Hub'] || 0, color: '#4F46E5' },
+          { label: 'Kurir Menuju Alamat', value: shBr['Kurir Menuju Alamat'] || 0, color: '#C2410C' },
+          { label: 'Terkirim', value: shBr['Terkirim'] || 0, color: '#059669' },
+          { label: 'Kendala Pengiriman', value: shBr['Kendala Pengiriman'] || 0, color: '#B91C1C' }
+        ];
+        const isShipMode = currentOverviewDonutMode === 'shipping';
+        chartCards.push(
+          '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+            '<div class="flex items-center justify-between gap-2 border-b border-[#E7E5E4] pb-2">' +
+              '<div>' +
+                '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Distribusi Pesanan & Pengiriman</h3>' +
+                '<p class="text-[10px] text-[#57534E]">Komposisi status pesanan masuk & progres pengiriman kurir</p>' +
+              '</div>' +
+              '<div class="flex items-center gap-1 text-[10px] font-mono">' +
+                '<button type="button" onclick="setOverviewDonutMode(\'order\')" class="px-2 py-1 border ' + (!isShipMode ? 'bg-[#1C1917] text-white border-[#1C1917]' : 'border-[#E7E5E4] text-[#57534E]') + '">Pesanan</button>' +
+                '<button type="button" onclick="setOverviewDonutMode(\'shipping\')" class="px-2 py-1 border ' + (isShipMode ? 'bg-[#1C1917] text-white border-[#1C1917]' : 'border-[#E7E5E4] text-[#57534E]') + '">Pengiriman</button>' +
+              '</div>' +
+            '</div>' +
+            buildDonutSVG(isShipMode ? shipDonutEntries : orderDonutEntries, isShipMode ? 'PAKET' : 'PESANAN') +
+          '</div>'
+        );
+
+        // CHART C: Performa Omzet per Kategori Busana (Super Admin & Store Manager ONLY)
+        if (!isCS && res.category_sales) {
+          const catColors = { Outerwear: '#1C1917', Tops: '#C2410C', Bottoms: '#57534E', Footwear: '#059669', Accessories: '#D97706' };
+          const catItems = Object.keys(res.category_sales).map(k => ({
+            label: k + ' (' + (res.category_sales[k].units || 0) + ' pcs)',
+            value: res.category_sales[k].revenue || 0,
+            color: catColors[k] || '#1C1917'
+          })).sort((a, b) => b.value - a.value);
+
+          chartCards.push(
+            '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+              '<div class="border-b border-[#E7E5E4] pb-2">' +
+                '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Omzet per Kategori Busana</h3>' +
+                '<p class="text-[10px] text-[#57534E]">Kontribusi penjualan terkonfirmasi berdasarkan 5 lini kategori</p>' +
+              '</div>' +
+              buildHorizontalBarList(catItems, it => formatMoney(it.value, 'IDR')) +
+            '</div>'
+          );
+        }
+
+        // CHART D: Segmen & Pertumbuhan Pelanggan (Super Admin & Customer Service ONLY; Hidden for Store Manager)
+        if (!isManager && res.customer_segments) {
+          const seg = res.customer_segments;
+          const segItems = [
+            { label: 'Pelanggan Baru (1x Pesanan)', value: seg.new_customers || 0, color: '#57534E' },
+            { label: 'Pelanggan Repeat (2x Pesanan)', value: seg.repeat_customers || 0, color: '#2563EB' },
+            { label: 'Pelanggan VIP (>= 3x atau >= Rp 2jt)', value: seg.vip_customers || 0, color: '#C2410C' }
+          ];
+          chartCards.push(
+            '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+              '<div class="flex items-center justify-between border-b border-[#E7E5E4] pb-2">' +
+                '<div>' +
+                  '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Segmen & Retensi Pelanggan</h3>' +
+                  '<p class="text-[10px] text-[#57534E]">Distribusi loyalitas dari total ' + (seg.total_customers || 0) + ' pelanggan terdaftar</p>' +
+                '</div>' +
+                '<span class="px-2 py-0.5 bg-[#FAFAF9] border border-[#E7E5E4] font-mono text-[10px] font-bold text-[#1C1917]">Total: ' + (seg.total_customers || 0) + '</span>' +
+              '</div>' +
+              buildHorizontalBarList(segItems, it => it.value + ' orang') +
+            '</div>'
+          );
+        }
+
+        // CHART E: Status Antrean Retur & SLA Layanan (Customer Service & Super Admin)
+        if ((isCS || (!isCS && !isManager)) && res.returns_breakdown) {
+          const rb = res.returns_breakdown;
+          const retItems = [
+            { label: 'Diajukan (Menunggu Tinjauan)', value: rb['Diajukan'] || 0, color: '#C2410C' },
+            { label: 'Disetujui (Proses Tukar)', value: rb['Disetujui'] || 0, color: '#2563EB' },
+            { label: 'Selesai Tertangani', value: rb['Selesai'] || 0, color: '#059669' },
+            { label: 'Ditolak', value: rb['Ditolak'] || 0, color: '#78716C' }
+          ];
+          chartCards.push(
+            '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+              '<div class="border-b border-[#E7E5E4] pb-2">' +
+                '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Grafik Status Retur & Garansi Ukuran</h3>' +
+                '<p class="text-[10px] text-[#57534E]">Pemantauan SLA penyelesaian permohonan retur pelanggan</p>' +
+              '</div>' +
+              buildHorizontalBarList(retItems, it => it.value + ' kasus') +
+            '</div>'
+          );
+        }
+
+        // CHART F: Volume Aktivitas Pesanan Harian (For Customer Service instead of Revenue chart)
+        if (isCS) {
+          const dailyOrdItems = series.map(d => ({
+            label: 'Tanggal ' + d.date_display + ' (' + d.customers + ' pelanggan)',
+            value: d.orders,
+            color: '#2563EB'
+          }));
+          chartCards.push(
+            '<div class="p-4 bg-white border border-[#E7E5E4] space-y-3">' +
+              '<div class="border-b border-[#E7E5E4] pb-2">' +
+                '<h3 class="text-xs uppercase tracking-wider font-bold text-[#1C1917]">Volume Pesanan Harian (Bebas Nominal)</h3>' +
+                '<p class="text-[10px] text-[#57534E]">Beban kerja pesanan masuk per tanggal (format dd:mm:yyyy)</p>' +
+              '</div>' +
+              buildHorizontalBarList(dailyOrdItems, it => it.value + ' pesanan') +
+            '</div>'
+          );
+        }
+
+        chartsGrid.innerHTML = chartCards.join('');
+      }
+
+      // 5. Role-Scoped Sections Visibility (Funnel, Low Stock, CS Queue)
+      const funnelSec = document.getElementById('overview-funnel-section');
+      const lowStockSec = document.getElementById('overview-low-stock-section');
+      const csQueueSec = document.getElementById('overview-cs-queue-section');
+
+      if (funnelSec) funnelSec.classList.toggle('hidden', isCS);
+      if (lowStockSec) lowStockSec.classList.toggle('hidden', isCS);
+      if (csQueueSec) csQueueSec.classList.toggle('hidden', isManager);
+
+      // Populate CS Action Queue (orders awaiting verification or shipping resi)
+      if (!isManager && csQueueSec) {
+        const queueEl = document.getElementById('overview-cs-queue-container');
+        const allOrders = (res.recent_orders || res.recentOrders || MockDB.orders || []);
+        const actionOrders = allOrders.filter(o => o.status === 'Verifikasi Pembayaran' || o.status === 'Diproses' || (o.status === 'Dikirim' && !o.tracking_number));
+        if (queueEl) {
+          if (actionOrders.length === 0) {
+            queueEl.innerHTML = '<p class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800">Seluruh pesanan prioritas telah diverifikasi dan memiliki nomor resi aktif.</p>';
+          } else {
+            queueEl.innerHTML = actionOrders.map(o =>
+              '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-[#FAFAF9] border border-[#E7E5E4]">' +
+                '<div>' +
+                  '<span class="font-mono font-bold text-[#1C1917]">' + o.invoice_no + '</span>' +
+                  '<span class="text-[#57534E] ml-2">' + o.customer_name + '</span>' +
+                  '<span class="ml-2 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-amber-100 text-amber-800">' + o.status + '</span>' +
+                '</div>' +
+                '<div class="flex items-center gap-1.5">' +
+                  (o.status === 'Diproses' || o.status === 'Dikirim'
+                    ? '<button type="button" onclick="openAdminShippingModal(\'' + o.invoice_no + '\')" class="px-2.5 py-1 bg-blue-700 text-white text-[11px] font-semibold">Input Resi</button>'
+                    : '<button type="button" onclick="switchAdminTab(\'orders\')" class="px-2.5 py-1 bg-[#1C1917] text-white text-[11px] font-semibold">Verifikasi</button>') +
+                '</div>' +
+              '</div>'
+            ).join('');
+          }
+        }
+      }
+
+      // Low stock alerts (Super Admin & Store Manager)
+      if (!isCS) {
+        const lowStockContainer = document.getElementById('overview-low-stock-container');
+        if (lowStockContainer) {
           const lowStockVariants = [];
-          AppState.products.forEach(p => {
+          (AppState.products || []).forEach(p => {
             (p.variants || []).forEach(v => {
               if (v.stock < 5) lowStockVariants.push({ prod: p, variant: v });
             });
@@ -8557,15 +9646,15 @@ const AppState = {
           if (lowStockVariants.length === 0) {
             lowStockContainer.innerHTML = '<p class="text-stone-500">Seluruh stok varian berada pada batas aman.</p>';
           } else {
-            lowStockContainer.innerHTML = lowStockVariants.map(item => `
-              <div class="flex items-center justify-between p-2 bg-red-50 border border-red-200">
-                <span class="font-bold text-red-950">${item.prod.name} (${item.variant.sku})</span>
-                <span class="font-mono text-red-700 font-bold">${item.variant.stock} unit tersisa</span>
-              </div>
-            `).join('');
+            lowStockContainer.innerHTML = lowStockVariants.map(item =>
+              '<div class="flex items-center justify-between p-2 bg-red-50 border border-red-200">' +
+                '<span class="font-bold text-red-950">' + item.prod.name + ' (' + item.variant.sku + ')</span>' +
+                '<span class="font-mono text-red-700 font-bold">' + item.variant.stock + ' unit tersisa</span>' +
+              '</div>'
+            ).join('');
           }
         }
-      });
+      }
     }
 
     function loadAdminProducts() {
@@ -9299,85 +10388,172 @@ const AppState = {
       window.print();
     }
 
-    // 34. Admin Orders Controller with Inline Manual Ongkir & Proof Preview
+    // 34. Admin Orders Controller with Resi Tracking, Shipping Status, Inline Ongkir & Proof Preview
+    let cachedAdminOrders = [];
+
     function loadAdminOrders() {
       return callApi('getOrders').then(res => {
         if (res && res.success) {
-          renderAdminOrdersTable(res.orders);
+          cachedAdminOrders = res.orders || [];
+          renderAdminOrdersTable(cachedAdminOrders);
         }
       });
     }
 
+    function filterAdminOrdersSearch(val) {
+      AppState.adminOrdersSearch = (val || '').trim().toLowerCase();
+      renderAdminOrdersTable(cachedAdminOrders);
+    }
+
     function filterAdminOrders(status) {
       AppState.adminOrdersFilter = status;
-      ['all', 'waiting', 'verify', 'proc', 'ship', 'done'].forEach(s => {
-        const btn = document.getElementById('ord-filter-' + s);
+      const map = {
+        '': 'ord-filter-all',
+        'Menunggu Pembayaran': 'ord-filter-waiting',
+        'Verifikasi Pembayaran': 'ord-filter-verify',
+        'Diproses': 'ord-filter-proc',
+        'Dikirim': 'ord-filter-ship',
+        'Selesai': 'ord-filter-done'
+      };
+      Object.values(map).forEach(id => {
+        const btn = document.getElementById(id);
         if (btn) btn.className = 'px-3 py-1.5 border border-[#E7E5E4] text-[#57534E] hover:border-[#1C1917]';
       });
-      loadAdminOrders();
+      const activeId = map[status] || 'ord-filter-all';
+      const activeBtn = document.getElementById(activeId);
+      if (activeBtn) activeBtn.className = 'px-3 py-1.5 border border-[#1C1917] bg-[#1C1917] text-white font-semibold';
+      renderAdminOrdersTable(cachedAdminOrders.length ? cachedAdminOrders : MockDB.orders);
+    }
+
+    function getShippingStatusBadgeClass(shipStatus) {
+      switch (shipStatus) {
+        case 'Terkirim': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        case 'Kurir Menuju Alamat': return 'bg-orange-100 text-[#C2410C] border-orange-200';
+        case 'Dalam Pengiriman': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'Transit Hub': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        case 'Menunggu Pick-up': return 'bg-amber-100 text-amber-800 border-amber-200';
+        case 'Kendala Pengiriman': return 'bg-red-100 text-red-800 border-red-200';
+        default: return 'bg-stone-100 text-stone-600 border-stone-200';
+      }
+    }
+
+    function copyTrackingNumber(resi) {
+      const clean = String(resi || '').trim();
+      if (!clean || clean === 'Menunggu Input Resi') {
+        showToast('Nomor resi belum tersedia.', 'warning');
+        return;
+      }
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(clean).then(() => {
+          showToast('Nomor resi ' + clean + ' disalin ke clipboard.', 'success');
+        }).catch(() => {
+          showToast('Nomor resi: ' + clean, 'success');
+        });
+      } else {
+        showToast('Nomor resi: ' + clean, 'success');
+      }
     }
 
     function renderAdminOrdersTable(orders) {
-      let filtered = orders || [];
+      let filtered = (orders || []).slice();
       if (AppState.adminOrdersFilter) {
         filtered = filtered.filter(o => o.status === AppState.adminOrdersFilter);
       }
+      if (AppState.adminOrdersSearch) {
+        const q = AppState.adminOrdersSearch;
+        filtered = filtered.filter(o =>
+          (o.invoice_no || '').toLowerCase().includes(q) ||
+          (o.customer_name || '').toLowerCase().includes(q) ||
+          (o.whatsapp_no || '').toLowerCase().includes(q) ||
+          (o.tracking_number || '').toLowerCase().includes(q) ||
+          (o.shipping_method || '').toLowerCase().includes(q)
+        );
+      }
 
       const container = document.getElementById('admin-orders-table-container');
+      if (!container) return;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center bg-[#FAFAF9] border border-[#E7E5E4] text-xs text-[#57534E]">Tidak ada pesanan yang cocok dengan filter pencarian.</div>';
+        return;
+      }
+
       container.innerHTML = `
         <table class="w-full text-left text-xs border border-[#E7E5E4]">
           <thead class="bg-[#FAFAF9] border-b border-[#E7E5E4] font-mono text-[#57534E]">
             <tr>
-              <th class="p-2.5">Invoice</th>
+              <th class="p-2.5">Invoice &amp; Tanggal</th>
               <th class="p-2.5">Pelanggan</th>
-              <th class="p-2.5">WhatsApp</th>
-              <th class="p-2.5">Subtotal</th>
-              <th class="p-2.5">Ongkir Manual</th>
-              <th class="p-2.5">Grand Total</th>
+              <th class="p-2.5">Total &amp; Ongkir</th>
               <th class="p-2.5">Bukti Bayar</th>
-              <th class="p-2.5">Status</th>
+              <th class="p-2.5">Resi &amp; Status Pengiriman</th>
+              <th class="p-2.5">Status Pesanan</th>
               <th class="p-2.5 text-right">Proses</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[#E7E5E4]">
-            ${filtered.map(o => `
-              <tr class="hover:bg-[#FAFAF9]">
-                <td class="p-2.5 font-mono font-bold text-[#1C1917]">${o.invoice_no}</td>
-                <td class="p-2.5 font-semibold text-[#1C1917]">${o.customer_name}</td>
-                <td class="p-2.5 font-mono">${o.whatsapp_no}</td>
-                <td class="p-2.5 font-mono">${formatMoney(o.subtotal, 'IDR')}</td>
-                <td class="p-2.5 font-mono">
-                  ${
-                    (function() {
-                      const r = AppState.adminUser ? AppState.adminUser.role : '';
-                      const baseR = String(r).split('(')[0].trim();
-                      if (baseR === 'Customer Service') {
-                        return '<span class="text-stone-600 font-mono">' + formatMoney(o.shipping_cost || 0, 'IDR') + '</span>';
-                      }
-                      return '<input type="number" value="' + (o.shipping_cost || 0) + '" onchange="updateInlineOngkir(\'' + o.invoice_no + '\', this.value)" class="w-24 p-1 border border-[#E7E5E4] font-mono text-xs">';
-                    })()
-                  }
+            ${filtered.map(o => {
+              const shipStatus = o.shipping_status || (o.status === 'Selesai' ? 'Terkirim' : (o.status === 'Dikirim' ? 'Dalam Pengiriman' : 'Belum Dikirim'));
+              const shipBadgeCls = getShippingStatusBadgeClass(shipStatus);
+              const r = AppState.adminUser ? AppState.adminUser.role : '';
+              const baseR = String(r).split('(')[0].trim();
+              const ongkirCell = baseR === 'Customer Service'
+                ? '<span class="text-stone-600 font-mono">Ongkir: ' + formatMoney(o.shipping_cost || 0, 'IDR') + '</span>'
+                : '<div class="flex items-center gap-1 mt-0.5"><span class="text-[10px] text-[#57534E]">Ongkir:</span><input type="number" value="' + (o.shipping_cost || 0) + '" onchange="updateInlineOngkir(\'' + o.invoice_no + '\', this.value)" class="w-20 px-1 py-0.5 border border-[#E7E5E4] font-mono text-[11px] bg-white"></div>';
+
+              return `
+              <tr class="hover:bg-[#FAFAF9] align-top">
+                <td class="p-2.5">
+                  <div class="font-mono font-bold text-[#1C1917]">${o.invoice_no}</div>
+                  <div class="font-mono text-[10px] text-[#57534E] mt-0.5">${formatDateTimeDDMMYYYY(o.created_at)}</div>
                 </td>
-                <td class="p-2.5 font-mono font-bold text-[#1C1917]">${formatMoney(o.grand_total, 'IDR')}</td>
+                <td class="p-2.5">
+                  <div class="font-semibold text-[#1C1917]">${o.customer_name}</div>
+                  <div class="font-mono text-[11px] text-[#57534E]">${o.whatsapp_no}</div>
+                </td>
+                <td class="p-2.5 font-mono">
+                  <div class="font-bold text-[#1C1917]">${formatMoney(o.grand_total, 'IDR')}</div>
+                  <div class="text-[10px] text-[#57534E]">Sub: ${formatMoney(o.subtotal, 'IDR')}</div>
+                  ${ongkirCell}
+                </td>
                 <td class="p-2.5">
                   ${o.payment_proof_url ? `
-                    <button onclick="openPaymentProofModal('${o.invoice_no}', '${o.payment_proof_url}')" class="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-semibold">Lihat Foto</button>
+                    <button onclick="openPaymentProofModal('${o.invoice_no}', '${o.payment_proof_url}')" class="px-2 py-1 bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-semibold hover:bg-purple-100">Lihat Foto</button>
                   ` : '<span class="text-stone-400 italic">Belum Ada</span>'}
                 </td>
+                <td class="p-2.5 min-w-[190px]">
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-[10px] font-semibold text-[#57534E]">${o.shipping_method || 'Kurir Standar'}</span>
+                      <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold border ${shipBadgeCls}">${shipStatus}</span>
+                    </div>
+                    ${o.tracking_number ? `
+                      <div class="flex items-center gap-1.5 bg-white border border-[#E7E5E4] px-2 py-1">
+                        <span class="font-mono font-bold text-[11px] text-[#1C1917] tracking-wider">${o.tracking_number}</span>
+                        <button type="button" onclick="copyTrackingNumber('${o.tracking_number}')" title="Salin Resi" class="text-[10px] font-semibold text-[#C2410C] hover:underline ml-auto">Salin</button>
+                      </div>
+                    ` : '<div class="text-[11px] text-stone-400 italic">Resi belum diinput</div>'}
+                    <div class="flex items-center justify-between text-[10px] font-mono text-[#57534E]">
+                      <span>${o.shipped_at ? 'Kirim: ' + formatDateDDMMYYYY(o.shipped_at) : ''}</span>
+                      <button type="button" onclick="openAdminShippingModal('${o.invoice_no}')" class="text-blue-700 font-semibold hover:underline">${o.tracking_number ? 'Edit Resi' : '+ Input Resi'}</button>
+                    </div>
+                  </div>
+                </td>
                 <td class="p-2.5">
-                  <span class="px-2 py-0.5 text-[10px] font-mono font-bold ${
+                  <span class="px-2 py-0.5 text-[10px] font-mono font-bold inline-block ${
                     o.status === 'Selesai' ? 'bg-emerald-100 text-emerald-800' :
                     o.status === 'Dikirim' ? 'bg-blue-100 text-blue-800' :
                     o.status === 'Diproses' ? 'bg-amber-100 text-amber-800' :
                     o.status === 'Verifikasi Pembayaran' ? 'bg-purple-100 text-purple-800' :
+                    o.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' :
                     'bg-stone-200 text-stone-800'
                   }">${o.status}</span>
                 </td>
-                <td class="p-2.5 text-right space-x-1">
-                  ${renderStatusProgressionButtons(o)}
+                <td class="p-2.5 text-right space-y-1">
+                  <div class="flex flex-wrap justify-end gap-1">${renderStatusProgressionButtons(o)}</div>
                 </td>
-              </tr>
-            `).join('')}
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       `;
@@ -9391,37 +10567,140 @@ const AppState = {
       if (order.status === 'Menunggu Pembayaran' || order.status === 'Verifikasi Pembayaran') {
         btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Diproses\')" class="px-2 py-1 bg-[#1C1917] text-white text-[11px]">Verifikasi</button>';
       } else if (order.status === 'Diproses') {
-        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Dikirim\')" class="px-2 py-1 bg-blue-700 text-white text-[11px]">Kirim Resi</button>';
+        btns += '<button onclick="openAdminShippingModal(\'' + order.invoice_no + '\')" class="px-2 py-1 bg-blue-700 hover:bg-blue-800 text-white text-[11px]">Kirim Resi</button>';
       } else if (order.status === 'Dikirim') {
-        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Selesai\')" class="px-2 py-1 bg-emerald-700 text-white text-[11px]">Selesai</button>';
+        btns += '<button onclick="openAdminShippingModal(\'' + order.invoice_no + '\')" class="px-2 py-1 border border-blue-700 text-blue-700 hover:bg-blue-50 text-[11px]">Lacak/Edit</button>';
+        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Selesai\')" class="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px]">Selesai</button>';
       }
 
-      // Opsi Batalkan hanya untuk Super Admin dan Store Manager
       if (order.status !== 'Selesai' && order.status !== 'Dibatalkan' && baseR !== 'Customer Service') {
-        btns += ' <button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Dibatalkan\')" class="px-2 py-1 bg-red-800 hover:bg-red-900 text-white text-[11px]">Batalkan</button>';
+        btns += '<button onclick="advanceOrderStatus(\'' + order.invoice_no + '\', \'Dibatalkan\')" class="px-2 py-1 bg-red-800 hover:bg-red-900 text-white text-[11px]">Batalkan</button>';
       }
 
       return btns;
     }
 
+    function openAdminShippingModal(invoiceNo) {
+      const orders = cachedAdminOrders.length ? cachedAdminOrders : (MockDB.orders || []);
+      const ord = orders.find(o => o.invoice_no === invoiceNo);
+      if (!ord) {
+        showToast('Data pesanan tidak ditemukan.', 'error');
+        return;
+      }
+
+      document.getElementById('ship-form-invoice').value = ord.invoice_no;
+      document.getElementById('ship-form-wa').value = ord.whatsapp_no || '';
+      document.getElementById('ship-form-cust-name').value = ord.customer_name || '';
+      document.getElementById('shipping-modal-subtitle').textContent = 'Invoice: ' + ord.invoice_no + ' | Pelanggan: ' + ord.customer_name;
+
+      const courierSel = document.getElementById('ship-form-courier');
+      if (courierSel && ord.shipping_method) {
+        let matched = false;
+        for (let i = 0; i < courierSel.options.length; i++) {
+          if (courierSel.options[i].value.toLowerCase() === ord.shipping_method.toLowerCase()) {
+            courierSel.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          const opt = document.createElement('option');
+          opt.value = ord.shipping_method;
+          opt.textContent = ord.shipping_method;
+          courierSel.appendChild(opt);
+          courierSel.value = ord.shipping_method;
+        }
+      }
+
+      const defaultShipStatus = ord.shipping_status && ord.shipping_status !== 'Belum Dikirim'
+        ? ord.shipping_status
+        : (ord.status === 'Selesai' ? 'Terkirim' : 'Dalam Pengiriman');
+      document.getElementById('ship-form-status').value = defaultShipStatus;
+      document.getElementById('ship-form-tracking').value = ord.tracking_number || '';
+      document.getElementById('ship-form-notes').value = ord.shipping_notes || '';
+
+      setStructuredDateTime('ship-date', ord.shipped_at || new Date(), false);
+
+      document.getElementById('admin-shipping-modal').classList.remove('hidden');
+    }
+
+    function closeAdminShippingModal() {
+      const modal = document.getElementById('admin-shipping-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function saveOrderShippingAction(evt, sendWA) {
+      if (evt && evt.preventDefault) evt.preventDefault();
+      const invoiceNo = document.getElementById('ship-form-invoice').value;
+      const courier = document.getElementById('ship-form-courier').value;
+      const trackingNo = document.getElementById('ship-form-tracking').value.trim().toUpperCase();
+      const shipStatus = document.getElementById('ship-form-status').value;
+      const shippedAt = document.getElementById('ship-form-date').value;
+      const notes = document.getElementById('ship-form-notes').value.trim();
+      const custWa = document.getElementById('ship-form-wa').value.replace(/[^0-9]/g, '');
+      const custName = document.getElementById('ship-form-cust-name').value;
+
+      if (!trackingNo && shipStatus !== 'Belum Dikirim' && shipStatus !== 'Menunggu Pick-up') {
+        showToast('Nomor resi wajib diisi untuk status ' + shipStatus + '.', 'warning');
+        return Promise.resolve();
+      }
+
+      const btn = document.getElementById(sendWA ? 'ship-save-wa-btn' : 'ship-save-btn');
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      const payload = {
+        shipping_method: courier,
+        tracking_number: trackingNo,
+        shipping_status: shipStatus,
+        shipped_at: shippedAt,
+        shipping_notes: notes,
+        auto_update_status: true
+      };
+
+      return withButtonLoading(btn, () => {
+        return callApi('updateOrderShipping', invoiceNo, payload, role).then(res => {
+          if (res && res.success) {
+            showToast('Resi & status pengiriman ' + invoiceNo + ' berhasil disimpan.', 'success');
+            closeAdminShippingModal();
+            loadAdminOrders();
+            if (AppState.adminActiveTab === 'overview') loadAdminOverview();
+            if (sendWA && custWa) {
+              const msg = 'Halo Kak ' + custName + ', pesanan Anda di AryaStore (' + invoiceNo + ') telah diperbarui status pengirimannya:\n\n' +
+                'Ekspedisi: ' + courier + '\n' +
+                'Nomor Resi: ' + (trackingNo || '-') + '\n' +
+                'Status Pengiriman: ' + shipStatus + '\n' +
+                'Tanggal Kirim: ' + shippedAt + '\n' +
+                (notes ? 'Catatan: ' + notes + '\n' : '') +
+                '\nTerima kasih telah berbelanja di AryaStore.';
+              window.open('https://wa.me/' + custWa + '?text=' + encodeURIComponent(msg), '_blank');
+            }
+          } else {
+            showToast((res && res.message) || 'Gagal menyimpan resi pengiriman.', 'error');
+          }
+          return res;
+        });
+      });
+    }
+
     function advanceOrderStatus(invoiceNo, newStatus) {
-      const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
-      callApi('updateOrderStatus', invoiceNo, newStatus, null, 'Status diubah via konsol admin', role).then(res => {
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      return callApi('updateOrderStatus', invoiceNo, newStatus, null, 'Status diubah via konsol admin', role).then(res => {
         if (res && res.success) {
           showToast('Status pesanan ' + invoiceNo + ' diubah menjadi ' + newStatus, 'success');
           loadAdminOrders();
         }
+        return res;
       });
     }
 
     function updateInlineOngkir(invoiceNo, newCost) {
       const cost = parseInt(newCost, 10);
-      const role = AppState.adminUser ? AppState.adminUser.role : 'Super Admin';
-      callApi('updateOrderStatus', invoiceNo, null, cost, 'Penyesuaian ongkos kirim manual', role).then(res => {
+      const role = AppState.adminUser ? AppState.adminUser.role : (AppState.adminRole || 'Super Admin');
+      return callApi('updateOrderStatus', invoiceNo, null, cost, 'Penyesuaian ongkos kirim manual', role).then(res => {
         if (res && res.success) {
           showToast('Ongkir ' + invoiceNo + ' diperbarui, grand total dikalkulasi ulang.', 'success');
           loadAdminOrders();
         }
+        return res;
       });
     }
 
@@ -9584,7 +10863,7 @@ const AppState = {
               <tbody class="divide-y divide-[#E7E5E4]">
                 ${res.customers.map(c => `
                   <tr class="hover:bg-[#FAFAF9]">
-                    <td class="p-2.5 font-mono">${c.customer_id}</td>
+                    <td class="p-2.5 font-mono"><div>${c.customer_id}</div><div class="text-[10px] text-[#57534E]">${formatDateDDMMYYYY(c.created_at)}</div></td>
                     <td class="p-2.5 font-semibold text-[#1C1917]">${c.name}</td>
                     <td class="p-2.5 font-mono">
                       <a href="https://wa.me/${c.whatsapp_no}" target="_blank" class="text-[#C2410C] hover:underline">${c.whatsapp_no} &nearr;</a>
@@ -9635,7 +10914,7 @@ const AppState = {
                   <span class="font-bold text-[#1C1917]">Harga Promo: ${formatMoney(b.bundle_price, 'IDR')}</span>
                   <span class="text-stone-400 line-through">Normal: ${formatMoney(b.normal_price, 'IDR')}</span>
                   ${saveAmount > 0 ? `<span class="text-emerald-700 font-bold">Hemat: ${formatMoney(saveAmount, 'IDR')}</span>` : ''}
-                  <span class="text-stone-500">Berakhir: ${b.ends_at || '-'}</span>
+                  <span class="text-stone-500">Berakhir: ${formatDateTimeDDMMYYYY(b.ends_at)} WIB</span>
                 </div>
               </div>
 
@@ -9660,7 +10939,7 @@ const AppState = {
       document.getElementById('admin-bundle-modal-title').textContent = 'Tambah Paket Promo / Bundling Baru';
       document.getElementById('bundle-form-id').value = '';
       document.getElementById('admin-bundle-form').reset();
-      document.getElementById('bundle-form-ends-at').value = '2026-12-31 23:59:59';
+      setStructuredDateTime('bundle-ends', '31:12:2026 23:59', true);
       document.getElementById('bundle-form-is-active').value = 'true';
       const previewImg = document.getElementById('bundle-form-preview-img');
       if (previewImg) previewImg.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80';
@@ -9768,7 +11047,7 @@ const AppState = {
         document.getElementById('bundle-form-desc').value = b.banner_desc || '';
         document.getElementById('bundle-form-normal-price').value = b.normal_price || 0;
         document.getElementById('bundle-form-bundle-price').value = b.bundle_price || 0;
-        document.getElementById('bundle-form-ends-at').value = b.ends_at || '2026-12-31 23:59:59';
+        setStructuredDateTime('bundle-ends', b.ends_at || '31:12:2026 23:59', true);
         document.getElementById('bundle-form-is-active').value = (b.is_active === true || String(b.is_active).toUpperCase() === 'TRUE') ? 'true' : 'false';
         document.getElementById('bundle-form-image-url').value = b.image_url || '';
         const previewImg = document.getElementById('bundle-form-preview-img');
@@ -9924,7 +11203,7 @@ const AppState = {
               <tbody class="divide-y divide-[#E7E5E4] font-mono text-[11px]">
                 ${(res.logs || []).map(l => `
                   <tr>
-                    <td class="p-2 text-stone-500">${l.timestamp}</td>
+                    <td class="p-2 text-stone-500">${formatDateTimeDDMMYYYY(l.timestamp)}</td>
                     <td class="p-2 font-bold">${l.actor_role}</td>
                     <td class="p-2">${l.module}</td>
                     <td class="p-2 font-sans">${l.action_detail}</td>
@@ -10301,24 +11580,62 @@ const AppState = {
       });
     }
 
-    // 36. Global Keyboard Listener (Accessibility Escape Handler R-32)
-    document.addEventListener('keydown', function(evt) {
-      if (evt.key === 'Escape') {
-        closeProductDetailModal();
-        closeCartDrawer();
-        closeSizeGuideModal();
-        closeOrderTrackerModal();
-        closeReturnModal();
-        closeWishlistModal();
-        closeAdminLoginModal();
-        closeCookieSettings();
-        closePaymentProofModal();
-        closeMobileNav();
-        closeAdminProductModal();
-        closeAdminVariantModal();
-        closeAdminCouponModal();
+    // 36. Global Keyboard Listener (Bulletproof Capture-Phase LIFO Escape Handler R-32)
+    const MODAL_ESC_REGISTRY = [
+      { id: 'admin-shipping-modal', close: () => closeAdminShippingModal() },
+      { id: 'admin-bundle-modal', close: () => closeAdminBundleModal() },
+      { id: 'admin-coupon-modal', close: () => closeAdminCouponModal() },
+      { id: 'admin-variant-modal', close: () => closeAdminVariantModal() },
+      { id: 'admin-product-modal', close: () => closeAdminProductModal() },
+      { id: 'payment-proof-modal', close: () => closePaymentProofModal() },
+      { id: 'admin-login-modal', close: () => closeAdminLoginModal() },
+      { id: 'cookie-settings-modal', close: () => closeCookieSettings() },
+      { id: 'wishlist-modal', close: () => closeWishlistModal() },
+      { id: 'return-modal', close: () => closeReturnModal() },
+      { id: 'order-tracker-modal', close: () => closeOrderTrackerModal() },
+      { id: 'size-guide-modal', close: () => closeSizeGuideModal() },
+      { id: 'cart-drawer', close: () => closeCartDrawer() },
+      { id: 'product-detail-modal', close: () => closeProductDetailModal() },
+      { id: 'mobile-nav-drawer', close: () => closeMobileNav() }
+    ];
+
+    function handleGlobalEscapeKey(evt) {
+      const isEsc = evt && (evt.key === 'Escape' || evt.key === 'Esc' || evt.keyCode === 27);
+      if (!isEsc) return false;
+
+      let closedAny = false;
+      for (let i = 0; i < MODAL_ESC_REGISTRY.length; i++) {
+        const entry = MODAL_ESC_REGISTRY[i];
+        const el = document.getElementById(entry.id);
+        if (el && !el.classList.contains('hidden')) {
+          try {
+            if (document.activeElement && el.contains && el.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+              document.activeElement.blur();
+            }
+          } catch (e) {}
+          try { entry.close(); } catch (e) { el.classList.add('hidden'); }
+          closedAny = true;
+          break;
+        }
       }
-    });
+
+      if (!closedAny) {
+        const openDialogs = document.querySelectorAll('[role="dialog"]:not(.hidden)');
+        if (openDialogs && openDialogs.length > 0) {
+          const topDialog = openDialogs[openDialogs.length - 1];
+          topDialog.classList.add('hidden');
+          closedAny = true;
+        }
+      }
+
+      if (closedAny && evt.preventDefault) {
+        evt.preventDefault();
+        if (evt.stopPropagation) evt.stopPropagation();
+      }
+      return closedAny;
+    }
+
+    window.addEventListener('keydown', handleGlobalEscapeKey, true);
 
     // 37. Global Exposure of Declared Functions (Guarantees zero reference errors on load)
     window.renderStorefront = function() { switchView('storefront'); };
@@ -10358,6 +11675,22 @@ const AppState = {
     window.loadAdminContentTab = loadAdminContentTab;
     window.uploadHeroImageAction = uploadHeroImageAction;
     window.submitStorefrontContentAction = submitStorefrontContentAction;
+    window.parseFlexibleDate = parseFlexibleDate;
+    window.formatDateDDMMYYYY = formatDateDDMMYYYY;
+    window.formatDateTimeDDMMYYYY = formatDateTimeDDMMYYYY;
+    window.syncDatePickerDays = syncDatePickerDays;
+    window.setStructuredDateTime = setStructuredDateTime;
+    window.onStructuredDateChange = onStructuredDateChange;
+    window.onNativeCalendarPick = onNativeCalendarPick;
+    window.openNativeCalendarPicker = openNativeCalendarPicker;
+    window.setOverviewPeriod = setOverviewPeriod;
+    window.setOverviewDonutMode = setOverviewDonutMode;
+    window.openAdminShippingModal = openAdminShippingModal;
+    window.closeAdminShippingModal = closeAdminShippingModal;
+    window.saveOrderShippingAction = saveOrderShippingAction;
+    window.copyTrackingNumber = copyTrackingNumber;
+    window.filterAdminOrdersSearch = filterAdminOrdersSearch;
+    window.handleGlobalEscapeKey = handleGlobalEscapeKey;
     window.hydrateStorefrontContent = hydrateStorefrontContent;
     window.switchAdminTab = switchAdminTab;
     window.logoutAdmin = logoutAdmin;

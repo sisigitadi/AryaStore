@@ -83,7 +83,11 @@ var COL_ORDERS = {
   SHIPPING_ZONE: 14,
   CURRENCY_CODE: 15,
   EXCHANGE_RATE: 16,
-  UTM_SOURCE: 17
+  UTM_SOURCE: 17,
+  TRACKING_NUMBER: 18,
+  SHIPPING_STATUS: 19,
+  SHIPPED_AT: 20,
+  SHIPPING_NOTES: 21
 };
 
 var COL_CUSTOMERS = {
@@ -193,7 +197,11 @@ var SCHEMA_DEFINITIONS = {
       'shipping_zone',
       'currency_code',
       'exchange_rate',
-      'utm_source'
+      'utm_source',
+      'tracking_number',
+      'shipping_status',
+      'shipped_at',
+      'shipping_notes'
     ],
     colMap: COL_ORDERS
   },
@@ -1885,7 +1893,11 @@ function seedDatabase() {
         shipping_zone: 'JABODETABEK',
         currency_code: 'IDR',
         exchange_rate: 1,
-        utm_source: 'instagram'
+        utm_source: 'instagram',
+        tracking_number: 'JNE8821049210',
+        shipping_status: 'Terkirim',
+        shipped_at: '20:11:2026',
+        shipping_notes: 'Paket diterima langsung oleh penerima di Jakarta Selatan'
       },
       {
         invoice_no: 'INV-202611-002',
@@ -1953,7 +1965,49 @@ function seedDatabase() {
         shipping_zone: 'SINGAPORE',
         currency_code: 'SGD',
         exchange_rate: 0.000085,
-        utm_source: 'tiktok'
+        utm_source: 'tiktok',
+        tracking_number: '',
+        shipping_status: 'Menunggu Pick-up',
+        shipped_at: '',
+        shipping_notes: 'Pesanan sedang dikemas di studio atelier'
+      },
+      {
+        invoice_no: 'INV-202611-004',
+        created_at: now,
+        customer_id: 'CST-001',
+        customer_name: 'Dimas Pratama',
+        whatsapp_no: '6281234567891',
+        items_json: JSON.stringify([
+          {
+            product_id: 'PRD-003',
+            name: 'Celana Lipit Wide-Leg Atelier',
+            name_en: 'Atelier Wide-Leg Pleated Trousers',
+            variant_id: 'VAR-0011',
+            sku: 'PLTD-SND-M',
+            color: 'Pasir Krem',
+            size: 'M',
+            quantity: 1,
+            price: 580000,
+            weight_gram: 420,
+            subtotal: 580000
+          }
+        ]),
+        subtotal: 580000,
+        coupon_code: '',
+        coupon_discount: 0,
+        shipping_method: 'SiCepat REG',
+        shipping_cost: 18000,
+        grand_total: 598000,
+        payment_proof_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80',
+        status: 'Dikirim',
+        shipping_zone: 'JABODETABEK',
+        currency_code: 'IDR',
+        exchange_rate: 1,
+        utm_source: 'instagram',
+        tracking_number: 'SICEPAT004192883',
+        shipping_status: 'Dalam Pengiriman',
+        shipped_at: '23:11:2026',
+        shipping_notes: 'Paket sedang dalam perjalanan menuju hub Jakarta Selatan'
       }
     ];
 
@@ -1978,7 +2032,11 @@ function seedDatabase() {
           ord.shipping_zone,
           ord.currency_code,
           ord.exchange_rate,
-          ord.utm_source
+          ord.utm_source,
+          ord.tracking_number || '',
+          ord.shipping_status || 'Belum Dikirim',
+          ord.shipped_at || '',
+          ord.shipping_notes || ''
         ]);
         results.ordersAdded++;
       }

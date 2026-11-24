@@ -2,7 +2,7 @@
 
 > **Standar Mutlak Rekayasa Sistem, Tata Kelola Repositori & Kontrak Agen AI Coding**  
 > Mengikat seluruh agen pengembang (*docs-worker*, *setup-worker*, *backend-worker*, *ui-worker*, *verifier*, *catalog-auditor*)  
-> Versi Kontrak: **v2.1.0 (Strict RBAC Accountability, Dynamic Storefront CMS & Mobile Ergonomics)**  
+> Versi Kontrak: **v2.4.0 (Structured Date/Time Engine, Global LIFO ESC Accessibility, Full Shipping & Resi Tracking, and RBAC Interactive KPI Charts)**  
 > Kepatuhan Standar: **RetroBOT Core v3.0 & antislop Filter**
 
 ---
@@ -90,7 +90,11 @@ const COL_ORDERS = {
   SHIPPING_ZONE: 14,
   CURRENCY_CODE: 15,
   EXCHANGE_RATE: 16,
-  UTM_SOURCE: 17
+  UTM_SOURCE: 17,
+  TRACKING_NUMBER: 18,
+  SHIPPING_STATUS: 19,
+  SHIPPED_AT: 20,
+  SHIPPING_NOTES: 21
 };
 
 const COL_CUSTOMERS = {
@@ -347,6 +351,39 @@ Sistem membedakan secara ketat hak akses 3 peran tim operasional dengan akuntabi
    - Menyimpan file ke folder `DRIVE_PRODUCTS_FOLDER_NAME` di Google Drive dan mengatur izin baca publik (*Anyone with link can view*).
    - Mengembalikan URL gambar langsung Google CDN (`https://lh3.googleusercontent.com/d/<ID>=w1000`) dan mencatat aktivitas ke `AuditLogs`.
    - Antarmuka formulir modal (`#admin-bundle-modal`) menyediakan tombol unggah file lokal, kompresi kanvas 1200px, kotak pratinjau gambar, dan pengisian otomatis ke kolom URL.
+
+---
+
+### 2.13 Standar Format Waktu Terstruktur, Aksesibilitas ESC, Resi Pengiriman & Grafik RBAC v2.4
+
+1. **Standar Pengaturan Waktu & Tanggal Terstruktur (`dd:mm:yyyy`)**:
+   - **Larangan Keras**: DILARANG KERAS menggunakan input isian teks manual (`<input type="text">`) untuk tanggal dan waktu pada formulir admin maupun etalase toko.
+   - **Pola Komponen**: Gunakan 5 komponen selektor dropdown terstruktur (`DD`, `MM`, `YYYY`, `HH`, `mm`).
+   - **Dynamic Day Clamping**: Terapkan fungsi pembaruan jumlah hari dinamis (`syncDatePickerDays`) saat bulan atau tahun berganti, guna menjamin validitas kalender (misal: Februari tahun kabisat vs non-kabisat).
+   - **Pintasan Kalender Visual**: Sediakan tombol kalender tersembunyi berformat ISO (`openNativeCalendarPicker`) untuk memudahkan pemilihan visual tanggal, yang kemudian otomatis disinkronkan ke 5 dropdown terstruktur.
+
+2. **Aksesibilitas Penutupan Modal Global Keyboard ESC (Capture Phase LIFO)**:
+   - Pasang satu pendengar event global pada fase penangkapan (*capture phase*):
+     ```javascript
+     window.addEventListener('keydown', handleGlobalEscapeKey, true);
+     ```
+   - Prioritas penutupan modal bertumpuk wajib mematuhi aturan LIFO (*Last In, First Out*).
+   - Seluruh 15 modal dan drawer wajib terdaftar dalam urutan LIFO terstruktur.
+   - Panggil `document.activeElement.blur()` pada saat penutupan modal untuk membebaskan fokus keyboard.
+
+3. **Manajemen Resi Pengiriman & Mutex Pesanan (`updateOrderShipping`)**:
+   - Modifikasi data logistik wajib dilindungi `LockService.getScriptLock()` dengan batas tunggu 10 detik.
+   - Kolom nomor resi (`COL_ORDERS.TRACKING_NUMBER`), status pengiriman (`COL_ORDERS.SHIPPING_STATUS`), tanggal kirim (`COL_ORDERS.SHIPPED_AT`), dan catatan (`COL_ORDERS.SHIPPING_NOTES`) diperbarui secara atomik.
+   - Jika status pengiriman diatur ke `Terkirim` (*Delivered*), sistem secara otomatis menyinkronkan status pesanan utama menjadi `Selesai` (*Completed*).
+   - Setiap mutasi logistik wajib dicatat ke sheet `AuditLogs` dengan mencantumkan nomor invoice, kurir, dan nomor resi.
+
+4. **Tata Kelola Grafik Analitik & Sanitasi Server-Side Dasbor RBAC (`getAdminDashboard`)**:
+   - Dilarang mengandalkan penyembunyian di sisi klien saja untuk data finansial dan PII sensitif.
+   - Fungsi backend `getAdminDashboard(role)` wajib menyaring data di tingkat server sebelum dikirimkan ke peramban:
+     - Jika peran adalah `Customer Service`, nilai finansial (`totalRevenue`, `aov`, `dailyRevenue`, `categorySales`) wajib diatur ke `null` atau `0`.
+     - Jika peran adalah `Store Manager`, data PII pelanggan dan segmentasi pelanggan individual wajib diatur ke `null`.
+     - Hanya peran `Super Admin` yang menerima set data analitik utuh tanpa sanitasi.
+   - Komponen grafik visual di sisi peramban wajib menggunakan elemen SVG murni yang responsif dan terbebas dari pustaka eksternal pihak ketiga yang berat.
 
 ---
 

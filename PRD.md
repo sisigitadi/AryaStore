@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD): AryaStore E-Commerce Engine
 
 > **Spesifikasi Resmi Platform Global Fashion & Apparel E-Commerce Terpadu (Storefront & RBAC Admin Dashboard)**  
-> Versi Dokumen: **v2.2.0 (Strict Inventory Governance, Web-Style Admin Navigation & SKU Variant Lifecycle)**  
+> Versi Dokumen: **v2.4.0 (Structured Date/Time Engine, Global LIFO ESC Accessibility, Full Shipping & Resi Tracking, and RBAC Interactive KPI Charts)**  
 > Arsitektur Target: **Serverless Google Apps Script + Google Sheets Database**  
 > Standar Kepatuhan: **RetroBOT Core v3.0 & antislop Filter**
 
@@ -298,7 +298,38 @@ Google Spreadsheet (AryaStore Database Engine)
 #### Aturan Sanitasi Keamanan `getPublicConfig()`
 Fungsi endpoint publik `getPublicConfig()` yang melayani antarmuka browser `index.html` **WAJIB MENYARING DAN MENIADAKAN** kunci PIN otorisasi (`PIN_SUPER_ADMIN`, `PIN_STORE_MANAGER`, `PIN_CUSTOMER_SERVICE`), API key pihak ketiga (`RAJAONGKIR_API_KEY`, `BITESHIP_API_KEY`), serta nama folder internal Google Drive (`DRIVE_FOLDER_NAME`, `DRIVE_PRODUCTS_FOLDER_NAME`). Sebagai pengganti kunci rahasia, sertakan boolean `RAJAONGKIR_CONFIGURED: !!settings.RAJAONGKIR_API_KEY` dan `BITESHIP_CONFIGURED: !!settings.BITESHIP_API_KEY` agar antarmuka storefront mengetahui ketersediaan integrasi kurir live secara aman.
 
-### 5. Log Pembaruan Resmi (Version History)
+---
+
+### 5. Fitur Utama Tambahan Rilis v2.4.0
+
+#### 5.1 Mesin Pengaturan Tanggal & Waktu Terstruktur (`dd:mm:yyyy`)
+- **Peniadaan Input Teks Bebas**: Menghilangkan seluruh masukan teks bebas untuk pengaturan waktu dan tanggal guna mencegah salah penulisan dan ketidakseragaman format.
+- **Komponen 5 Dropdown Terstruktur**: Menyediakan pemilih dropdown modular untuk Tanggal (`01` s.d. `31`), Bulan (`01` s.d. `12`), Tahun (`2026` s.d. `2030`), Jam (`00` s.d. `23`), dan Menit (`00` s.d. `59`).
+- **Dynamic Day Clamping**: Sinkronisasi dinamis jumlah hari berdasarkan kombinasi bulan dan tahun (misalnya Februari 2026 dibatasi tepat 28 hari, sedangkan bulan dengan 30 atau 31 hari menyesuaikan secara otomatis).
+- **Pintasan Kalender & Lencana Pratinjau**: Tersedia tombol kalender native dan tampilan lencana pratinjau langsung berformat resmi `dd:mm:yyyy HH:mm WIB`.
+
+#### 5.2 Aksesibilitas Penutupan Modal Global Keyboard ESC
+- **Dukungan 15 Modal & Drawer**: Seluruh jendela modal, drawer seluler, dialog konfirmasi, dan formulir dapat ditutup menggunakan tombol keyboard `ESC`.
+- **Mekanisme LIFO (Last In, First Out)**: Menerapkan penanganan fase penangkapan (*capture phase*) sehingga pada situasi modal bertumpuk, hanya lapisan teratas yang ditutup lebih dulu.
+- **Pelepasan Fokus Otomatis**: Melakukan `blur()` pada elemen aktif untuk mencegah pembukaan ulang modal yang tidak diinginkan.
+
+#### 5.3 Manajemen Resi & Pelacakan Logistik Pengiriman
+- **Kolom Resi & Status Pengiriman di Tabel Pesanan (Tab 3)**: Menampilkan nama kurir, nomor resi dalam font monospace dengan tombol **Salin** 1-klik, lencana status logistik berwarna, dan tanggal pengiriman `dd:mm:yyyy`.
+- **Modal Pembaruan Pengiriman (`#admin-shipping-modal`)**: Antarmuka bagi operator untuk menginput kurir, nomor resi, tanggal kirim terstruktur, status pengiriman (`Diproses di Gudang`, `Diserahkan ke Kurir`, `Dalam Perjalanan`, `Terkirim`), catatan kurir, dan tombol **Simpan & Kirim WA** untuk notifikasi langsung ke WhatsApp pembeli.
+- **Bilah Pencarian Cepat**: Mendukung penyaringan multi-kriteria (nomor invoice, nama pelanggan, nomor WhatsApp, nomor resi, dan kurir).
+- **Pelacak Mandiri Pelanggan (`#order-tracker-modal`)**: Memperlihatkan detail ekspedisi, status real-time, dan nomor resi yang dapat disalin oleh pembeli.
+
+#### 5.4 Dasbor Analitik & Grafik Interaktif RBAC (Server-Side Sanitized)
+- **Visualisasi SVG Murni Responsif**: Grafik performa tanpa dependensi pustaka berat, cepat dimuat, dan memiliki tooltip interaktif.
+- **Filter Periode Analitik**: Pilihan rentang waktu `7 Hari`, `30 Hari`, dan `Semua`.
+- **Sanitasi Data Ketat di Sisi Server (`code.gs`)**:
+  - *Super Admin*: Visualisasi lengkap grafik tren omzet, pesanan, distribusi status logistik, penjualan per kategori, segmentasi pelanggan, dan SLA pengembalian barang.
+  - *Store Manager*: Akses grafik performa omzet produk, tren pesanan, breakdown status pesanan, dan SLA retur; data privasi PII pelanggan disanitasi.
+  - *Customer Service*: Akses data finansial (omzet) disanitasi total; menyajikan grafik volume pesanan harian, distribusi status logistik, segmentasi pelanggan, SLA retur, dan antrean tindakan prioritas.
+
+---
+
+### 6. Log Pembaruan Resmi (Version History)
 
 - **v1.0.0 (2026-11-21)**: Perancangan fondasi awal serverless GAS + Google Sheets. Eliminasi loyalti poin dan ulasan produk, implementasi wishlist localStorage, dan sistem RBAC PIN.
 - **v2.0.0 (2026-11-24)**: Ekspansi skala global. Baseline katalog 19 produk busana terverifikasi visual, dukungan bilingual (ID/EN), multi-valas 8 mata uang, mesin ekspedisi hibrida (Live RajaOngkir Komerce v2, Biteship v1, kalkulator tarif live, dan fallback matriks otomatis), penyimpanan foto produk & galeri varian warna di Google Drive dengan pergantian foto warna live di storefront, generator hangtag barcode fisik ganda (QR + Code128) dengan aturan cetak `@media print`, strip linkout marketplace eksternal, aset SEO teknis (`robots.txt`, `sitemap.xml`, OpenGraph, Schema.org), serta konfigurasi pelacak analitik digital multi-platform dengan Consent Mode v2, atribusi UTM, ekspor feed katalog CSV, dan panel diagnostik piksel langsung.
@@ -306,3 +337,4 @@ Fungsi endpoint publik `getPublicConfig()` yang melayani antarmuka browser `inde
 - **v2.2.0 (2026-11-24)**: Eliminasi total tab strip geser mobile pada konsol admin, digantikan dengan selektor dropdown berbasis web (#mobile-admin-tab-select). Integrasi alur penjagaan stok habis (Out-of-Stock Guard) di sisi klien dan backend anti-overselling pada createOrder. Siklus hidup lengkap katalog produk & varian SKU (tambah/edit/hapus varian dan updateVariantStock cepat).
 - **v2.3.0 (2026-11-24)**: Manajemen penuh interaktif Flash Sale & Paket Bundling (CRUD) di Tab 7 Konsol Admin (#admin-panel-bundles) dan Google Sheets (CampaignsAndBundles). Penambahan endpoint deleteCampaign di code.gs, antarmuka formulir modal pembuatan/pembaruan (#admin-bundle-modal), sakelar cepat aktif/nonaktif promo (toggleBundleStatusAction), dan sinkronisasi reaktif etalase tanpa reload.
 - **v2.3.1 (2026-11-24)**: Integrasi pengunggahan foto sampul paket promo & bundling langsung ke Google Drive publik via endpoint uploadBundleImage di code.gs. Penambahan komponen pemilih file lokal, kompresi kanvas 1200px, kotak pratinjau langsung (#bundle-form-preview-img), dan pengisian otomatis URL CDN Google Drive pada formulir kelola promo (#admin-bundle-modal).
+- **v2.4.0 (2026-11-24)**: Pengaturan waktu & tanggal terstruktur dd:mm:yyyy (eliminasi 100% input isian teks bebas, 5 dropdown dinamis, dynamic day clamping, tombol kalender native). Penutupan modal global capture-phase LIFO dengan tombol ESC untuk 15 modal dan dialog. Manajemen resi & logistik pengiriman di Tab 3 dan pelacak pesanan pelanggan dengan integrasi 4 status pengiriman, tombol salin resi 1-klik, dan pesan WhatsApp instan. Dasbor grafik analitik interaktif SVG murni berbasis segregasi RBAC di Tab 1 (Super Admin, Store Manager, Customer Service).

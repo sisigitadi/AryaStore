@@ -1,11 +1,41 @@
 # 🛍️ AryaStore : Global Fashion & Apparel E-Commerce Engine
 
-> **Editorial Minimalist Fashion Storefront & Operational RBAC Admin Dashboard v2.0**  
+> **Editorial Minimalist Fashion Storefront & Operational RBAC Admin Dashboard v2.4**  
 > Dibangun dengan arsitektur serverless **Google Apps Script (GAS) + Google Sheets Database** dan dapat dijalankan langsung sebagai Single Page Application (SPA) di **GitHub Pages**.  
 > Kepatuhan Standar: **RetroBOT Core v3.0** & **antislop Filter**
 
 🌐 **Demo Live:** [https://sisigitadi.github.io/AryaStore/](https://sisigitadi.github.io/AryaStore/)  
 📦 **Repositori:** [https://github.com/sisigitadi/AryaStore](https://github.com/sisigitadi/AryaStore)
+
+---
+
+## 🚀 Pembaruan Rilis v2.4.0 (Structured Date/Time Engine, Global LIFO ESC Accessibility, Full Shipping & Resi Tracking, and RBAC Interactive KPI Charts)
+
+1. **Mesin Pengaturan Tanggal & Waktu Terstruktur (Structured dd:mm:yyyy Engine)**:
+   - **Peniadaan Total Input Isian Teks Bebas**: Menghilangkan seluruh input isian teks manual tanggal yang rawan salah ketik atau format tidak valid.
+   - **Komponen Dropdown Terstruktur 5 Bagian**: Menggunakan selektor terpisah untuk Tanggal (`01` s.d. `31`), Bulan (`01` s.d. `12`), Tahun (`2026` s.d. `2030`), Jam (`00` s.d. `23`), dan Menit (`00` s.d. `59`).
+   - **Sinkronisasi Dinamis Jumlah Hari (Dynamic Day Clamping)**: Jumlah hari menyesuaikan secara otomatis dengan bulan dan tahun kabisat (misalnya Februari 2026 dibatasi tepat 28 hari, sedangkan bulan 30/31 hari menyesuaikan secara dinamis).
+   - **Pratinjau Format Baku & Pintasan Kalender**: Lencana pratinjau langsung berformat resmi `dd:mm:yyyy HH:mm WIB` serta tombol pintasan pemilih kalender visual native (`openNativeCalendarPicker`).
+
+2. **Aksesibilitas Penutupan Modal Global Tombol ESC (Capture-Phase LIFO Handler)**:
+   - **Penutupan 15 Modal & Drawer dengan Satu Tombol**: Seluruh modal storefront maupun konsol admin dapat ditutup secara instan menggunakan tombol keyboard `ESC`.
+   - **Penanganan LIFO (Last In, First Out)**: Menggunakan event listener fase penangkapan (*capture phase*) sehingga jika terdapat modal bertumpuk (seperti modal resi di atas daftar pesanan), hanya modal paling atas yang tertutup.
+   - **Pelepasan Fokus Otomatis (Active Element Blur)**: Melepaskan fokus dari elemen aktif saat tombol `ESC` ditekan untuk mencegah trigger ganda atau pembukaan kembali tanpa disengaja.
+
+3. **Manajemen Resi & Status Pengiriman Lengkap (Tab 3 & Pelacak Pesanan Pelanggan)**:
+   - **Kolom Resi & Status Pengiriman Baru di Tabel Pesanan**: Menampilkan nama kurir ekspedisi, nomor resi dalam tipografi monospace dengan tombol **Salin** 1-klik, lencana status pengiriman berwarna, serta tanggal kirim berformat `dd:mm:yyyy`.
+   - **Modal Pengiriman Khusus (#admin-shipping-modal)**: Memungkinkan operator memilih kurir, menginput nomor resi, menentukan tanggal pengiriman terstruktur, memilih status pengiriman (`Diproses di Gudang`, `Diserahkan ke Kurir`, `Dalam Perjalanan`, `Terkirim`), mencatat catatan kurir, dan mengirim notifikasi WhatsApp otomatis ke pelanggan via tombol **Simpan & Kirim WA**.
+   - **Bilah Pencarian Pesanan Cepat**: Memungkinkan pencarian instan berdasarkan nomor invoice, nama pelanggan, nomor WhatsApp, nomor resi pengiriman, maupun nama kurir.
+   - **Peningkatan Pelacak Pesanan Pelanggan (#order-tracker-modal)**: Menampilkan kartu informasi resi dan status pengiriman yang informatif dan dapat disalin langsung oleh pembeli.
+   - **Backend Mutex & Endpoint `updateOrderShipping`**: Memperbarui kolom `tracking_number`, `shipping_status`, `shipped_at`, dan `shipping_notes` secara atomik di Google Sheets dengan `LockService` mutex dan pencatatan audit log.
+
+4. **Dasbor Grafik Interaktif Berbasis RBAC (Tab 1 Ringkasan & KPI)**:
+   - **Grafik SVG Murni Responsif**: Menghadirkan visualisasi data tanpa dependensi pustaka pihak ketiga berukuran besar, ringan dimuat, dan dilengkapi interaksi hover tooltip.
+   - **Filter Periode Analitik Dinamis**: Operator dapat memfilter visualisasi berdasarkan rentang waktu `7 Hari`, `30 Hari`, atau `Semua`.
+   - **Penyaringan Ketat Hak Akses RBAC di Sisi Server (`code.gs`)**:
+     - *Super Admin*: Visualisasi menyeluruh meliputi Grafik Tren Omzet & Pesanan (Combo Line/Bar SVG), Donut Status Pesanan & Logistik, Distribusi Penjualan Kategori, Segmentasi Pelanggan, dan SLA Penanganan Retur.
+     - *Store Manager*: Visualisasi performa penjualan dan logistik (Grafik Omzet & Pesanan, Donut Status, Distribusi Kategori, dan SLA Retur; data privasi PII pelanggan disanitasi).
+     - *Customer Service*: Visualisasi operasional layanan pelanggan (Data omzet disanitasi total; menyajikan Donut Status Pesanan, Volume Pesanan Harian, Segmentasi Pelanggan, SLA Retur, dan Antrean Tindakan Prioritas).
 
 ---
 
